@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { useSearchParams } from 'next/navigation'
 
 interface LoginFormProps {
     onSuccess?: () => void;
@@ -29,6 +30,16 @@ export default function LoginForm({
     const [googleLoading, setGoogleLoading] = useState(false);
 
     const idSuffix = compact ? 'mobile' : 'desktop';
+    const searchParams = useSearchParams();
+
+    useEffect(() => {
+        const errorParam = searchParams.get('error');
+        if (errorParam === 'cancelled') {
+            setError('Login cancelled via Google.');
+        } else if (errorParam) {
+            setError(errorParam); // Or specific mapping
+        }
+    }, [searchParams]);
 
     // Check if user is already logged in (from callback)
     useEffect(() => {

@@ -38,11 +38,11 @@ router.get('/google/callback',
 
     if (req.query.error === 'access_denied') {
       console.log('🚫 User cancelled login');
-      return res.redirect(`${config.frontendUrl}/login?error=cancelled`);
+      return res.redirect(`${config.frontendUrl}/auth/google?error=cancelled`);
     }
 
     passport.authenticate('google', {
-      failureRedirect: `${config.frontendUrl}/login?error=auth_failed`,
+      failureRedirect: `${config.frontendUrl}/auth/google?error=auth_failed`,
       session: false
     })(req, res, next);
   },
@@ -108,7 +108,7 @@ router.get('/google/callback',
 
     } catch (error) {
       console.error('❌ Callback processing error:', error);
-      const errorUrl = `${config.frontendUrl}/login?error=server_error&message=${encodeURIComponent(error.message)}`;
+      const errorUrl = `${config.frontendUrl}/auth/google?error=server_error&message=${encodeURIComponent(error.message)}`;
       res.redirect(errorUrl);
     }
   }
