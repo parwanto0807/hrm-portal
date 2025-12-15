@@ -2,6 +2,13 @@
 import { packages } from './utils/require.js';
 import config from './config/env.js';
 
+// ✅ Import Cookie Parser (Standard Import karena support ESM/CJS interop)
+import cookieParser from 'cookie-parser';
+
+// ✅ Import Routes yang sudah kita buat
+import userRoute from './routes/auth/userRoutes.js';
+import authRoute from './routes/auth/authRoutes.js'; // Asumsi Anda sudah membuat file ini untuk login
+
 // Load CommonJS packages
 const express = packages.express();
 const cors = packages.cors();
@@ -14,9 +21,11 @@ const app = express();
 
 // Middleware
 app.use(helmet());
+
+// Update CORS untuk mengizinkan Credentials (Cookie)
 app.use(cors({
-  origin: config.cors.origin,
-  credentials: true,
+  origin: config.cors.origin, // Pastikan ini URL frontend (misal: http://localhost:3000)
+  credentials: true, // WAJIB: Agar browser mau mengirim cookie/token balik ke server
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
@@ -24,6 +33,9 @@ app.use(cors({
 app.use(morgan(config.env === 'development' ? 'dev' : 'combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// ✅ Pasang Cookie Parser (Sebelum Session & Routes)
+app.use(cookieParser());
 
 app.use(session({
   secret: config.session.secret,
@@ -54,6 +66,13 @@ app.get('/api/health', (req, res) => {
     env: config.env
   });
 });
+
+// ✅ MOUNT ROUTES (Daftarkan Route Disini)
+// Prefix '/api/auth' untuk login/google
+app.use('/api/auth', authRoute); 
+
+// Prefix '/api/users' untuk profile/crud user
+app.use('/api/users', userRoute);
 
 // Root endpoint
 app.get('/', (req, res) => {

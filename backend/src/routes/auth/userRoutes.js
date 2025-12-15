@@ -2,6 +2,8 @@
 import express from 'express';
 import passport from 'passport';
 import { prisma } from '../../config/prisma.js';
+import { getProfile } from "../../controllers/auth/userController.js";
+import { verifyUser } from '../../middleware/auth.middleware.js';
 
 const router = express.Router();
 
@@ -139,5 +141,7 @@ router.put('/:id', async (req, res) => {
     });
   }
 });
+
+router.get('/me', verifyUser, getProfile);
 
 export default router;

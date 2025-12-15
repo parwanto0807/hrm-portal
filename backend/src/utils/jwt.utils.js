@@ -1,80 +1,57 @@
 // src/utils/jwt.utils.js
-import jwt from 'jsonwebtoken';
+import { packages } from './require.js';
 import config from '../config/env.js';
 
-const generateTokens = (user) => {
-  const accessTokenPayload = {
-    userId: user.id,
-    email: user.email,
-    role: user.role
-  };
+const jwt = packages.jsonwebtoken();
 
-  const refreshTokenPayload = {
-    userId: user.id
-  };
-
-  const accessToken = jwt.sign(
-    accessTokenPayload,
-    config.jwt.secret,
-    { 
-      expiresIn: config.jwt.expiresIn,
-      issuer: 'hrm-backend',
-      audience: 'hrm-frontend'
+export const generateTokens = (user) => {
+  try {
+    if (!user || !user.id) {
+      throw new Error('User object is invalid for token generation');
     }
-  );
 
-  const refreshToken = jwt.sign(
-    refreshTokenPayload,
-    config.jwt.refreshSecret,
-    { 
-      expiresIn: config.jwt.refreshExpiresIn,
-      issuer: 'hrm-backend',
-      audience: 'hrm-frontend'
-    }
-  );
+    console.log('🔑 Generating tokens for user ID:', user.id);
 
-  return { 
-    accessToken, 
-    refreshToken,
-    expiresIn: config.jwt.expiresIn
-  };
-};
+    const accessToken = jwt.sign(
+      { 
+        userId: user.id,  // PENTING: gunakan userId, bukan id
+        email: user.email,
+        role: user.role || 'EMPLOYEE'
+      },
+      config.jwt.secret,
+      { expiresIn: config.jwt.accessExpiry || '15m' }
+    );
 
-const verifyToken = (token) => {
-  try {
-    return jwt.verify(token, config.jwt.secret, {
-      issuer: 'hrm-backend',
-      audience: 'hrm-frontend'
-    });
+    const refreshToken = jwt.sign(
+      { 
+        userId: user.id  // PENTING: gunakan userId
+      },
+      config.jwt.refreshSecret,
+      { expiresIn: config.jwt.refreshExpiry || '7d' }
+    );
+
+    console.log('✅ Tokens generated successfully');
+
+    return {
+      accessToken,
+      refreshToken,
+      expiresIn: 15 * 60 * 1000
+    };
   } catch (error) {
-    console.error('Token verification failed:', error.message);
-    return null;
+    console.error('❌ Token generation error:', error);
+    throw error;
   }
 };
 
-const verifyRefreshToken = (token) => {
+export const verifyToken = (token, type = 'access') => {
   try {
-    return jwt.verify(token, config.jwt.refreshSecret, {
-      issuer: 'hrm-backend',
-      audience: 'hrm-frontend'
-    });
+    const secret = type === 'refresh' 
+      ? config.jwt.refreshSecret 
+      : config.jwt.secret;
+    
+    return jwt.verify(token, secret);
   } catch (error) {
-    console.error('Refresh token verification failed:', error.message);
-    return null;
+    console.error(`❌ ${type} token verification error:`, error.message);
+    throw error;
   }
-};
-
-const decodeToken = (token) => {
-  try {
-    return jwt.decode(token);
-  } catch (error) {
-    return null;
-  }
-};
-
-export {
-  generateTokens,
-  verifyToken,
-  verifyRefreshToken,
-  decodeToken
 };

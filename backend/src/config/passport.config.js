@@ -7,107 +7,131 @@ import { generateTokens } from '../utils/jwt.utils.js';
 // Load passport packages
 const passport = packages.passport();
 const GoogleStrategy = packages['passport-google-oauth20']().Strategy;
-const JwtStrategy = packages['passport-jwt']().Strategy;
-const ExtractJwt = packages['passport-jwt']().ExtractJwt;
+
+console.log('🔄 Initializing Passport strategies...');
 
 // Google OAuth Strategy
 passport.use(new GoogleStrategy({
     clientID: config.google.clientId,
     clientSecret: config.google.clientSecret,
     callbackURL: config.google.callbackUrl,
-    passReqToCallback: true
+    passReqToCallback: true,
+    scope: ['profile', 'email', 'openid'],
+    accessType: 'offline',
+    prompt: 'consent'
   },
   async (req, accessToken, refreshToken, profile, done) => {
     try {
-      console.log('📱 Google OAuth profile received:', profile.id);
-
-      let user = await prisma.user.findUnique({
-        where: { email: profile.emails?.[0]?.value }
+      console.log('📱 Google OAuth profile received:', {
+        id: profile.id,
+        email: profile.emails?.[0]?.value,
+        name: profile.displayName
       });
 
-      if (!user) {
-        user = await prisma.user.create({
-          data: {
-            email: profile.emails?.[0]?.value,
-            name: profile.displayName,
-            image: profile.photos?.[0]?.value,
-            role: 'EMPLOYEE'
-          }
-        });
-        console.log('✅ User created:', user.email);
+      if (!profile.emails || !profile.emails[0]?.value) {
+        console.error('❌ No email found in Google profile');
+        return done(new Error('No email found in Google profile'));
       }
 
-      await prisma.account.upsert({
-        where: {
-          provider_providerAccountId: {
-            provider: 'google',
-            providerAccountId: profile.id
-          }
-        },
-        update: {
-          access_token: accessToken,
-          refresh_token: refreshToken,
-          expires_at: Math.floor(Date.now() / 1000) + 3600,
-          updatedAt: new Date()
-        },
-        create: {
-          userId: user.id,
-          provider: 'google',
-          providerAccountId: profile.id,
-          access_token: accessToken,
-          refresh_token: refreshToken,
-          expires_at: Math.floor(Date.now() / 1000) + 3600
+      const email = profile.emails[0].value;
+      const name = profile.displayName || email.split('@')[0];
+      const image = profile.photos?.[0]?.value;
+
+      // Cari atau buat user dengan transaction
+      const result = await prisma.$transaction(async (tx) => {
+        // Cari user by email
+        let user = await tx.user.findUnique({
+          where: { email }
+        });
+
+        if (!user) {
+          console.log('👤 Creating new user for:', email);
+          
+          user = await tx.user.create({
+            data: {
+              email,
+              name,
+              image,
+              role: 'EMPLOYEE',
+              isActive: true
+            }
+          });
+          
+          console.log('✅ New user created:', user.id);
+        } else {
+          console.log('👤 Existing user found:', user.id);
+          
+          // Update user info jika ada perubahan
+          user = await tx.user.update({
+            where: { id: user.id },
+            data: { 
+              name: name || user.name,
+              image: image || user.image 
+            }
+          });
         }
+
+        // Upsert account (Google)
+        await tx.account.upsert({
+          where: {
+            provider_providerAccountId: {
+              provider: 'google',
+              providerAccountId: profile.id
+            }
+          },
+          update: {
+            access_token: accessToken,
+            refresh_token: refreshToken,
+            expires_at: Math.floor(Date.now() / 1000) + 3600,
+            updatedAt: new Date()
+          },
+          create: {
+            userId: user.id,
+            provider: 'google',
+            providerAccountId: profile.id,
+            type: 'oauth',
+            access_token: accessToken,
+            refresh_token: refreshToken,
+            expires_at: Math.floor(Date.now() / 1000) + 3600,
+            token_type: 'Bearer'
+          }
+        });
+
+        return user;
       });
 
-      const tokens = generateTokens(user);
-      console.log('✅ Tokens generated for user:', user.email);
+      // PENTING: Format user object dengan benar
+      const userResponse = {
+        id: result.id,
+        email: result.email,
+        name: result.name,
+        image: result.image,
+        role: result.role || 'EMPLOYEE'
+      };
+
+      // Generate tokens
+      const tokens = generateTokens(userResponse);
       
-      return done(null, { user, tokens });
+      console.log('✅ Authentication successful for:', userResponse.email);
+      console.log('🎟️ Tokens generated for user ID:', userResponse.id);
+      
+      // PENTING: Return object dengan structure yang benar
+      return done(null, { 
+        user: userResponse,
+        tokens: tokens 
+      });
+
     } catch (error) {
       console.error('❌ Google strategy error:', error);
-      return done(error);
+      return done(error, false);
     }
   }
 ));
 
-// JWT Strategy
-const jwtOptions = {
-  jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-  secretOrKey: config.jwt.secret
-};
-
-passport.use(new JwtStrategy(jwtOptions, async (payload, done) => {
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id: payload.userId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        image: true,
-        role: true,
-        isActive: true
-      }
-    });
-
-    if (!user) {
-      return done(null, false);
-    }
-
-    if (!user.isActive) {
-      return done(new Error('User account is inactive'), false);
-    }
-
-    return done(null, user);
-  } catch (error) {
-    return done(error);
-  }
-}));
-
-// Serialize/Deserialize
-passport.serializeUser((user, done) => {
-  done(null, user.id);
+// Serialize/Deserialize user
+passport.serializeUser((data, done) => {
+  // Data adalah { user, tokens } dari strategy
+  done(null, data.user?.id);
 });
 
 passport.deserializeUser(async (id, done) => {
@@ -123,12 +147,17 @@ passport.deserializeUser(async (id, done) => {
         isActive: true
       }
     });
+    
+    if (!user) {
+      return done(new Error('User not found'), null);
+    }
+    
     done(null, user);
   } catch (error) {
-    done(error);
+    done(error, null);
   }
 });
 
-console.log('✅ Passport strategies initialized');
+console.log('✅ Passport strategies initialized successfully');
 
 export default passport;

@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { setToken } from '@/lib/auth';
 
 interface LoginFormProps {
     onSuccess?: () => void;
@@ -20,7 +19,6 @@ export default function LoginForm({
     compact = false
 }: LoginFormProps) {
     const router = useRouter();
-    const searchParams = useSearchParams(); // 1. Hook untuk baca URL params
 
     const [formData, setFormData] = useState({
         email: '',
@@ -30,29 +28,23 @@ export default function LoginForm({
     const [error, setError] = useState<string | null>(null);
     const [googleLoading, setGoogleLoading] = useState(false);
 
-    // Gunakan suffix unik untuk ID agar tidak bentrok
     const idSuffix = compact ? 'mobile' : 'desktop';
 
-    // 2. LOGIC BARU: Tangani Error dari URL (Google Redirect)
+    // Check if user is already logged in (from callback)
     useEffect(() => {
-        const errorType = searchParams.get('error');
+        const checkAuth = () => {
+            const accessToken = localStorage.getItem('access_token');
+            const isAuthenticated = localStorage.getItem('isAuthenticated');
 
-        if (errorType === 'cancelled') {
-            setError('Login Google dibatalkan oleh pengguna.');
-        } else if (errorType === 'google_auth_failed') {
-            setError('Gagal login dengan Google. Silakan coba lagi.');
-        } else if (errorType === 'callback_processing_error') {
-            setError('Terjadi kesalahan saat memproses data login.');
-        } else if (errorType === 'missing_tokens') {
-            setError('Gagal mendapatkan akses token.');
-        }
+            if (accessToken && isAuthenticated === 'true') {
+                console.log('✅ User already authenticated, redirecting...');
+                if (onSuccess) onSuccess();
+                router.push(redirectPath);
+            }
+        };
 
-        // Opsional: Bersihkan URL agar parameter error hilang (agar bersih)
-        if (errorType) {
-            const newUrl = window.location.pathname;
-            window.history.replaceState({}, '', newUrl);
-        }
-    }, [searchParams]);
+        checkAuth();
+    }, [router, onSuccess, redirectPath]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -63,15 +55,25 @@ export default function LoginForm({
         setError(null);
     };
 
-    // Handler Google Login - Redirect ke Backend OAuth
+    // SIMPLE Google Login Redirect
     const handleGoogleLogin = () => {
         setGoogleLoading(true);
-        // Redirect ke backend OAuth endpoint
+        setError(null);
+
         const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002';
-        window.location.href = `${backendUrl}/api/auth/google`;
+        const frontendUrl = window.location.origin;
+
+        // Redirect URL setelah login sukses
+        const redirectUrl = `${frontendUrl}/auth/callback`;
+
+        // Simple redirect ke backend OAuth
+        const googleAuthUrl = `${backendUrl}/api/auth/google?redirect=${encodeURIComponent(redirectUrl)}`;
+
+        console.log('🔗 Redirecting to:', googleAuthUrl);
+        window.location.href = googleAuthUrl;
     };
 
-    // Handler Login Email/Password
+    // Email/Password Login
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -82,7 +84,6 @@ export default function LoginForm({
                 throw new Error('Please fill in all fields');
             }
 
-            // Panggil backend API untuk login
             const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002';
 
             const response = await fetch(`${backendUrl}/api/auth/login`, {
@@ -93,19 +94,26 @@ export default function LoginForm({
                 body: JSON.stringify({
                     email: formData.email,
                     password: formData.password
-                })
+                }),
+                credentials: 'include'
             });
 
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.error || 'Login failed');
+                throw new Error(data.message || data.error || 'Login failed');
             }
 
-            // Simpan token
-            if (data.tokens) {
-                setToken(data.tokens.accessToken);
-                localStorage.setItem('refresh_token', data.tokens.refreshToken);
+            // Simpan tokens
+            if (data.tokens?.accessToken) {
+                localStorage.setItem('access_token', data.tokens.accessToken);
+                localStorage.setItem('refresh_token', data.tokens.refreshToken || '');
+            }
+
+            // Simpan user data
+            if (data.user) {
+                localStorage.setItem('user', JSON.stringify(data.user));
+                localStorage.setItem('isAuthenticated', 'true');
             }
 
             if (onSuccess) onSuccess();
@@ -171,12 +179,12 @@ export default function LoginForm({
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        {error}
+                        <span>{error}</span>
                     </div>
                 </motion.div>
             )}
 
-            {/* Google Login Button - Custom */}
+            {/* Google Login Button */}
             {showGoogleLogin && (
                 <div className={compact ? 'mb-4' : 'mb-6'}>
                     <motion.button
@@ -190,7 +198,7 @@ export default function LoginForm({
                         {googleLoading ? (
                             <div className="flex items-center justify-center gap-2">
                                 <div className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin`} />
-                                <span>Redirecting...</span>
+                                <span>Redirecting to Google...</span>
                             </div>
                         ) : (
                             <>
