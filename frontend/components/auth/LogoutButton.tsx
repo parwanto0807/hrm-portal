@@ -1,7 +1,7 @@
 // components/LogoutButton.tsx
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/hooks/useAuth';
 import { Button } from '../ui/button';
@@ -23,6 +23,9 @@ export default function LogoutButton({
     const [loading, setLoading] = useState(false);
     const { getUser } = useAuth();
     const user = getUser();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => setMounted(true), []);
 
     const handleLogout = async () => {
         if (loading) return;
@@ -75,7 +78,7 @@ export default function LogoutButton({
             onClick={handleLogout}
             disabled={loading}
             className={`${variantStyles[variant]} ${className} disabled:opacity-50 disabled:cursor-not-allowed`}
-            title={`Logout ${user?.name || user?.email || ''}`}
+            title={mounted ? `Logout ${user?.name || user?.email || ''}` : 'Logout'}
         >
             {loading ? (
                 <span className="flex items-center justify-center gap-2">
