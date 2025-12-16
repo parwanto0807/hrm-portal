@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 export const STORAGE_KEYS = {
@@ -24,17 +24,18 @@ export const useAuth = () => {
         isLoading: true,
     });
 
-    const isBrowser = typeof window !== 'undefined';
+    // Track if component is mounted
+    const [isMounted, setIsMounted] = useState(false);
+    const initRef = useRef(false);
 
+    // Initialize auth HANYA setelah component mounted
     const initializeAuth = useCallback(() => {
-        if (!isBrowser) {
-            setAuthState({
-                user: null,
-                token: null,
-                isLoading: false,
-            });
-            return;
-        }
+        // CRITICAL: Jangan akses localStorage sebelum mounted
+        if (!isMounted) return;
+
+        // Prevent multiple initialization
+        if (initRef.current) return;
+        initRef.current = true;
 
         try {
             // Coba format baru dulu, jika tidak ada coba format lama
@@ -61,21 +62,18 @@ export const useAuth = () => {
 
             const user = userStr ? JSON.parse(userStr) : null;
 
-            console.log('Auth initialized:', {
-                tokenExists: !!token,
-                userExists: !!user,
-                keysInStorage: Object.keys(localStorage)
-            });
+            if (process.env.NODE_ENV === 'development') {
+                console.log('Auth initialized:', {
+                    tokenExists: !!token,
+                    userExists: !!user,
+                    storageKeysCount: Object.keys(localStorage).length
+                });
+            }
 
-            setAuthState(prev => {
-                if (prev.user === user && prev.token === token && !prev.isLoading) {
-                    return prev;
-                }
-                return {
-                    user,
-                    token,
-                    isLoading: false,
-                };
+            setAuthState({
+                user,
+                token,
+                isLoading: false,
             });
         } catch (error) {
             console.error('Error initializing auth:', error);
@@ -85,12 +83,25 @@ export const useAuth = () => {
                 isLoading: false,
             });
         }
-    }, [isBrowser]);
+    }, [isMounted]);
 
+    // Effect 1: Set mounted flag
     useEffect(() => {
+        setIsMounted(true);
+        return () => {
+            setIsMounted(false);
+            initRef.current = false;
+        };
+    }, []);
+
+    // Effect 2: Initialize auth setelah mounted
+    useEffect(() => {
+        if (!isMounted) return;
+
         initializeAuth();
 
         const handleStorageChange = () => {
+            initRef.current = false;
             initializeAuth();
         };
 
@@ -101,7 +112,7 @@ export const useAuth = () => {
             window.removeEventListener('storage', handleStorageChange);
             window.removeEventListener('auth-change', handleStorageChange);
         };
-    }, [initializeAuth]);
+    }, [isMounted, initializeAuth]);
 
     const isAuthenticated = useCallback(() => {
         return !authState.isLoading && !!authState.token && !!authState.user;
@@ -116,49 +127,80 @@ export const useAuth = () => {
     }, [authState.isLoading]);
 
     const login = useCallback((user: any, accessToken: string) => {
-        if (!isBrowser) return;
+        if (!isMounted) return;
 
-        console.log('Saving to localStorage with keys:', STORAGE_KEYS);
+        try {
+            if (process.env.NODE_ENV === 'development') {
+                console.log('Logging in with keys:', STORAGE_KEYS);
+            }
 
-        // Simpan dengan format baru
-        localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
-        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+            // Simpan dengan format baru
+            localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+            localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
 
-        // Hapus data lama jika ada
-        localStorage.removeItem(STORAGE_KEYS.LEGACY_ACCESS_TOKEN);
-        localStorage.removeItem(STORAGE_KEYS.LEGACY_USER);
+            // Hapus data lama jika ada
+            localStorage.removeItem(STORAGE_KEYS.LEGACY_ACCESS_TOKEN);
+            localStorage.removeItem(STORAGE_KEYS.LEGACY_USER);
 
-        setAuthState({
-            user,
-            token: accessToken,
-            isLoading: false,
-        });
+            setAuthState({
+                user,
+                token: accessToken,
+                isLoading: false,
+            });
 
-        window.dispatchEvent(new Event('auth-change'));
-        router.push('/dashboard');
-        router.refresh();
-    }, [isBrowser, router]);
+            window.dispatchEvent(new Event('auth-change'));
+
+            // Use replace instead of push for better UX
+            router.replace('/dashboard');
+        } catch (error) {
+            console.error('Login error:', error);
+        }
+    }, [isMounted, router]);
 
     const logout = useCallback(() => {
-        if (!isBrowser) return;
+        if (!isMounted) return;
 
-        // Hapus semua format
-        localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-        localStorage.removeItem(STORAGE_KEYS.USER);
-        localStorage.removeItem(STORAGE_KEYS.LEGACY_ACCESS_TOKEN);
-        localStorage.removeItem(STORAGE_KEYS.LEGACY_USER);
-        localStorage.removeItem('isAuthenticated');
+        try {
+            // Hapus semua format
+            localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+            localStorage.removeItem(STORAGE_KEYS.USER);
+            localStorage.removeItem(STORAGE_KEYS.LEGACY_ACCESS_TOKEN);
+            localStorage.removeItem(STORAGE_KEYS.LEGACY_USER);
+            localStorage.removeItem('isAuthenticated');
 
-        setAuthState({
-            user: null,
-            token: null,
-            isLoading: false,
-        });
+            setAuthState({
+                user: null,
+                token: null,
+                isLoading: false,
+            });
 
-        window.dispatchEvent(new Event('auth-change'));
-        router.push('/login');
-        router.refresh();
-    }, [isBrowser, router]);
+            window.dispatchEvent(new Event('auth-change'));
+
+            // Use replace instead of push
+            router.replace('/login');
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+    }, [isMounted, router]);
+
+    const debug = useCallback(() => {
+        if (!isMounted) {
+            return {
+                error: 'Not mounted yet',
+                authState
+            };
+        }
+
+        return {
+            currentToken: localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN),
+            legacyToken: localStorage.getItem(STORAGE_KEYS.LEGACY_ACCESS_TOKEN),
+            currentUser: localStorage.getItem(STORAGE_KEYS.USER),
+            legacyUser: localStorage.getItem(STORAGE_KEYS.LEGACY_USER),
+            allStorage: Object.keys(localStorage),
+            authState,
+            isMounted
+        };
+    }, [isMounted, authState]);
 
     return {
         isAuthenticated,
@@ -166,13 +208,8 @@ export const useAuth = () => {
         isLoading,
         login,
         logout,
-        debug: () => ({
-            currentToken: localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN),
-            legacyToken: localStorage.getItem(STORAGE_KEYS.LEGACY_ACCESS_TOKEN),
-            currentUser: localStorage.getItem(STORAGE_KEYS.USER),
-            legacyUser: localStorage.getItem(STORAGE_KEYS.LEGACY_USER),
-            allStorage: Object.keys(localStorage),
-            authState
-        })
+        debug,
+        // Export mounted state untuk debugging
+        isMounted,
     };
 };

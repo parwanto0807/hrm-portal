@@ -1,40 +1,60 @@
-"use client";
+// components/providers/ClientProviders.tsx
+"use client"
 
-import { GoogleOAuthProvider } from '@react-oauth/google';
-import dynamic from 'next/dynamic';
-import { useState, useEffect } from 'react';
+import { GoogleOAuthProvider } from "@react-oauth/google";
+import { ThemeProvider } from "./theme-provider";
+import { useState, useEffect } from "react";
 
-const PWAInstallPrompt = dynamic(() => import('@/components/PWAInstallPrompt'), {
-    ssr: false,
-});
+interface ClientProvidersProps {
+    children: React.ReactNode;
+    googleClientId?: string;
+}
 
 export default function ClientProviders({
     children,
-    googleClientId,
-}: {
-    children: React.ReactNode;
-    googleClientId?: string;
-}) {
-    if (!googleClientId) {
-        return <>{children}</>;
-    }
-
+    googleClientId
+}: ClientProvidersProps) {
+    // State untuk cek apakah sudah mounted
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
         setMounted(true);
     }, []);
 
-    // During SSR/Hydration, render children directly to match server HTML
-    // This prevents GoogleOAuthProvider from injecting scripts before hydration is complete
+    // Render minimal version sebelum mounted
+    // Ini mencegah blank screen
     if (!mounted) {
-        return <>{children}</>;
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-pulse">Loading...</div>
+            </div>
+        );
+    }
+
+    // Setelah mounted, render full providers
+    if (!googleClientId) {
+        return (
+            <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+                disableTransitionOnChange
+            >
+                {children}
+            </ThemeProvider>
+        );
     }
 
     return (
         <GoogleOAuthProvider clientId={googleClientId}>
-            {children}
-            <PWAInstallPrompt />
+            <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+                disableTransitionOnChange
+            >
+                {children}
+            </ThemeProvider>
         </GoogleOAuthProvider>
     );
 }

@@ -111,7 +111,7 @@ export default function UserProfileDropdown({ user, isDarkMode, toggleDarkMode }
             >
                 {/* Avatar Container */}
                 <div className="relative">
-                    <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white dark:border-gray-800 shadow-lg group-hover:scale-105 transition-transform duration-300">
+                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-full overflow-hidden border-2 border-white dark:border-gray-800 shadow-lg group-hover:scale-105 transition-transform duration-300">
                         {user?.image && !imgError ? (
                             <img
                                 src={user.image}
