@@ -7,21 +7,8 @@ export default function PWAInstallPrompt() {
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
-        // Debugging logs
-        console.log("PWA Component: Mounted");
-        console.log("PWA Component: SW supported?", 'serviceWorker' in navigator);
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistration().then(reg => {
-                console.log("PWA Component: SW Registration:", reg ? "Found" : "Missing");
-            });
-        }
-
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-        console.log("PWA Component: Is Standalone?", isStandalone);
-
         // Handler untuk event beforeinstallprompt
         const handleBeforeInstallPrompt = (e: any) => {
-            console.log("PWA Component: Event 'beforeinstallprompt' FIRED!");
             // 1. Cegah browser menampilkan prompt bawaan
             e.preventDefault();
 
@@ -29,24 +16,12 @@ export default function PWAInstallPrompt() {
             setDeferredPrompt(e);
 
             // 3. Tampilkan UI kustom kita jika belum pernah di-skip session ini
-            checkDismissed();
-        };
-
-        const checkDismissed = () => {
             const isDismissed = sessionStorage.getItem('pwa_prompt_dismissed');
-            console.log("PWA Component: isDismissed?", isDismissed);
+
             if (!isDismissed) {
                 setIsVisible(true);
             }
-        }
-
-        // DEVELOPMENT ONLY: Force show untuk testing UI
-        if (process.env.NODE_ENV === 'development') {
-            console.log("Dev Mode: Simulating PWA Prompt...");
-            setTimeout(() => {
-                checkDismissed();
-            }, 2000);
-        }
+        };
 
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
