@@ -1,98 +1,178 @@
-// hooks/useAuth.ts
+"use client";
+
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+
+export const STORAGE_KEYS = {
+    // New format
+    ACCESS_TOKEN: 'hrm_access_token',
+    USER: 'hrm_user',
+    // Legacy format (for backward compatibility)
+    LEGACY_ACCESS_TOKEN: 'access_token',
+    LEGACY_USER: 'user',
+};
 
 export const useAuth = () => {
     const router = useRouter();
+    const [authState, setAuthState] = useState<{
+        user: any | null;
+        token: string | null;
+        isLoading: boolean;
+    }>({
+        user: null,
+        token: null,
+        isLoading: true,
+    });
 
-    const logout = async () => {
-        try {
-            const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002';
+    const isBrowser = typeof window !== 'undefined';
 
-            await fetch(`${backendUrl}/api/auth/logout`, {
-                method: 'POST',
-                credentials: 'include'
+    const initializeAuth = useCallback(() => {
+        if (!isBrowser) {
+            setAuthState({
+                user: null,
+                token: null,
+                isLoading: false,
             });
-
-            clearAuth();
-            router.push('/login');
-            router.refresh();
-
-        } catch (error) {
-            console.error('Logout error:', error);
-            clearAuth();
-            router.push('/login');
+            return;
         }
-    };
 
-    const clearAuth = () => {
-        if (typeof window !== 'undefined') {
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('refresh_token');
-            localStorage.removeItem('user');
-            localStorage.removeItem('isAuthenticated');
-        }
-    };
-
-    const getUser = () => {
-        if (typeof window === 'undefined') return null;
-        const userStr = localStorage.getItem('user');
-        return userStr ? JSON.parse(userStr) : null;
-    };
-
-    const getToken = () => {
-        if (typeof window === 'undefined') return null;
-        return localStorage.getItem('access_token');
-    };
-
-    const isAuthenticated = () => {
-        if (typeof window === 'undefined') return false;
-        const token = getToken();
-        const isAuth = localStorage.getItem('isAuthenticated');
-        return !!token && isAuth === 'true';
-    };
-
-    const refreshToken = async () => {
         try {
-            const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002';
-            const refreshToken = localStorage.getItem('refresh_token');
+            // Coba format baru dulu, jika tidak ada coba format lama
+            let token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+            let userStr = localStorage.getItem(STORAGE_KEYS.USER);
 
-            if (!refreshToken) {
-                clearAuth();
-                return false;
-            }
-
-            const response = await fetch(`${backendUrl}/api/auth/refresh`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ refreshToken }),
-                credentials: 'include'
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-
-                if (data.tokens?.accessToken) {
-                    localStorage.setItem('access_token', data.tokens.accessToken);
-                    return true;
+            // Jika tidak ada di format baru, coba format lama
+            if (!token) {
+                token = localStorage.getItem(STORAGE_KEYS.LEGACY_ACCESS_TOKEN);
+                // Jika ada data lama, migrasikan ke format baru
+                if (token) {
+                    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, token);
+                    localStorage.removeItem(STORAGE_KEYS.LEGACY_ACCESS_TOKEN);
                 }
             }
 
-            return false;
+            if (!userStr) {
+                userStr = localStorage.getItem(STORAGE_KEYS.LEGACY_USER);
+                if (userStr) {
+                    localStorage.setItem(STORAGE_KEYS.USER, userStr);
+                    localStorage.removeItem(STORAGE_KEYS.LEGACY_USER);
+                }
+            }
 
+            const user = userStr ? JSON.parse(userStr) : null;
+
+            console.log('Auth initialized:', {
+                tokenExists: !!token,
+                userExists: !!user,
+                keysInStorage: Object.keys(localStorage)
+            });
+
+            setAuthState(prev => {
+                if (prev.user === user && prev.token === token && !prev.isLoading) {
+                    return prev;
+                }
+                return {
+                    user,
+                    token,
+                    isLoading: false,
+                };
+            });
         } catch (error) {
-            console.error('Token refresh error:', error);
-            return false;
+            console.error('Error initializing auth:', error);
+            setAuthState({
+                user: null,
+                token: null,
+                isLoading: false,
+            });
         }
-    };
+    }, [isBrowser]);
+
+    useEffect(() => {
+        initializeAuth();
+
+        const handleStorageChange = () => {
+            initializeAuth();
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        window.addEventListener('auth-change', handleStorageChange);
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener('auth-change', handleStorageChange);
+        };
+    }, [initializeAuth]);
+
+    const isAuthenticated = useCallback(() => {
+        return !authState.isLoading && !!authState.token && !!authState.user;
+    }, [authState.isLoading, authState.token, authState.user]);
+
+    const getUser = useCallback(() => {
+        return authState.user;
+    }, [authState.user]);
+
+    const isLoading = useCallback(() => {
+        return authState.isLoading;
+    }, [authState.isLoading]);
+
+    const login = useCallback((user: any, accessToken: string) => {
+        if (!isBrowser) return;
+
+        console.log('Saving to localStorage with keys:', STORAGE_KEYS);
+
+        // Simpan dengan format baru
+        localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+
+        // Hapus data lama jika ada
+        localStorage.removeItem(STORAGE_KEYS.LEGACY_ACCESS_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.LEGACY_USER);
+
+        setAuthState({
+            user,
+            token: accessToken,
+            isLoading: false,
+        });
+
+        window.dispatchEvent(new Event('auth-change'));
+        router.push('/dashboard');
+        router.refresh();
+    }, [isBrowser, router]);
+
+    const logout = useCallback(() => {
+        if (!isBrowser) return;
+
+        // Hapus semua format
+        localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.USER);
+        localStorage.removeItem(STORAGE_KEYS.LEGACY_ACCESS_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.LEGACY_USER);
+        localStorage.removeItem('isAuthenticated');
+
+        setAuthState({
+            user: null,
+            token: null,
+            isLoading: false,
+        });
+
+        window.dispatchEvent(new Event('auth-change'));
+        router.push('/login');
+        router.refresh();
+    }, [isBrowser, router]);
 
     return {
-        logout,
-        getUser,
-        getToken,
         isAuthenticated,
-        refreshToken,
-        clearAuth
+        getUser,
+        isLoading,
+        login,
+        logout,
+        debug: () => ({
+            currentToken: localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN),
+            legacyToken: localStorage.getItem(STORAGE_KEYS.LEGACY_ACCESS_TOKEN),
+            currentUser: localStorage.getItem(STORAGE_KEYS.USER),
+            legacyUser: localStorage.getItem(STORAGE_KEYS.LEGACY_USER),
+            allStorage: Object.keys(localStorage),
+            authState
+        })
     };
 };

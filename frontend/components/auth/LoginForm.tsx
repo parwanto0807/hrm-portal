@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { useSearchParams } from 'next/navigation'
+import { useGoogleLogin } from '@react-oauth/google'; // Import Wajib
 
 interface LoginFormProps {
     onSuccess?: () => void;
@@ -20,6 +20,7 @@ export default function LoginForm({
     compact = false
 }: LoginFormProps) {
     const router = useRouter();
+    const searchParams = useSearchParams();
 
     const [formData, setFormData] = useState({
         email: '',
@@ -30,30 +31,30 @@ export default function LoginForm({
     const [googleLoading, setGoogleLoading] = useState(false);
 
     const idSuffix = compact ? 'mobile' : 'desktop';
-    const searchParams = useSearchParams();
 
+    // 1. Handle URL Errors (Legacy support jika ada redirect lama)
     useEffect(() => {
         const errorParam = searchParams.get('error');
-        if (errorParam === 'cancelled') {
-            setError('Login cancelled via Google.');
+        if (errorParam === 'cancelled' || errorParam === 'access_denied') {
+            setError('Login dibatalkan.');
+            // Bersihkan URL agar rapi
+            window.history.replaceState({}, '', window.location.pathname);
         } else if (errorParam) {
-            setError(errorParam); // Or specific mapping
+            setError(errorParam);
         }
     }, [searchParams]);
 
-    // Check if user is already logged in (from callback)
+    // 2. Check Authentication Status
     useEffect(() => {
         const checkAuth = () => {
-            const accessToken = localStorage.getItem('access_token');
-            const isAuthenticated = localStorage.getItem('isAuthenticated');
-
-            if (accessToken && isAuthenticated === 'true') {
+            const accessToken = localStorage.getItem('access_token'); // Sesuaikan nama key token Anda
+            // Cek token keberadaan token saja biasanya cukup
+            if (accessToken) {
                 console.log('✅ User already authenticated, redirecting...');
                 if (onSuccess) onSuccess();
                 router.push(redirectPath);
             }
         };
-
         checkAuth();
     }, [router, onSuccess, redirectPath]);
 
@@ -66,25 +67,65 @@ export default function LoginForm({
         setError(null);
     };
 
-    // SIMPLE Google Login Redirect
-    const handleGoogleLogin = () => {
-        setGoogleLoading(true);
-        setError(null);
+    // 3. HOOK GOOGLE LOGIN (PENGGANTI FUNGSI LAMA)
+    // Ini menggunakan Popup, jadi user tidak meninggalkan halaman
+    const loginToGoogle = useGoogleLogin({
+        onSuccess: async (tokenResponse) => {
+            setGoogleLoading(true);
+            setError(null);
 
-        const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002';
-        const frontendUrl = window.location.origin;
+            try {
+                // Gunakan URL dari ENV (wajib https untuk mobile)
+                const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://solusiit.id/api';
 
-        // Redirect URL setelah login sukses
-        const redirectUrl = `${frontendUrl}/auth/callback`;
+                // Kirim Access Token ke Backend
+                const response = await fetch(`${backendUrl}/auth/google`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: tokenResponse.access_token }),
+                });
 
-        // Simple redirect ke backend OAuth
-        const googleAuthUrl = `${backendUrl}/api/auth/google?redirect=${encodeURIComponent(redirectUrl)}`;
+                const data = await response.json();
 
-        console.log('🔗 Redirecting to:', googleAuthUrl);
-        window.location.href = googleAuthUrl;
-    };
+                if (!response.ok) {
+                    throw new Error(data.message || "Gagal login dengan Google");
+                }
 
-    // Email/Password Login
+                // Simpan Token & User Data
+                const accessToken = data.tokens?.accessToken || data.accessToken;
+                const refreshToken = data.tokens?.refreshToken || data.refreshToken;
+
+                if (accessToken) {
+                    localStorage.setItem('hrm_access_token', accessToken); // <- GANTI
+                    if (refreshToken) localStorage.setItem('hrm_refresh_token', refreshToken);
+                }
+
+                if (data.user) {
+                    localStorage.setItem('hrm_user', JSON.stringify(data.user)); // <- GANTI
+                    localStorage.setItem('isAuthenticated', 'true');
+                }
+
+                // Sukses
+                if (onSuccess) onSuccess();
+                router.push(redirectPath);
+
+            } catch (err: any) {
+                console.error("Google Auth Error:", err);
+                setError(err.message || "Terjadi kesalahan saat login Google");
+            } finally {
+                setGoogleLoading(false);
+            }
+        },
+        onError: (errorResponse) => {
+            // MENANGANI PEMBATALAN (CANCEL)
+            console.log("Login Cancelled:", errorResponse);
+            setError("Login dibatalkan."); // Pesan error tanpa reload halaman
+            setGoogleLoading(false);
+        },
+        flow: 'implicit' // Penting untuk mendapatkan access_token langsung
+    });
+
+    // 4. Email/Password Login Function (Tetap Sama)
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -95,13 +136,11 @@ export default function LoginForm({
                 throw new Error('Please fill in all fields');
             }
 
-            const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002';
+            const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://solusiit.id/api';
 
-            const response = await fetch(`${backendUrl}/api/auth/login`, {
+            const response = await fetch(`${backendUrl}/auth/login`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     email: formData.email,
                     password: formData.password
@@ -112,26 +151,23 @@ export default function LoginForm({
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || data.error || 'Login failed');
+                throw new Error(data.message || 'Login failed');
             }
 
-            // Simpan tokens
-            if (data.tokens?.accessToken) {
-                localStorage.setItem('access_token', data.tokens.accessToken);
-                localStorage.setItem('refresh_token', data.tokens.refreshToken || '');
-            }
+            // Simpan Token
+            const accessToken = data.tokens?.accessToken || data.accessToken;
 
-            // Simpan user data
+            if (accessToken) localStorage.setItem('hrm_access_token', accessToken); // <- GANTI
             if (data.user) {
-                localStorage.setItem('user', JSON.stringify(data.user));
+                localStorage.setItem('hrm_user', JSON.stringify(data.user)); // <- GANTI
                 localStorage.setItem('isAuthenticated', 'true');
             }
 
             if (onSuccess) onSuccess();
             router.push(redirectPath);
 
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Login failed');
+        } catch (err: any) {
+            setError(err.message || 'Login failed');
         } finally {
             setLoading(false);
         }
@@ -199,17 +235,20 @@ export default function LoginForm({
             {showGoogleLogin && (
                 <div className={compact ? 'mb-4' : 'mb-6'}>
                     <motion.button
-                        type="button"
+                        type="button" // PENTING: Type button agar tidak submit form
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={handleGoogleLogin}
+
+                        // FIX: Memanggil hook useGoogleLogin, BUKAN function redirect lama
+                        onClick={() => loginToGoogle()}
+
                         disabled={googleLoading}
                         className={googleButtonClasses}
                     >
                         {googleLoading ? (
                             <div className="flex items-center justify-center gap-2">
                                 <div className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin`} />
-                                <span>Redirecting to Google...</span>
+                                <span>Processing...</span>
                             </div>
                         ) : (
                             <>
@@ -240,7 +279,7 @@ export default function LoginForm({
                 </div>
             )}
 
-            {/* Login Form */}
+            {/* Login Form (Email/Password) */}
             <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Email Field */}
                 <div>

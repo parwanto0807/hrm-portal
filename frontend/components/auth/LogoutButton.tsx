@@ -36,7 +36,7 @@ export default function LogoutButton({
             const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002';
 
             // Call backend logout endpoint
-            await fetch(`${backendUrl}/api/auth/logout`, {
+            await fetch(`${backendUrl}/auth/logout`, {
                 method: 'POST',
                 credentials: 'include'
             });
