@@ -62,13 +62,13 @@ export const useAuth = () => {
 
             const user = userStr ? JSON.parse(userStr) : null;
 
-            if (process.env.NODE_ENV === 'development') {
-                console.log('Auth initialized:', {
-                    tokenExists: !!token,
-                    userExists: !!user,
-                    storageKeysCount: Object.keys(localStorage).length
-                });
-            }
+            // if (process.env.NODE_ENV === 'development') {
+            //     console.log('Auth initialized:', {
+            //         tokenExists: !!token,
+            //         userExists: !!user,
+            //         storageKeysCount: Object.keys(localStorage).length
+            //     });
+            // }
 
             setAuthState({
                 user,

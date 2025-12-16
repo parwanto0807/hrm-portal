@@ -5,6 +5,8 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import { ThemeProvider } from "./theme-provider";
 import { useState, useEffect } from "react";
 
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+
 interface ClientProvidersProps {
     children: React.ReactNode;
     googleClientId?: string;
@@ -41,6 +43,7 @@ export default function ClientProviders({
                 disableTransitionOnChange
             >
                 {children}
+                <PWAInstallPrompt />
             </ThemeProvider>
         );
     }
@@ -54,6 +57,7 @@ export default function ClientProviders({
                 disableTransitionOnChange
             >
                 {children}
+                <PWAInstallPrompt />
             </ThemeProvider>
         </GoogleOAuthProvider>
     );

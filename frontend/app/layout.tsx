@@ -34,6 +34,7 @@ export const viewport: Viewport = {
 
 // 3. Metadata SEO & PWA
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3002"),
   title: {
     template: "%s | Project HRM",
     default: "Project HRM - Sistem Manajemen SDM",
@@ -49,13 +50,13 @@ export const metadata: Metadata = {
   // Icons dengan multiple sizes
   icons: {
     icon: [
-      { url: "/icon/icon-192x192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icon/icon-512x512.png", sizes: "512x512", type: "image/png" },
+      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
     ],
     apple: [
-      { url: "/icon/icon-180x180.png", sizes: "180x180", type: "image/png" },
+      { url: "/icons/icon-192x192.png", sizes: "180x180", type: "image/png" },
     ],
-    shortcut: "/icon/icon-192x192.png",
+    shortcut: "/icons/icon-192x192.png",
   },
 
   // Apple Web App
