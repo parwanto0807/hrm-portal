@@ -50,53 +50,53 @@ const activities = [
 export const RecentActivity = () => {
     return (
         <Card className="mb-8">
-            <CardHeader>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            <CardHeader className="pb-3">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
                     Aktivitas Terbaru
                 </h2>
-                <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-0.5">
                     Update terbaru dari sistem HRM
                 </p>
             </CardHeader>
-            <CardContent>
-                <div className="space-y-4">
+            <CardContent className="pt-0">
+                <div className="space-y-3 sm:space-y-4">
                     {activities.map((activity, index) => (
                         <div
                             key={index}
-                            className="flex items-start gap-4 p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                            className="flex items-start gap-3 p-3 sm:p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                         >
-                            <div className={`${activity.color} p-2 rounded-lg`}>
-                                <activity.icon className="w-5 h-5" />
+                            <div className={`${activity.color} p-1.5 sm:p-2 rounded-md sm:rounded-lg flex-shrink-0`}>
+                                <activity.icon className="w-4 h-4 sm:w-5 sm:h-5" />
                             </div>
-                            <div className="flex-1">
-                                <h4 className="font-medium text-gray-900 dark:text-white">
+                            <div className="flex-1 min-w-0">
+                                <h4 className="font-medium text-sm sm:text-base text-gray-900 dark:text-white truncate">
                                     {activity.title}
                                 </h4>
-                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-0.5 line-clamp-1">
                                     {activity.description}
                                 </p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                <p className="text-[10px] xs:text-xs text-gray-500 dark:text-gray-400 mt-1.5 sm:mt-2">
                                     {activity.time}
                                 </p>
                             </div>
-                            <button className="text-blue-600 hover:text-blue-700 dark:text-blue-400 text-sm font-medium">
+                            <button className="text-blue-600 hover:text-blue-700 dark:text-blue-400 text-xs sm:text-sm font-medium whitespace-nowrap ml-2">
                                 Lihat
                             </button>
                         </div>
                     ))}
                 </div>
 
-                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center justify-between">
+                <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-3">
                         <div>
-                            <h4 className="font-medium text-gray-900 dark:text-white">
+                            <h4 className="font-medium text-sm sm:text-base text-gray-900 dark:text-white">
                                 Total Pending Approval
                             </h4>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                                 12 pengajuan menunggu
                             </p>
                         </div>
-                        <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
+                        <button className="px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm sm:text-base transition-colors w-full xs:w-auto">
                             Review Semua
                         </button>
                     </div>

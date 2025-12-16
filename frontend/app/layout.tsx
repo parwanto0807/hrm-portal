@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { GoogleOAuthProvider } from '@react-oauth/google';
+import ClientProviders from "@/components/providers/ClientProviders";
 import "./globals.css";
 
 // 1. Setup Font (Tetap pertahankan ini)
@@ -61,12 +61,13 @@ export default function RootLayout({
     // Ubah lang ke "id" karena target user Indonesia
     <html lang="id" suppressHydrationWarning>
       <body
+        suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 text-gray-900`}
       >
         {/* Wrapper Provider */}
-        <GoogleOAuthProvider clientId={googleClientId!}>
+        <ClientProviders googleClientId={googleClientId}>
           {children}
-        </GoogleOAuthProvider>
+        </ClientProviders>
       </body>
     </html>
   );

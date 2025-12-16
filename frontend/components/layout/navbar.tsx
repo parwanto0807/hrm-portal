@@ -197,10 +197,10 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                                 )}
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-xl font-bold bg-gradient-to-r from-sky-600 to-emerald-600 bg-clip-text text-transparent">
+                                <span className="text-[14px] md:text-xl font-bold bg-gradient-to-r from-sky-600 to-emerald-600 bg-clip-text text-transparent">
                                     HRM Pro
                                 </span>
-                                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                                <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 font-medium">
                                     Human Resource Management
                                 </span>
                             </div>
