@@ -44,7 +44,7 @@ export async function createCompanyAction(data: CompanyFormValues) {
         return { success: true };
     } catch (error: any) {
         console.error("Create Error Full:", error);
-        const errorMsg = error?.response?.data?.msg || error?.response?.data?.error || error.message || "Gagal membuat company";
+        const errorMsg = error?.response?.data?.message || error?.response?.data?.msg || error?.response?.data?.error || error.message || "Gagal membuat company";
         console.error("Create Companies Error MSG:", errorMsg);
 
         return {
@@ -79,7 +79,7 @@ export async function updateCompanyAction(id: string, data: CompanyFormValues) {
         return { success: true };
     } catch (error: any) {
         console.error("Update Error Full:", error);
-        const errorMsg = error?.response?.data?.msg || error?.response?.data?.error || error.message || "Gagal mengupdate company";
+        const errorMsg = error?.response?.data?.message || error?.response?.data?.msg || error?.response?.data?.error || error.message || "Gagal mengupdate company";
 
         return {
             success: false,
@@ -106,7 +106,7 @@ export async function deleteCompanyAction(id: string) {
         return { success: true };
     } catch (error: any) {
         console.error("Delete Error Full:", error);
-        const errorMsg = error?.response?.data?.msg || error?.response?.data?.error || error.message || "Gagal menghapus data";
+        const errorMsg = error?.response?.data?.message || error?.response?.data?.msg || error?.response?.data?.error || error.message || "Gagal menghapus data";
 
         return {
             success: false,
