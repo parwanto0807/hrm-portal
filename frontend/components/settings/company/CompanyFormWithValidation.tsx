@@ -960,12 +960,33 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                         <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 relative overflow-hidden group">
                                                             {form.watch("logo") ? (
                                                                 <>
-                                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                                    <img
-                                                                        src={form.watch("logo") || ""}
-                                                                        alt="Logo Preview"
-                                                                        className="h-32 w-auto object-contain z-10 relative transition-transform duration-300 group-hover:scale-105"
-                                                                    />
+                                                                    <div className="relative h-32 w-full flex items-center justify-center">
+                                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                                        <img
+                                                                            src={form.watch("logo") || ""}
+                                                                            alt="Logo Preview"
+                                                                            className="max-h-full max-w-full object-contain z-10 relative transition-transform duration-300 group-hover:scale-105"
+                                                                            onError={(e) => {
+                                                                                console.error("Failed to load image:", form.watch("logo"));
+                                                                                e.currentTarget.style.display = 'none';
+
+                                                                                // Show error state
+                                                                                const container = e.currentTarget.parentElement;
+                                                                                if (container) {
+                                                                                    container.innerHTML = `
+                                                                                        <div class="text-center text-red-500">
+                                                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-8 w-8 mx-auto mb-2 lucide lucide-x-circle"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
+                                                                                            <p class="text-xs">Gagal memuat gambar</p>
+                                                                                            <p class="text-[10px] text-gray-500 mt-1">${form.watch("logo")}</p>
+                                                                                        </div>
+                                                                                    `;
+                                                                                }
+                                                                            }}
+                                                                            onLoad={(e) => {
+                                                                                console.log("Image loaded successfully");
+                                                                            }}
+                                                                        />
+                                                                    </div>
                                                                     <div className="absolute inset-0 bg-gray-900/5 opacity-0 group-hover:opacity-100 transition-opacity z-0" />
                                                                     <Button
                                                                         type="button"
@@ -982,6 +1003,9 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                                     <Globe className="h-8 w-8 text-gray-400 dark:text-gray-500 mx-auto mb-2" />
                                                                     <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                                                                         Preview logo akan muncul di sini
+                                                                    </p>
+                                                                    <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
+                                                                        Masukkan URL lengkap atau path relative
                                                                     </p>
                                                                 </div>
                                                             )}
