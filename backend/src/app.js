@@ -19,7 +19,11 @@ const app = express();
 // 1. Trust Proxy (Wajib ON jika deploy di Vercel/Heroku/AWS/VPS dengan Nginx)
 app.set('trust proxy', 1);
 
-app.use(helmet());
+// COOP Policy untuk Google Login Popup
+app.use(helmet({
+  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 
 // ==========================================
 // 🔧 CONFIG CORS PRODUCTION READY
@@ -27,10 +31,9 @@ app.use(helmet());
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3002',
+  'https://solusiit.id',     // HARDCODED PRODUCTION DOMAIN
+  'https://www.solusiit.id',
   config.cors.origin,       // Pastikan .env production sudah diisi URL frontend asli
-  // Tambahkan domain production manual jika env belum diupdate:
-  // 'https://nama-website-anda.com', 
-  // 'https://admin.nama-website-anda.com' 
 ];
 
 app.use(cors({
@@ -107,10 +110,10 @@ app.use((err, req, res, next) => {
   console.error('🔥 App Error:', err); // Tetap log error di console server production
 
   const statusCode = err.statusCode || 500;
-  // Di Production, jangan tampilkan detail error sistem ke user
-  const message = config.env === 'production' && statusCode === 500
-    ? 'Internal server error'
-    : err.message;
+  
+  // FORCE SHOW ERROR IN PRODUCTION FOR DEBUGGING
+  // const message = config.env === 'production' && statusCode === 500 ? 'Internal server error' : err.message;
+  const message = err.message || 'Internal Server Error';
 
   res.status(statusCode).json({
     success: false,
