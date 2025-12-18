@@ -46,11 +46,18 @@ export const uploadCompanyLogo = (req, res) => {
         }
 
         // Construct public URL
-        const protocol = config.env === 'production' ? 'https' : req.protocol;
-        const host = req.get('host');
-        // If host contains localhost but no port, or port 5000, we might want to ensure it points to 5002? 
-        // Actually req.get('host') should return "localhost:5002" if requested correctly.
-        const fileUrl = `${protocol}://${host}/images/company/${req.file.filename}`;
+        let fileUrl;
+        
+        // Use SERVER_URL from env if available and not default localhost in production
+        if (config.serverUrl && (config.env !== 'production' || !config.serverUrl.includes('localhost'))) {
+            // Append /api/public to ensure it goes through the backend proxy
+            fileUrl = `${config.serverUrl}/api/public/images/company/${req.file.filename}`;
+        } else {
+            // Fallback for dynamic host detection
+            const protocol = config.env === 'production' ? 'https' : req.protocol;
+            const host = req.get('host');
+            fileUrl = `${protocol}://${host}/api/public/images/company/${req.file.filename}`;
+        }
 
         res.status(200).json({
             success: true,

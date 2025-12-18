@@ -929,6 +929,9 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                                                                 throw new Error(errorData.message || `Upload failed with status ${res.status}`);
                                                                                             }
                                                                                             const data = await res.json();
+                                                                                            console.log("Upload response:", data); // Debug log
+                                                                                            if (!data.url) throw new Error("Server did not return a URL");
+
                                                                                             field.onChange(data.url);
                                                                                             return data;
                                                                                         });
