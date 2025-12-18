@@ -102,7 +102,7 @@ export const QuickAccess = () => {
     if (!isMounted) {
         return (
             <Card className="mb-6 md:mb-8 border-0 shadow-sm bg-white dark:bg-gray-900">
-                <CardHeader className="pb-3 px-4 md:px-6">
+                <CardHeader className="pb-3 px-0 md:px-4">
                     <div className="flex justify-between items-center">
                         <div>
                             <h2 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white">

@@ -247,7 +247,7 @@ const menuGroups = [
 export default function SettingsPage() {
     return (
         <div className="min-h-screen w-full bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950">
-            <div className="max-w-full mx-auto p-6 space-y-8 w-full">
+            <div className="max-w-full mx-auto p-2 md:p-6 lg:p-6 space-y-8 w-full">
                 {/* Header */}
                 <div className="space-y-2">
                     <div className="flex items-center justify-between">

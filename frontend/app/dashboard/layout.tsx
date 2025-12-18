@@ -61,7 +61,7 @@ export default function DashboardLayout({
                     {/* PAGE CONTENT */}
                     <main className="flex-1">
                         <div className="w-full h-full overflow-y-auto">
-                            <div className="min-h-full p-4 md:p-6 lg:p-8">
+                            <div className="min-h-full py-2 md:p-6 lg:p-8">
                                 {children}
                             </div>
                         </div>
