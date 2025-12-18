@@ -52,7 +52,7 @@ export default function CompanyPage() {
                     setData(res[0]);
                 }
             } catch (err) {
-                console.error("Error fetching company data:", err);
+                console.error("❌ Error fetching company data:", err);
                 const errorMessage = err instanceof Error ? err.message : "Gagal memuat data perusahaan";
                 setError(errorMessage);
             } finally {

@@ -87,9 +87,11 @@ export default function LoginForm({
                 });
 
                 const data = await response.json();
+                console.log("❌ server response error full:", data); // DEBUG LOG
 
                 if (!response.ok) {
-                    throw new Error(data.message || "Gagal login dengan Google");
+                    // Cek 'message' ATAU 'error' agar fallbacknya jalan
+                    throw new Error(data.message || data.error || "Gagal login dengan Google");
                 }
 
                 // Simpan Token & User Data
