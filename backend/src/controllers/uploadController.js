@@ -48,13 +48,13 @@ export const uploadCompanyLogo = (req, res) => {
         // Construct public URL
         let fileUrl;
         
-        // Use SERVER_URL from env if available and not default localhost in production
-        if (config.serverUrl && (config.env !== 'production' || !config.serverUrl.includes('localhost'))) {
+        // Use SERVER_URL from env ONLY in production to ensure correct public access
+        if (config.env === 'production' && config.serverUrl) {
             // Append /api/public to ensure it goes through the backend proxy
             fileUrl = `${config.serverUrl}/api/public/images/company/${req.file.filename}`;
         } else {
-            // Fallback for dynamic host detection
-            const protocol = config.env === 'production' ? 'https' : req.protocol;
+            // Development/Local: Always use dynamic host to ensure it points to localhost (or current server)
+            const protocol = req.protocol;
             const host = req.get('host');
             fileUrl = `${protocol}://${host}/api/public/images/company/${req.file.filename}`;
         }
