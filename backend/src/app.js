@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import userRoute from './routes/auth/userRoutes.js';
 import authRoute from './routes/auth/authRoutes.js';
 import companyRouter from './routes/company/companyRouters.js';
+import uploadRouter from './routes/uploadRoutes.js';
 
 const express = packages.express();
 const cors = packages.cors();
@@ -60,6 +61,7 @@ app.use(morgan(config.env === 'production' ? 'combined' : 'dev'));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.static('public')); // Serve static files
 app.use(cookieParser());
 
 // ==========================================
@@ -104,6 +106,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoute); 
 app.use('/api/users', userRoute);
 app.use('/api/company', companyRouter);
+app.use('/api/upload', uploadRouter);
 
 // Error Handler
 app.use((err, req, res, next) => {

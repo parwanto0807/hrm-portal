@@ -161,26 +161,25 @@ enum ShiftType {
 model Company {
   id         String   @id @default(uuid()) @db.Uuid
   kodeCmpy   String   @unique @map("KODE_CMPY") @db.Char(3)
-  company    String?  @map("COMPANY") @db.VarChar(40)
-  address1   String?  @map("ADDRESS1") @db.VarChar(40)
-  address2   String?  @map("ADDRESS2") @db.VarChar(40)
-  address3   String?  @map("ADDRESS3") @db.VarChar(40)
-  tlp        String?  @map("TLP") @db.VarChar(15)
-  fax        String?  @map("FAX") @db.VarChar(15)
+  company    String?  @map("COMPANY") @db.Text
+  address1   String?  @map("ADDRESS1") @db.Text
+  address2   String?  @map("ADDRESS2") @db.Text
+  address3   String?  @map("ADDRESS3") @db.Text
+  tlp        String?  @map("TLP") @db.VarChar(20)
+  fax        String?  @map("FAX") @db.VarChar(20)
   npwp       String?  @map("NPWP") @db.VarChar(20)
-  director   String?  @map("DIRECTOR") @db.VarChar(25)
+  director   String?  @map("DIRECTOR") @db.Text
   npwpDir    String?  @map("NPWPDIR") @db.VarChar(20)
-  logo       String?  @map("LOGO") @db.VarChar(80)
+  logo       String?  @map("LOGO") @db.Text
   npp        String?  @map("NPP") @db.VarChar(30)
-  astekBayar String?  @map("ASTEKBAYAR") @db.VarChar(80)
-  email      String?  @map("EMAIL") @db.VarChar(30)
-  homepage   String?  @map("HOMEPAGE") @db.VarChar(50)
-  hrdMng     String?  @map("HRDMNG") @db.VarChar(30)
+  astekBayar String?  @map("ASTEKBAYAR") @db.Text
+  email      String?  @map("EMAIL") @db.VarChar(100)
+  homepage   String?  @map("HOMEPAGE") @db.Text
+  hrdMng     String?  @map("HRDMNG") @db.Text
   npwpMng    String?  @map("NPWPMNG") @db.VarChar(20)
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp
   updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamp
 
-  // Relations
   karyawan  Karyawan[]
   timeWork  TimeWork[]
   parameter Parameter[]

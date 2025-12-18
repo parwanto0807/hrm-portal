@@ -1,4 +1,6 @@
 import { prisma } from "../../../config/prisma.js";
+import fs from 'fs';
+import path from 'path';
 
 // 1. CREATE: Tambah Company Baru
 export const createCompany = async (req, res) => {
@@ -109,6 +111,23 @@ export const updateCompany = async (req, res) => {
     });
 
     if (!checkCompany) return res.status(404).json({ msg: "Company tidak ditemukan" });
+
+    // Logic: Delete Old Logo if updated
+    if (data.logo && checkCompany.logo && data.logo !== checkCompany.logo) {
+      try {
+        // Asumsi URL format: http://.../image/company/filename.ext
+        const filename = checkCompany.logo.split('/').pop();
+        if (filename) {
+          const filePath = path.join('public/image/company', filename);
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            console.log(`Deleted old logo: ${filePath}`);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to delete old logo:", err);
+      }
+    }
 
     // Lakukan update
     const updatedCompany = await prisma.company.update({

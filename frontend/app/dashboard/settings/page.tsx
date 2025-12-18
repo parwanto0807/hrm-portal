@@ -252,19 +252,23 @@ export default function SettingsPage() {
                 <div className="space-y-2">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-800 to-slate-600 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
-                                Pengaturan Sistem
-                            </h1>
-                            <p className="text-muted-foreground mt-2">
+                            <div className="flex items-center gap-2">
+                                <h1 className="text-xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-800 to-slate-600 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
+                                    Pengaturan Sistem
+                                </h1>
+                                <Badge
+                                    variant="outline"
+                                    className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800"
+                                >
+                                    {shortcutItems.length} Modul
+                                </Badge>
+                            </div>
+                            <p className="text-xs md:text-base text-muted-foreground mt-2">
                                 Kelola konfigurasi sistem dan data master organisasi Anda secara terpusat
                             </p>
+
                         </div>
-                        <Badge
-                            variant="outline"
-                            className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800"
-                        >
-                            {shortcutItems.length} Modul
-                        </Badge>
+
                     </div>
                     <Separator className="bg-gradient-to-r from-transparent via-slate-200 to-transparent dark:via-slate-700" />
                 </div>
@@ -287,14 +291,14 @@ export default function SettingsPage() {
                                 <CardHeader className="pb-3">
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                                            <CardTitle className="text-lg md:text-xl font-semibold flex items-center gap-2">
                                                 <div className={`h-2 w-2 rounded-full ${idx === 0 ? 'bg-blue-500' :
                                                     idx === 1 ? 'bg-green-500' :
                                                         'bg-red-500'
                                                     }`}></div>
                                                 {group.group}
                                             </CardTitle>
-                                            <p className="text-sm text-muted-foreground mt-1">
+                                            <p className="text-xs md:text-sm text-muted-foreground mt-1">
                                                 {group.description}
                                             </p>
                                         </div>
@@ -346,8 +350,8 @@ export default function SettingsPage() {
                     <TabsContent value="master" className="space-y-6">
                         <Card className="border shadow-sm overflow-hidden">
                             <CardHeader>
-                                <CardTitle className="text-xl font-semibold">Master Data</CardTitle>
-                                <p className="text-sm text-muted-foreground">Pengelolaan data entitas utama perusahaan</p>
+                                <CardTitle className="text-lg md:text-xl font-semibold">Master Data</CardTitle>
+                                <p className="text-xs md:text-sm text-muted-foreground">Pengelolaan data entitas utama perusahaan</p>
                             </CardHeader>
                             <CardContent>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
@@ -385,8 +389,8 @@ export default function SettingsPage() {
                     <TabsContent value="system" className="space-y-6">
                         <Card className="border shadow-sm overflow-hidden">
                             <CardHeader>
-                                <CardTitle className="text-xl font-semibold">System Settings</CardTitle>
-                                <p className="text-sm text-muted-foreground">Pengaturan sistem dan infrastruktur</p>
+                                <CardTitle className="text-lg md:text-xl font-semibold">System Settings</CardTitle>
+                                <p className="text-xs md:text-sm text-muted-foreground">Pengaturan sistem dan infrastruktur</p>
                             </CardHeader>
                             <CardContent>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
