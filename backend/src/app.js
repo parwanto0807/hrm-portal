@@ -1,15 +1,12 @@
-// src/app.js
 import { packages } from './utils/require.js';
 import config from './config/env.js';
-
-// ✅ Import Cookie Parser (Standard Import karena support ESM/CJS interop)
 import cookieParser from 'cookie-parser';
 
-// ✅ Import Routes yang sudah kita buat
+// Import Routes
 import userRoute from './routes/auth/userRoutes.js';
-import authRoute from './routes/auth/authRoutes.js'; // Asumsi Anda sudah membuat file ini untuk login
+import authRoute from './routes/auth/authRoutes.js';
+import companyRouter from './routes/company/companyRouters.js';
 
-// Load CommonJS packages
 const express = packages.express();
 const cors = packages.cors();
 const helmet = packages.helmet();
@@ -19,93 +16,107 @@ const passport = packages.passport();
 
 const app = express();
 
+// 1. Trust Proxy (Wajib ON jika deploy di Vercel/Heroku/AWS/VPS dengan Nginx)
 app.set('trust proxy', 1);
 
-// Middleware
 app.use(helmet());
 
-// Update CORS untuk mengizinkan Credentials (Cookie)
+// ==========================================
+// 🔧 CONFIG CORS PRODUCTION READY
+// ==========================================
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3002',
+  config.cors.origin,       // Pastikan .env production sudah diisi URL frontend asli
+  // Tambahkan domain production manual jika env belum diupdate:
+  // 'https://nama-website-anda.com', 
+  // 'https://admin.nama-website-anda.com' 
+];
+
 app.use(cors({
-  origin: config.cors.origin, // Pastikan ini URL frontend (misal: http://localhost:3000)
-  credentials: true, // WAJIB: Agar browser mau mengirim cookie/token balik ke server
+  origin: function (origin, callback) {
+    // Izinkan request server-to-server (tanpa origin)
+    if (!origin) return callback(null, true);
+    
+    // Perbaikan Logika:
+    // Jika origin ada di whitelist ATAU environment BUKAN production, izinkan.
+    if (allowedOrigins.indexOf(origin) !== -1 || config.env !== 'production') {
+      callback(null, true);
+    } else {
+      console.log('Blocked by CORS:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 }));
 
-app.use(morgan(config.env === 'development' ? 'dev' : 'combined'));
+// Logger: Gunakan 'combined' di production untuk log lebih detail
+app.use(morgan(config.env === 'production' ? 'combined' : 'dev'));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// ✅ Pasang Cookie Parser (Sebelum Session & Routes)
 app.use(cookieParser());
 
+// ==========================================
+// 🔧 SESSION CONFIG
+// ==========================================
+// Catatan: Untuk Production High-Traffic, disarankan pakai Redis/Postgres Store
+// agar user tidak logout saat server restart.
 app.use(session({
   secret: config.session.secret,
   resave: false,
   saveUninitialized: false,
+  proxy: true, // PENTING: Agar cookie secure terbaca di balik proxy (Load Balancer)
   cookie: {
-    secure: config.env === 'production',
+    secure: config.env === 'production', // Wajib TRUE di production (HTTPS)
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000,
-    sameSite: config.env === 'production' ? 'none' : 'lax'
+    // Jika Frontend & Backend beda domain (frontend.com & api.backend.com) pakai 'none'
+    // Jika satu domain (app.com & app.com/api) pakai 'lax'
+    sameSite: config.env === 'production' ? 'none' : 'lax' 
   }
 }));
 
-// Initialize passport
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Import passport config
 import './config/passport.config.js';
 
-// Health check endpoint
+// Health Check
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'OK',
-    service: 'HRM Backend API',
-    version: '1.0.0',
-    timestamp: new Date().toISOString(),
-    env: config.env
+    env: config.env,
+    timestamp: new Date().toISOString()
   });
 });
 
-// ✅ MOUNT ROUTES (Daftarkan Route Disini)
-// Prefix '/api/auth' untuk login/google
-app.use('/api/auth', authRoute); 
-
-// Prefix '/api/users' untuk profile/crud user
-app.use('/api/users', userRoute);
-
-// Root endpoint
 app.get('/', (req, res) => {
-  res.json({
-    message: 'Welcome to HRM Backend API',
-    version: '1.0.0',
-    endpoints: {
-      auth: '/api/auth',
-      users: '/api/users',
-      health: '/api/health'
-    },
-    docs: `${config.serverUrl}/api/health`
-  });
+  res.json({ message: 'HRM Backend API Running...' });
 });
 
-// Global error handler
+// Mount Routes
+app.use('/api/auth', authRoute); 
+app.use('/api/users', userRoute);
+app.use('/api/company', companyRouter);
+
+// Error Handler
 app.use((err, req, res, next) => {
-  console.error('🔥 App Error:', err);
+  console.error('🔥 App Error:', err); // Tetap log error di console server production
 
   const statusCode = err.statusCode || 500;
-  const message = config.env === 'development' 
-    ? err.message 
-    : 'Internal server error';
+  // Di Production, jangan tampilkan detail error sistem ke user
+  const message = config.env === 'production' && statusCode === 500
+    ? 'Internal server error'
+    : err.message;
 
-  const response = {
+  res.status(statusCode).json({
     success: false,
     error: message,
     ...(config.env === 'development' && { stack: err.stack })
-  };
-
-  res.status(statusCode).json(response);
+  });
 });
 
 export default app;

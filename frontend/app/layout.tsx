@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import ClientProviders from "@/components/providers/ClientProviders";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 // 1. Setup Font dengan optimasi
@@ -125,6 +126,7 @@ export default function RootLayout({
             {children}
           </ClientProviders>
         </ErrorBoundary>
+        <Toaster />
       </body>
     </html>
   );

@@ -1,66 +1,19 @@
-import jwt from 'jsonwebtoken';
+// src/controllers/authController.js
+
 import config from '../../config/env.js';
 import { prisma } from '../../config/prisma.js';
 
-// ==========================================
-// HELPER FUNCTIONS (Internal)
-// ==========================================
-
-/**
- * Generate Access & Refresh Tokens
- */
-const generateTokens = (user) => {
-  const accessToken = jwt.sign(
-    { id: user.id, role: user.role, email: user.email },
-    process.env.JWT_SECRET || 'your-jwt-secret',
-    { expiresIn: '15m' } // Access token pendek (keamanan)
-  );
-
-  const refreshToken = jwt.sign(
-    { id: user.id },
-    process.env.JWT_REFRESH_SECRET || 'your-refresh-secret',
-    { expiresIn: '7d' } // Refresh token panjang (kenyamanan)
-  );
-
-  return { accessToken, refreshToken };
-};
-
-/**
- * Standard Response Sender (Cookie + JSON)
- * Menggantikan utils/jwtToken.js agar logic terkumpul disini
- */
-const sendTokenResponse = (user, statusCode, res) => {
-  const tokens = generateTokens(user);
-
-  // Set HttpOnly Cookie untuk Refresh Token (Anti XSS)
-  res.cookie('refreshToken', tokens.refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production', // HTTPS only di production
-    sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 hari
-  });
-
-  // Hapus password dari object user sebelum dikirim ke frontend
-  const { password, ...userWithoutPassword } = user;
-
-  res.status(statusCode).json({
-    success: true,
-    tokens: {
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken
-    },
-    user: userWithoutPassword
-  });
-};
+// Import Helper Modular yang sudah Anda buat sebelumnya
+import { sendTokenResponse } from '../../utils/jwtToken.js'; // Mengurus Response & Cookie
+import { verifyToken } from '../../utils/jwt.utils.js';      // Mengurus Verifikasi Token
 
 // ==========================================
 // MAIN CONTROLLERS
 // ==========================================
 
 // 1. Google Login (Client-Side Popup Flow)
-// Menggunakan Access Token dari Frontend untuk fetch data ke Google
 export const googleLogin = async (req, res) => {
-  const { token } = req.body; // Access Token (ya29...)
+  const { token } = req.body; // Access Token Google (ya29...)
 
   try {
     // A. Fetch Data User dari Google
@@ -132,6 +85,7 @@ export const googleLogin = async (req, res) => {
     });
 
     // C. Kirim Response Sukses
+    // Menggunakan helper 'sendTokenResponse' agar token masuk ke Cookie & JSON
     sendTokenResponse(user, 200, res);
 
   } catch (error) {
@@ -159,13 +113,14 @@ export const login = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Email atau password salah' });
     }
 
-    // ⚠️ PENTING: Di Production gunakan bcrypt.compare(password, user.password)
+    // ⚠️ PENTING: Di Production pastikan menggunakan bcrypt.compare
     const isPasswordValid = user.password === password; 
 
     if (!isPasswordValid) {
       return res.status(401).json({ success: false, message: 'Email atau password salah' });
     }
 
+    // Menggunakan helper agar konsisten (Set Cookie + JSON)
     sendTokenResponse(user, 200, res);
 
   } catch (error) {
@@ -177,40 +132,33 @@ export const login = async (req, res) => {
 // 3. Refresh Token
 export const refreshToken = async (req, res) => {
   try {
+    // Ambil token dari Cookie (Prioritas) atau Body
     const token = req.cookies.refreshToken || req.body.refreshToken;
 
     if (!token) {
-      return res.status(401).json({ success: false, message: 'Refresh token tidak ditemukan' });
+      return res.status(401).json({ success: false, message: 'Refresh token tidak ditemukan, silakan login ulang' });
     }
 
-    // Verifikasi Token
-    const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET || 'your-refresh-secret');
+    // 1. Verifikasi Token menggunakan helper modular 'verifyToken'
+    // Helper ini akan throw error jika token invalid/expired
+    const decoded = verifyToken(token, 'refresh');
     
-    // Cek User di DB (Security Check)
+    // 2. Cek User di DB (Security Check)
+    // Perhatikan: decoded.userId sesuai dengan logic di jwt.utils.js
     const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
+      where: { id: decoded.userId },
     });
 
     if (!user) {
       return res.status(401).json({ success: false, message: 'User tidak ditemukan' });
     }
 
-    // Generate Access Token Baru Saja (Refresh token lama tetap dipakai atau dirotasi tergantung kebijakan)
-    const accessToken = jwt.sign(
-      { id: user.id, role: user.role, email: user.email },
-      process.env.JWT_SECRET || 'your-jwt-secret',
-      { expiresIn: '15m' }
-    );
-
-    res.json({
-      success: true,
-      tokens: {
-        accessToken,
-        refreshToken: token 
-      }
-    });
+    // 3. Generate Token Baru & Update Cookie (Token Rotation)
+    // Kita panggil sendTokenResponse lagi untuk memperbarui masa aktif Access & Refresh Token
+    sendTokenResponse(user, 200, res);
 
   } catch (error) {
+    console.error("Refresh Error:", error.message);
     res.status(403).json({ success: false, message: 'Refresh token tidak valid atau kadaluwarsa' });
   }
 };
@@ -218,12 +166,15 @@ export const refreshToken = async (req, res) => {
 // 4. Logout
 export const logout = (req, res) => {
   try {
-    // Hapus Cookie
-    res.clearCookie('refreshToken', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax'
-    });
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
+    };
+
+    // Hapus KEDUA cookie (accessToken dan refreshToken)
+    res.clearCookie('accessToken', cookieOptions);
+    res.clearCookie('refreshToken', cookieOptions);
     
     res.status(200).json({ success: true, message: 'Berhasil logout' });
   } catch (error) {
@@ -233,7 +184,6 @@ export const logout = (req, res) => {
 
 // 5. Google Callback Handler (Opsional - Jika pakai Passport/Redirect Flow)
 export const googleCallbackHandler = async (req, res) => {
-    // Logika Passport Callback (sesuai request Anda sebelumnya)
     try {
       if (!req.user) throw new Error('No user data');
       const { user, tokens } = req.user;
@@ -241,10 +191,27 @@ export const googleCallbackHandler = async (req, res) => {
       const redirectUrl = req.session?.redirectUrl || `${config.frontendUrl}/auth/callback`;
       const frontendUrl = new URL(redirectUrl);
       
+      // Mengirim token via URL params (kurang aman dibanding cookie, tapi standar untuk redirect flow)
       frontendUrl.searchParams.append('accessToken', tokens.accessToken);
       frontendUrl.searchParams.append('refreshToken', tokens.refreshToken);
       frontendUrl.searchParams.append('success', 'true');
       
+      // CHANGE: Set cookie agar Server Actions (Next.js) bisa membacanya
+      const cookieOptions = {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
+      };
+
+      res.cookie('accessToken', tokens.accessToken, { 
+        ...cookieOptions, 
+        expires: new Date(Date.now() + 15 * 60 * 1000) 
+      });
+      res.cookie('refreshToken', tokens.refreshToken, { 
+        ...cookieOptions, 
+        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+      });
+
       res.redirect(frontendUrl.toString());
     } catch (error) {
       res.redirect(`${config.frontendUrl}/login?error=auth_failed`);
@@ -258,7 +225,7 @@ export const getDebugConfig = (req, res) => {
     config: {
       env: process.env.NODE_ENV,
       frontendUrl: config.frontendUrl,
-      backendUrl: config.serverUrl,
+      backendUrl: config.serverUrl, // Asumsi config.serverUrl ada di env.js
     }
   });
 };

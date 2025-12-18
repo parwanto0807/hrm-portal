@@ -1,41 +1,36 @@
-// utils/jwtToken.js
-import jwt from 'jsonwebtoken';
-
-const signToken = (id, role) => {
-  return jwt.sign({ id, role }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE || '15m'
-  });
-};
-
-const signRefreshToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, {
-    expiresIn: process.env.JWT_REFRESH_EXPIRE || '7d'
-  });
-};
+// src/utils/jwtToken.js
+import { generateTokens } from './jwt.utils.js'; // Import dari file yang baru Anda kirim
 
 export const sendTokenResponse = (user, statusCode, res) => {
-  const accessToken = signToken(user.id, user.role);
-  const refreshToken = signRefreshToken(user.id);
+  // 1. Panggil fungsi generate dari jwt.utils.js
+  const { accessToken, refreshToken } = generateTokens(user);
 
+  // 2. Setup Opsi Cookie
   const cookieOptions = {
-    expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
   };
 
-  // Simpan refreshToken di cookie
-  res.cookie('refreshToken', refreshToken, cookieOptions);
+  // 3. Set Cookie Access Token (15 menit)
+  res.cookie('accessToken', accessToken, {
+    ...cookieOptions,
+    expires: new Date(Date.now() + 15 * 60 * 1000) 
+  });
 
-  // Hapus password dari response
+  // 4. Set Cookie Refresh Token (7 hari)
+  res.cookie('refreshToken', refreshToken, {
+    ...cookieOptions,
+    expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+  });
+
+  // 5. Hapus password agar tidak terkirim ke frontend
   const { password, ...userWithoutPassword } = user;
 
+  // 6. Kirim JSON
   res.status(statusCode).json({
     success: true,
-    tokens: {
-      accessToken,  // Format yang diharapkan frontend
-      refreshToken  // Juga kirim refreshToken di response
-    },
+    tokens: { accessToken, refreshToken },
     user: userWithoutPassword
   });
 };

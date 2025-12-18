@@ -11,36 +11,31 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Simulate loading
         const timer = setTimeout(() => {
             setLoading(false);
         }, 1500);
-
         return () => clearTimeout(timer);
     }, []);
 
-    // Tampilkan Skeleton saat loading
     if (loading) {
         return <SkeletonDashboard />;
     }
 
     return (
-        <div className="w-full space-y-8 animate-in fade-in duration-500">
+        <div className="w-full max-w-full space-y-8 animate-in fade-in duration-500">
             {/* Header */}
             <DashboardHeader />
 
-            {/* Stats Cards (Full Width Grid) */}
+            {/* Stats Cards */}
             <StatsCards />
 
-            {/* Content Grid (Quick Access + Activity) */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Kiri: Quick Access (Lebar) */}
-                <div className="lg:col-span-2">
+            {/* Content Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full">
+                <div className="lg:col-span-2 w-full">
                     <QuickAccess />
                 </div>
 
-                {/* Kanan: Recent Activity (Sempit) */}
-                <div className="lg:col-span-1">
+                <div className="lg:col-span-1 w-full">
                     <RecentActivity />
                 </div>
             </div>

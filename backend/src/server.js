@@ -2,12 +2,8 @@
 import app from './app.js';
 import config from './config/env.js';
 import { prisma } from './config/prisma.js';
-import authRoutes from './routes/auth/authRoutes.js';
-import userRoutes from './routes/auth/userRoutes.js';
 
-// Setup routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
+// Routes are already setup in app.js
 
 // Health check endpoint (harus sebelum 404)
 app.get('/api/health', (req, res) => {
