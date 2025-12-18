@@ -2,6 +2,7 @@
 
 import config from '../../config/env.js';
 import { prisma } from '../../config/prisma.js';
+import fetch from 'node-fetch'; // 1. Use node-fetch for consistent HTTP requests
 
 // Import Helper Modular yang sudah Anda buat sebelumnya
 import { sendTokenResponse } from '../../utils/jwtToken.js'; // Mengurus Response & Cookie
@@ -17,6 +18,7 @@ export const googleLogin = async (req, res) => {
 
   try {
     // A. Fetch Data User dari Google
+    // Menggunakan node-fetch
     const googleResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
       method: 'GET',
       headers: {
@@ -25,7 +27,7 @@ export const googleLogin = async (req, res) => {
     });
 
     if (!googleResponse.ok) {
-      throw new Error('Token Google tidak valid atau kadaluwarsa');
+      throw new Error(`Google API Error: ${googleResponse.status} ${googleResponse.statusText}`);
     }
 
     const payload = await googleResponse.json();
@@ -85,14 +87,14 @@ export const googleLogin = async (req, res) => {
     });
 
     // C. Kirim Response Sukses
-    // Menggunakan helper 'sendTokenResponse' agar token masuk ke Cookie & JSON
     sendTokenResponse(user, 200, res);
 
   } catch (error) {
     console.error("Auth Error:", error);
+    // DEBUG: Kirim detail error ke frontend agar tahu penyebabnya (Fetch error / DB error)
     res.status(500).json({ 
       success: false,
-      message: "Terjadi kesalahan saat login Google", 
+      message: `Login Gagal: ${error.message}`, 
       error: error.message 
     });
   }
