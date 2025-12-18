@@ -43,10 +43,13 @@ export async function createCompanyAction(data: CompanyFormValues) {
 
         return { success: true };
     } catch (error: any) {
-        console.error("Create Error:", error?.response?.data || error.message);
+        console.error("Create Error Full:", error);
+        const errorMsg = error?.response?.data?.msg || error?.response?.data?.error || error.message || "Gagal membuat company";
+        console.error("Create Companies Error MSG:", errorMsg);
+
         return {
             success: false,
-            error: error.response?.data?.msg || "Gagal membuat company",
+            error: errorMsg,
         };
     }
 }
@@ -75,10 +78,12 @@ export async function updateCompanyAction(id: string, data: CompanyFormValues) {
 
         return { success: true };
     } catch (error: any) {
-        console.error("Update Error:", error?.response?.data || error.message);
+        console.error("Update Error Full:", error);
+        const errorMsg = error?.response?.data?.msg || error?.response?.data?.error || error.message || "Gagal mengupdate company";
+
         return {
             success: false,
-            error: error.response?.data?.msg || "Gagal mengupdate company",
+            error: errorMsg,
         };
     }
 }
@@ -100,10 +105,12 @@ export async function deleteCompanyAction(id: string) {
 
         return { success: true };
     } catch (error: any) {
-        console.error("Delete Error:", error?.response?.data || error.message);
+        console.error("Delete Error Full:", error);
+        const errorMsg = error?.response?.data?.msg || error?.response?.data?.error || error.message || "Gagal menghapus data";
+
         return {
             success: false,
-            error: error.response?.data?.msg || "Gagal menghapus data"
+            error: errorMsg,
         };
     }
 }
