@@ -11,7 +11,7 @@ import {
     Save, Building2, MapPin, Phone, FileText,
     Users, Briefcase, Globe, UserCircle,
     Hash, Mail, Link, FileDigit, BadgePercent,
-    Upload
+    Upload, XCircle, AlertCircle
 } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { companySchema, CompanyFormValues } from "@/schemas/company/companySchema";
@@ -40,12 +40,15 @@ interface CompanyFormProps {
 
 export default function CompanyForm({ initialData }: CompanyFormProps) {
     const { theme } = useTheme();
-    const isEditMode = Boolean(initialData?.id); // Use ID to determine edit mode is safer
+    const isEditMode = Boolean(initialData?.id);
     const [progress, setProgress] = React.useState(0);
-
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
 
     const form = useForm<CompanyFormValues>({
         resolver: zodResolver(companySchema),
+        mode: "onChange",
+        reValidateMode: "onChange",
+        criteriaMode: "all",
         defaultValues: {
             kodeCmpy: initialData?.kodeCmpy || "",
             company: initialData?.company || "",
@@ -67,8 +70,8 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
         },
     });
 
-    // Update progress when values change
-    const { watch } = form;
+    // Watch form values for progress calculation
+    const { watch, formState } = form;
     const values = watch();
 
     useEffect(() => {
@@ -95,8 +98,9 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
         }
     }, [initialData, form]);
 
+    // Update progress when values change
     useEffect(() => {
-        const totalFields = Object.keys(values).length;
+        const totalFields = Object.keys(companySchema.shape).length;
         if (totalFields === 0) return;
 
         const filledFields = Object.values(values).filter(
@@ -107,17 +111,23 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
         setProgress(newProgress);
     }, [values]);
 
+    // Helper function to check if field has error
+    const hasError = (fieldName: keyof CompanyFormValues) => {
+        return formState.errors[fieldName] !== undefined;
+    };
 
     const onSubmit = async (data: CompanyFormValues) => {
+        if (isSubmitting) return;
+
+        setIsSubmitting(true);
         console.log("Submitting form data:", data);
+
         try {
             let result;
             if (isEditMode && initialData?.id) {
-                // UPDATE MODE
                 console.log("Mode: Update", initialData.id);
                 result = await updateCompanyAction(initialData.id, data);
             } else {
-                // CREATE MODE
                 console.log("Mode: Create");
                 result = await createCompanyAction(data);
             }
@@ -125,8 +135,14 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
             console.log("Action result:", result);
 
             if (result.success) {
-                console.log("Triggering success toast...");
                 toast.success(isEditMode ? "Data Perusahaan berhasil diperbarui" : "Perusahaan berhasil didaftarkan");
+
+                // Reset form after successful creation
+                if (!isEditMode) {
+                    setTimeout(() => {
+                        form.reset();
+                    }, 1000);
+                }
             } else {
                 console.error("Action Failed:", result.error);
                 toast.error(result.error || "Terjadi kesalahan saat menyimpan data");
@@ -136,6 +152,29 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
             console.error("Error submitting form:", error);
             const errorMessage = error instanceof Error ? error.message : "Terjadi kesalahan internal";
             toast.error(errorMessage);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const onInvalid = (errors: FieldErrors<CompanyFormValues>) => {
+        console.error("Form Validation Errors:", errors);
+
+        // Show first error message
+        const firstError = Object.values(errors)[0];
+        if (firstError?.message) {
+            toast.error(`Validasi gagal: ${firstError.message}`, {
+                icon: <AlertCircle className="h-4 w-4" />,
+            });
+        } else {
+            toast.error("Form tidak valid. Periksa semua isian yang wajib diisi.");
+        }
+
+        // Scroll to first error
+        const firstErrorField = Object.keys(errors)[0];
+        if (firstErrorField) {
+            const element = document.querySelector(`[name="${firstErrorField}"]`);
+            element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     };
 
@@ -160,36 +199,28 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
         return theme === "dark" ? colorMap[color].dark : colorMap[color].light;
     };
 
-    const onInvalid = (errors: FieldErrors<CompanyFormValues>) => {
-        console.error("Form Validation Errors:", errors);
-        toast.error("Form tidak valid. Periksa isian anda.");
-    };
-
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 py-4 px-2 sm:py-2 sm:px-4">
 
             {/* Alert Information */}
             <div className="max-w-full mx-auto mb-2 sm:mb-4">
-                <Alert className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
+                <Alert className={`bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800 ${Object.keys(formState.errors).length > 0 ? 'border-red-300 dark:border-red-800' : ''
+                    }`}>
                     <InfoIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     <AlertDescription className="text-blue-800 dark:text-blue-300 text-sm sm:text-base">
-                        Pastikan semua data diisi dengan benar. Data yang sudah disimpan akan digunakan untuk semua dokumen resmi perusahaan.
-                        {/* <Button
-                            variant="default"
-                            size="sm"
-                            className="ml-4"
-                            onClick={() => {
-                                console.log("Test toast clicked");
-                                toast.success("Toast Test Berhasil!", { duration: 5000 });
-                            }}
-                        >
-                            Test Toast
-                        </Button> */}
+                        {Object.keys(formState.errors).length > 0 ? (
+                            <span className="flex items-center gap-2">
+                                <XCircle className="h-4 w-4 text-red-500" />
+                                Terdapat {Object.keys(formState.errors).length} kesalahan validasi. Perbaiki sebelum menyimpan.
+                            </span>
+                        ) : (
+                            "Pastikan semua data diisi dengan benar. Data yang sudah disimpan akan digunakan untuk semua dokumen resmi perusahaan."
+                        )}
                     </AlertDescription>
                 </Alert>
             </div>
 
-            {/* Form Container - Full Width Responsive */}
+            {/* Form Container */}
             <div className="w-full mx-auto">
                 <Card className="border dark:border-gray-800 shadow-lg dark:shadow-gray-900/30 rounded-xl sm:rounded-2xl overflow-hidden bg-white dark:bg-gray-900">
                     <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 border-b dark:border-gray-800 p-4 sm:p-6">
@@ -206,9 +237,13 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                 <Badge variant="outline" className="text-xs">
                                     v2.0
                                 </Badge>
-                                <Badge className="bg-green-500 hover:bg-green-600 text-white">
-                                    <CheckCircle2 className="h-3 w-3 mr-1" />
-                                    Auto-save
+                                <Badge className={`${formState.isValid ? 'bg-green-500 hover:bg-green-600' : 'bg-amber-500 hover:bg-amber-600'} text-white`}>
+                                    {formState.isValid ? (
+                                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                                    ) : (
+                                        <AlertCircle className="h-3 w-3 mr-1" />
+                                    )}
+                                    {formState.isValid ? 'Valid' : 'Periksa Validasi'}
                                 </Badge>
                             </div>
                         </div>
@@ -244,7 +279,7 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                     {/* Desktop Sidebar Navigation */}
                                     <div className="hidden lg:block lg:w-64 xl:w-72 flex-shrink-0">
                                         <div className="sticky top-6 space-y-2">
-                                            {/* Progress Box Styled like Sidebar Button */}
+                                            {/* Progress Box */}
                                             <div className="w-full p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 mb-4">
                                                 <div className="flex items-center justify-between mb-2">
                                                     <div className="flex items-center gap-2">
@@ -265,11 +300,13 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
 
                                             {formSections.map((section) => {
                                                 const Icon = section.icon;
+                                                const hasSectionError = section.fields.some(field => hasError(field as keyof CompanyFormValues));
                                                 return (
                                                     <button
                                                         key={section.id}
                                                         type="button"
-                                                        className={`w-full p-4 rounded-lg text-left transition-all hover:scale-[1.02] ${getIconColor(section.color)} dark:hover:bg-gray-800 hover:shadow-md group`}
+                                                        className={`w-full p-4 rounded-lg text-left transition-all hover:scale-[1.02] ${getIconColor(section.color)} ${hasSectionError ? 'border-2 border-red-300 dark:border-red-700' : ''
+                                                            } dark:hover:bg-gray-800 hover:shadow-md group`}
                                                         onClick={() => {
                                                             const element = document.getElementById(`section-${section.id}`);
                                                             element?.scrollIntoView({ behavior: 'smooth' });
@@ -279,8 +316,15 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                             <div className={`p-2 rounded-lg ${getIconColor(section.color)}`}>
                                                                 <Icon className="h-5 w-5" />
                                                             </div>
-                                                            <div>
-                                                                <h3 className="font-semibold text-gray-800 dark:text-black dark:group-hover:text-white">{section.title}</h3>
+                                                            <div className="flex-1">
+                                                                <div className="flex items-center justify-between">
+                                                                    <h3 className="font-semibold text-gray-800 dark:text-black dark:group-hover:text-white">
+                                                                        {section.title}
+                                                                    </h3>
+                                                                    {hasSectionError && (
+                                                                        <div className="h-2 w-2 bg-red-500 rounded-full"></div>
+                                                                    )}
+                                                                </div>
                                                                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                                                     {section.fields.length} field
                                                                 </p>
@@ -290,24 +334,25 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                 );
                                             })}
 
-                                            {/* Quick Info Box */}
-                                            <div className="mt-6 p-4 bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-lg border dark:border-gray-700">
-                                                <h4 className="font-semibold text-gray-800 dark:text-white mb-2">Tips Pengisian</h4>
-                                                <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                                                    <li className="flex items-start gap-2">
-                                                        <div className="h-1.5 w-1.5 bg-blue-500 rounded-full mt-1"></div>
-                                                        <span>Isi data sesuai dengan dokumen resmi</span>
-                                                    </li>
-                                                    <li className="flex items-start gap-2">
-                                                        <div className="h-1.5 w-1.5 bg-green-500 rounded-full mt-1"></div>
-                                                        <span>Periksa kembali sebelum menyimpan</span>
-                                                    </li>
-                                                    <li className="flex items-start gap-2">
-                                                        <div className="h-1.5 w-1.5 bg-purple-500 rounded-full mt-1"></div>
-                                                        <span>Simpan draft jika belum lengkap</span>
-                                                    </li>
-                                                </ul>
-                                            </div>
+                                            {/* Validation Summary */}
+                                            {Object.keys(formState.errors).length > 0 && (
+                                                <div className="mt-6 p-4 bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                                                    <h4 className="font-semibold text-red-800 dark:text-red-300 mb-2 flex items-center gap-2">
+                                                        <AlertCircle className="h-4 w-4" />
+                                                        Validasi Gagal
+                                                    </h4>
+                                                    <ul className="text-xs text-red-700 dark:text-red-400 space-y-1">
+                                                        <li className="flex items-start gap-2">
+                                                            <div className="h-1.5 w-1.5 bg-red-500 rounded-full mt-1"></div>
+                                                            <span>Terdapat {Object.keys(formState.errors).length} error</span>
+                                                        </li>
+                                                        <li className="flex items-start gap-2">
+                                                            <div className="h-1.5 w-1.5 bg-red-500 rounded-full mt-1"></div>
+                                                            <span>Periksa form yang ditandai merah</span>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 
@@ -344,12 +389,13 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                                     <Input
                                                                         placeholder="Ex: 001, ABC, XYZ"
                                                                         maxLength={3}
-                                                                        className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                                                        className={`h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${hasError('kodeCmpy') ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''
+                                                                            }`}
                                                                         {...field}
                                                                         value={field.value ?? ""}
                                                                     />
                                                                 </FormControl>
-                                                                <FormMessage />
+                                                                <FormMessage className="text-red-600 dark:text-red-400 text-sm" />
                                                                 <p className="text-xs text-gray-500 dark:text-gray-400">
                                                                     Kode unik 3 karakter untuk identifikasi internal
                                                                 </p>
@@ -364,18 +410,19 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                             <FormItem className="space-y-2">
                                                                 <FormLabel className="font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
                                                                     <Building2 className="h-4 w-4" />
-                                                                    Nama Perusahaan
+                                                                    Nama Perusahaan <span className="text-red-500">*</span>
                                                                 </FormLabel>
                                                                 <FormControl>
                                                                     <Input
                                                                         placeholder="Nama lengkap perusahaan"
                                                                         maxLength={40}
-                                                                        className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                                                        className={`h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${hasError('company') ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''
+                                                                            }`}
                                                                         {...field}
                                                                         value={field.value ?? ""}
                                                                     />
                                                                 </FormControl>
-                                                                <FormMessage />
+                                                                <FormMessage className="text-red-600 dark:text-red-400 text-sm" />
                                                             </FormItem>
                                                         )}
                                                     />
@@ -409,18 +456,19 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                         render={({ field }) => (
                                                             <FormItem className="space-y-2">
                                                                 <FormLabel className="font-medium text-gray-700 dark:text-gray-300">
-                                                                    Alamat Jalan
+                                                                    Alamat Jalan <span className="text-red-500">*</span>
                                                                 </FormLabel>
                                                                 <FormControl>
                                                                     <Input
                                                                         placeholder="Jl. Raya Utama No. 123"
                                                                         maxLength={40}
-                                                                        className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                                                        className={`h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${hasError('address1') ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''
+                                                                            }`}
                                                                         {...field}
                                                                         value={field.value ?? ""}
                                                                     />
                                                                 </FormControl>
-                                                                <FormMessage />
+                                                                <FormMessage className="text-red-600 dark:text-red-400 text-sm" />
                                                             </FormItem>
                                                         )}
                                                     />
@@ -438,12 +486,13 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                                         <Input
                                                                             placeholder="Kelurahan, Kecamatan"
                                                                             maxLength={40}
-                                                                            className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                                                            className={`h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${hasError('address2') ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''
+                                                                                }`}
                                                                             {...field}
                                                                             value={field.value ?? ""}
                                                                         />
                                                                     </FormControl>
-                                                                    <FormMessage />
+                                                                    <FormMessage className="text-red-600 dark:text-red-400 text-sm" />
                                                                 </FormItem>
                                                             )}
                                                         />
@@ -454,18 +503,19 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                             render={({ field }) => (
                                                                 <FormItem className="space-y-2">
                                                                     <FormLabel className="font-medium text-gray-700 dark:text-gray-300">
-                                                                        Kota & Provinsi
+                                                                        Kota & Provinsi <span className="text-red-500">*</span>
                                                                     </FormLabel>
                                                                     <FormControl>
                                                                         <Input
                                                                             placeholder="Kota, Provinsi, Kode Pos"
                                                                             maxLength={40}
-                                                                            className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                                                            className={`h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${hasError('address3') ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''
+                                                                                }`}
                                                                             {...field}
                                                                             value={field.value ?? ""}
                                                                         />
                                                                     </FormControl>
-                                                                    <FormMessage />
+                                                                    <FormMessage className="text-red-600 dark:text-red-400 text-sm" />
                                                                 </FormItem>
                                                             )}
                                                         />
@@ -501,18 +551,19 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                             <FormItem className="space-y-2">
                                                                 <FormLabel className="font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
                                                                     <Phone className="h-4 w-4" />
-                                                                    Telepon
+                                                                    Telepon <span className="text-red-500">*</span>
                                                                 </FormLabel>
                                                                 <FormControl>
                                                                     <Input
                                                                         placeholder="(021) 1234-5678"
                                                                         maxLength={15}
-                                                                        className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                                                        className={`h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${hasError('tlp') ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''
+                                                                            }`}
                                                                         {...field}
                                                                         value={field.value ?? ""}
                                                                     />
                                                                 </FormControl>
-                                                                <FormMessage />
+                                                                <FormMessage className="text-red-600 dark:text-red-400 text-sm" />
                                                             </FormItem>
                                                         )}
                                                     />
@@ -529,12 +580,13 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                                     <Input
                                                                         placeholder="(021) 1234-5679"
                                                                         maxLength={15}
-                                                                        className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                                                        className={`h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${hasError('fax') ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''
+                                                                            }`}
                                                                         {...field}
                                                                         value={field.value ?? ""}
                                                                     />
                                                                 </FormControl>
-                                                                <FormMessage />
+                                                                <FormMessage className="text-red-600 dark:text-red-400 text-sm" />
                                                             </FormItem>
                                                         )}
                                                     />
@@ -553,12 +605,13 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                                         type="email"
                                                                         placeholder="hrd@company.com"
                                                                         maxLength={30}
-                                                                        className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                                                        className={`h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${hasError('email') ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''
+                                                                            }`}
                                                                         {...field}
                                                                         value={field.value ?? ""}
                                                                     />
                                                                 </FormControl>
-                                                                <FormMessage />
+                                                                <FormMessage className="text-red-600 dark:text-red-400 text-sm" />
                                                             </FormItem>
                                                         )}
                                                     />
@@ -576,12 +629,13 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                                     <Input
                                                                         placeholder="https://company.com"
                                                                         maxLength={50}
-                                                                        className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                                                        className={`h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${hasError('homepage') ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''
+                                                                            }`}
                                                                         {...field}
                                                                         value={field.value ?? ""}
                                                                     />
                                                                 </FormControl>
-                                                                <FormMessage />
+                                                                <FormMessage className="text-red-600 dark:text-red-400 text-sm" />
                                                             </FormItem>
                                                         )}
                                                     />
@@ -616,18 +670,19 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                             <FormItem className="space-y-2">
                                                                 <FormLabel className="font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
                                                                     <BadgePercent className="h-4 w-4" />
-                                                                    NPWP Perusahaan
+                                                                    NPWP Perusahaan <span className="text-red-500">*</span>
                                                                 </FormLabel>
                                                                 <FormControl>
                                                                     <Input
                                                                         placeholder="XX.XXX.XXX.X-XXX.XXX"
                                                                         maxLength={20}
-                                                                        className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                                                        className={`h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${hasError('npwp') ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''
+                                                                            }`}
                                                                         {...field}
                                                                         value={field.value ?? ""}
                                                                     />
                                                                 </FormControl>
-                                                                <FormMessage />
+                                                                <FormMessage className="text-red-600 dark:text-red-400 text-sm" />
                                                             </FormItem>
                                                         )}
                                                     />
@@ -645,12 +700,13 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                                     <Input
                                                                         placeholder="Nomor Pokok Perusahaan"
                                                                         maxLength={30}
-                                                                        className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                                                        className={`h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${hasError('npp') ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''
+                                                                            }`}
                                                                         {...field}
                                                                         value={field.value ?? ""}
                                                                     />
                                                                 </FormControl>
-                                                                <FormMessage />
+                                                                <FormMessage className="text-red-600 dark:text-red-400 text-sm" />
                                                             </FormItem>
                                                         )}
                                                     />
@@ -668,12 +724,13 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                                         <Input
                                                                             placeholder="Informasi detail tentang pembayaran astek"
                                                                             maxLength={80}
-                                                                            className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                                                            className={`h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${hasError('astekBayar') ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''
+                                                                                }`}
                                                                             {...field}
                                                                             value={field.value ?? ""}
                                                                         />
                                                                     </FormControl>
-                                                                    <FormMessage />
+                                                                    <FormMessage className="text-red-600 dark:text-red-400 text-sm" />
                                                                 </FormItem>
                                                             )}
                                                         />
@@ -709,18 +766,19 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                             <FormItem className="space-y-2">
                                                                 <FormLabel className="font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
                                                                     <UserCircle className="h-4 w-4" />
-                                                                    Nama Direktur
+                                                                    Nama Direktur <span className="text-red-500">*</span>
                                                                 </FormLabel>
                                                                 <FormControl>
                                                                     <Input
                                                                         placeholder="Nama lengkap direktur"
                                                                         maxLength={25}
-                                                                        className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                                                        className={`h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${hasError('director') ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''
+                                                                            }`}
                                                                         {...field}
                                                                         value={field.value ?? ""}
                                                                     />
                                                                 </FormControl>
-                                                                <FormMessage />
+                                                                <FormMessage className="text-red-600 dark:text-red-400 text-sm" />
                                                             </FormItem>
                                                         )}
                                                     />
@@ -737,12 +795,13 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                                     <Input
                                                                         placeholder="XX.XXX.XXX.X-XXX.XXX"
                                                                         maxLength={20}
-                                                                        className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                                                        className={`h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${hasError('npwpDir') ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''
+                                                                            }`}
                                                                         {...field}
                                                                         value={field.value ?? ""}
                                                                     />
                                                                 </FormControl>
-                                                                <FormMessage />
+                                                                <FormMessage className="text-red-600 dark:text-red-400 text-sm" />
                                                             </FormItem>
                                                         )}
                                                     />
@@ -759,12 +818,13 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                                     <Input
                                                                         placeholder="Nama HRD Manager"
                                                                         maxLength={30}
-                                                                        className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                                                        className={`h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${hasError('hrdMng') ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''
+                                                                            }`}
                                                                         {...field}
                                                                         value={field.value ?? ""}
                                                                     />
                                                                 </FormControl>
-                                                                <FormMessage />
+                                                                <FormMessage className="text-red-600 dark:text-red-400 text-sm" />
                                                             </FormItem>
                                                         )}
                                                     />
@@ -781,12 +841,13 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                                     <Input
                                                                         placeholder="XX.XXX.XXX.X-XXX.XXX"
                                                                         maxLength={20}
-                                                                        className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                                                        className={`h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${hasError('npwpMng') ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''
+                                                                            }`}
                                                                         {...field}
                                                                         value={field.value ?? ""}
                                                                     />
                                                                 </FormControl>
-                                                                <FormMessage />
+                                                                <FormMessage className="text-red-600 dark:text-red-400 text-sm" />
                                                             </FormItem>
                                                         )}
                                                     />
@@ -827,12 +888,13 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                                     <Input
                                                                         placeholder="https://example.com/logo.png"
                                                                         maxLength={80}
-                                                                        className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                                                        className={`h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white ${hasError('logo') ? 'border-red-500 dark:border-red-500 focus-visible:ring-red-500' : ''
+                                                                            }`}
                                                                         {...field}
                                                                         value={field.value ?? ""}
                                                                     />
                                                                 </FormControl>
-                                                                <FormMessage />
+                                                                <FormMessage className="text-red-600 dark:text-red-400 text-sm" />
                                                                 <p className="text-xs text-gray-500 dark:text-gray-400">
                                                                     Link gambar logo perusahaan (opsional)
                                                                 </p>
@@ -860,10 +922,19 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                         <div className="pt-6 mt-6 border-t dark:border-gray-800">
                                             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                                                 <div className="text-sm text-gray-500 dark:text-gray-400">
-                                                    <p>Pastikan semua data yang diisi sudah benar dan valid</p>
-                                                    <p className="text-xs mt-1">
-                                                        Fields dengan tanda <span className="text-red-500">*</span> wajib diisi
-                                                    </p>
+                                                    {Object.keys(formState.errors).length > 0 ? (
+                                                        <div className="text-red-600 dark:text-red-400">
+                                                            <p className="font-medium">⚠️ Ada {Object.keys(formState.errors).length} kesalahan validasi</p>
+                                                            <p className="text-xs mt-1">Perbaiki field yang ditandai merah sebelum menyimpan</p>
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <p>Semua data sudah valid dan siap disimpan</p>
+                                                            <p className="text-xs mt-1">
+                                                                Fields dengan tanda <span className="text-red-500">*</span> wajib diisi
+                                                            </p>
+                                                        </>
+                                                    )}
                                                 </div>
                                                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                                                     <AlertDialog>
@@ -872,6 +943,7 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                                 type="button"
                                                                 variant="outline"
                                                                 className="px-6 py-6 dark:border-gray-700 dark:text-gray-300"
+                                                                disabled={isSubmitting}
                                                             >
                                                                 Reset Form
                                                             </Button>
@@ -892,15 +964,19 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                     <Button
                                                         type="submit"
                                                         className="px-8 py-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 dark:from-blue-700 dark:to-indigo-700 dark:hover:from-blue-800 dark:hover:to-indigo-800 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
-                                                        disabled={form.formState.isSubmitting}
+                                                        disabled={isSubmitting || !formState.isValid}
                                                     >
-                                                        <Save className="h-5 w-5 mr-2" />
-                                                        {form.formState.isSubmitting
-                                                            ? "Memproses..."
-                                                            : isEditMode
-                                                                ? "Update Data Perusahaan"
-                                                                : "Daftarkan Perusahaan"
-                                                        }
+                                                        {isSubmitting ? (
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                                Memproses...
+                                                            </div>
+                                                        ) : (
+                                                            <>
+                                                                <Save className="h-5 w-5 mr-2" />
+                                                                {isEditMode ? "Update Data Perusahaan" : "Daftarkan Perusahaan"}
+                                                            </>
+                                                        )}
                                                     </Button>
                                                 </div>
                                             </div>

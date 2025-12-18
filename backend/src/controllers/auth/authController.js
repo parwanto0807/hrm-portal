@@ -84,6 +84,9 @@ export const googleLogin = async (req, res) => {
       }
 
       return existingUser;
+    }, {
+      maxWait: 5000, // Wait max 5s for a connection from the pool
+      timeout: 10000 // Transaction MUST finish in 10s
     });
 
     // C. Kirim Response Sukses

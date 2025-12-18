@@ -1,7 +1,10 @@
 // src/config/prisma.js
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient({
+// Prevent multiple instances of Prisma Client in development
+const globalForPrisma = global;
+
+const prisma = globalForPrisma.prisma || new PrismaClient({
   datasources: {
     db: {
       url: process.env.DATABASE_URL,
@@ -13,6 +16,8 @@ const prisma = new PrismaClient({
   errorFormat: 'pretty'
 });
 
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+
 // Connection check
 prisma.$connect()
   .then(() => {
@@ -20,14 +25,17 @@ prisma.$connect()
   })
   .catch((error) => {
     console.error('❌ Database connection failed:', error);
-    process.exit(1);
+    // Don't exit process in dev, it kills the nodemon watcher too aggressively sometimes
+    if (process.env.NODE_ENV === 'production') {
+      process.exit(1);
+    }
   });
 
-// Add query logging in development
+// Add query logging details in development
 if (process.env.NODE_ENV === 'development') {
   prisma.$on('query', (e) => {
-    console.log('📝 Query:', e.query);
-    console.log('⏱️  Duration:', `${e.duration}ms`);
+    console.log(`📝 Query: ${e.query}`);
+    console.log(`⏱️  Duration: ${e.duration}ms`);
   });
 }
 
