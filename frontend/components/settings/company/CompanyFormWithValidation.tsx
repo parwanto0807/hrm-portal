@@ -982,7 +982,8 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                                     </p>
                                                                 </div>
                                                             )}
-                                                        </div>        </div>
+                                                        </div>
+                                                    </div>
                                                 </CardContent>
                                             </Card>
                                         </section>

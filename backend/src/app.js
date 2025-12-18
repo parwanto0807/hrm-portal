@@ -1,6 +1,7 @@
 import { packages } from './utils/require.js';
 import config from './config/env.js';
 import cookieParser from 'cookie-parser';
+import path from 'path';
 
 // Import Routes
 import userRoute from './routes/auth/userRoutes.js';
@@ -61,7 +62,7 @@ app.use(morgan(config.env === 'production' ? 'combined' : 'dev'));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(express.static('public')); // Serve static files
+app.use(express.static(path.join(process.cwd(), 'public'))); // Serve static files
 app.use(cookieParser());
 
 // ==========================================

@@ -2,12 +2,13 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import config from '../config/env.js';
 
 // Configure storage
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         // Ensure directory exists
-        const dir = 'public/image/company';
+        const dir = 'public/images/company';
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
         }
@@ -45,11 +46,11 @@ export const uploadCompanyLogo = (req, res) => {
         }
 
         // Construct public URL
-        const protocol = req.protocol;
+        const protocol = config.env === 'production' ? 'https' : req.protocol;
         const host = req.get('host');
         // If host contains localhost but no port, or port 5000, we might want to ensure it points to 5002? 
         // Actually req.get('host') should return "localhost:5002" if requested correctly.
-        const fileUrl = `${protocol}://${host}/image/company/${req.file.filename}`;
+        const fileUrl = `${protocol}://${host}/images/company/${req.file.filename}`;
 
         res.status(200).json({
             success: true,
