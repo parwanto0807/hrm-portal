@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
 
 // Data shortcut untuk semua item dengan model yang sama
 const shortcutItems = [
@@ -312,34 +313,71 @@ export default function SettingsPage() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 w-full">
-                                        {group.items.map((item, itemIdx) => (
-                                            <Link
-                                                key={itemIdx}
-                                                href={item.href}
-                                                className="block"
-                                            >
-                                                <Card
-                                                    className={`${item.bgColor} border ${item.borderColor} hover:shadow-md transition-all duration-300 hover:scale-[1.02] cursor-pointer group`}
+                                        {group.items.map((item, itemIdx) => {
+                                            if (item.category === 'system') {
+                                                return (
+                                                    <div
+                                                        key={itemIdx}
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            toast.info("Fitur Dalam Pengembangan", {
+                                                                description: "Modul ini sedang dalam tahap pengembangan.",
+                                                            });
+                                                        }}
+                                                        className="block cursor-pointer"
+                                                    >
+                                                        <Card
+                                                            className={`${item.bgColor} border ${item.borderColor} hover:shadow-md transition-all duration-300 hover:scale-[1.02] group`}
+                                                        >
+                                                            <CardContent className="p-4">
+                                                                <div className="flex items-start gap-4">
+                                                                    <div className={`p-2.5 rounded-lg ${item.color} flex-shrink-0 transition-transform duration-300 group-hover:scale-110`}>
+                                                                        <item.icon className="h-5 w-5" />
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <h3 className="font-semibold text-sm truncate group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors">
+                                                                            {item.title}
+                                                                        </h3>
+                                                                        <p className="text-xs text-muted-foreground truncate">
+                                                                            {item.description}
+                                                                        </p>
+                                                                    </div>
+                                                                    <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors shrink-0 mt-1" />
+                                                                </div>
+                                                            </CardContent>
+                                                        </Card>
+                                                    </div>
+                                                );
+                                            }
+                                            return (
+                                                <Link
+                                                    key={itemIdx}
+                                                    href={item.href}
+                                                    className="block"
                                                 >
-                                                    <CardContent className="p-4">
-                                                        <div className="flex items-start gap-4">
-                                                            <div className={`p-2.5 rounded-lg ${item.color} flex-shrink-0 transition-transform duration-300 group-hover:scale-110`}>
-                                                                <item.icon className="h-5 w-5" />
+                                                    <Card
+                                                        className={`${item.bgColor} border ${item.borderColor} hover:shadow-md transition-all duration-300 hover:scale-[1.02] cursor-pointer group`}
+                                                    >
+                                                        <CardContent className="p-4">
+                                                            <div className="flex items-start gap-4">
+                                                                <div className={`p-2.5 rounded-lg ${item.color} flex-shrink-0 transition-transform duration-300 group-hover:scale-110`}>
+                                                                    <item.icon className="h-5 w-5" />
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <h3 className="font-semibold text-sm truncate group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors">
+                                                                        {item.title}
+                                                                    </h3>
+                                                                    <p className="text-xs text-muted-foreground truncate">
+                                                                        {item.description}
+                                                                    </p>
+                                                                </div>
+                                                                <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors shrink-0 mt-1" />
                                                             </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <h3 className="font-semibold text-sm truncate group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors">
-                                                                    {item.title}
-                                                                </h3>
-                                                                <p className="text-xs text-muted-foreground truncate">
-                                                                    {item.description}
-                                                                </p>
-                                                            </div>
-                                                            <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors shrink-0 mt-1" />
-                                                        </div>
-                                                    </CardContent>
-                                                </Card>
-                                            </Link>
-                                        ))}
+                                                        </CardContent>
+                                                    </Card>
+                                                </Link>
+                                            );
+                                        })}
                                     </div>
                                 </CardContent>
                             </Card>
@@ -397,13 +435,18 @@ export default function SettingsPage() {
                                     {shortcutItems
                                         .filter(item => item.category === 'system')
                                         .map((item, idx) => (
-                                            <Link
+                                            <div
                                                 key={idx}
-                                                href={item.href}
-                                                className="block"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    toast.info("Fitur Dalam Pengembangan", {
+                                                        description: "Modul ini sedang dalam tahap pengembangan.",
+                                                    });
+                                                }}
+                                                className="block cursor-pointer"
                                             >
                                                 <Card
-                                                    className={`${item.bgColor} border ${item.borderColor} hover:shadow-md transition-all duration-300 hover:scale-[1.02] cursor-pointer group`}
+                                                    className={`${item.bgColor} border ${item.borderColor} hover:shadow-md transition-all duration-300 hover:scale-[1.02] group`}
                                                 >
                                                     <CardContent className="p-4">
                                                         <div className="flex flex-col items-center text-center gap-3">
@@ -417,7 +460,7 @@ export default function SettingsPage() {
                                                         </div>
                                                     </CardContent>
                                                 </Card>
-                                            </Link>
+                                            </div>
                                         ))}
                                 </div>
                             </CardContent>
