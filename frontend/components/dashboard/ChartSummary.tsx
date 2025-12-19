@@ -357,7 +357,7 @@ export default function DashboardCharts() {
                     <div className="flex flex-wrap gap-1 sm:gap-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg sm:rounded-xl p-1">
                         {[
                             { id: 'salary', label: 'Gaji', icon: TrendingUp },
-                            { id: 'attendance', label: 'Telat', icon: Clock },
+                            { id: 'attendance', label: 'Absensi', icon: Clock },
                             { id: 'leave', label: 'Cuti', icon: Calendar }
                         ].map((tab) => {
                             const Icon = tab.icon;
