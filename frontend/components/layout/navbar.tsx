@@ -263,8 +263,6 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                                         {user && (
                                             <UserProfileDropdown
                                                 user={user}
-                                                isDarkMode={theme === 'dark'}
-                                                toggleDarkMode={toggleDarkMode}
                                             />
                                         )}
                                     </div>

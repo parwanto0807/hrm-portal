@@ -17,7 +17,7 @@ interface UserProfileDropdownProps {
     toggleDarkMode: () => void;
 }
 
-export default function UserProfileDropdown({ user, isDarkMode, toggleDarkMode }: UserProfileDropdownProps) {
+export default function UserProfileDropdown({ user }: Omit<UserProfileDropdownProps, 'isDarkMode' | 'toggleDarkMode'>) {
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [imgError, setImgError] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -69,36 +69,11 @@ export default function UserProfileDropdown({ user, isDarkMode, toggleDarkMode }
             badge: null
         },
         {
-            name: 'Account Settings',
-            href: '/dashboard/settings',
-            icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z',
-            badge: null
-        },
-        {
-            name: 'Team Members',
-            href: '/dashboard/team',
-            icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9.197h-5.197a4 4 0 01-3.599-2.257l-.955-1.914A4 4 0 007.697 2H4.5A2.5 2.5 0 002 4.5v15A2.5 2.5 0 004.5 22h15a2.5 2.5 0 002.5-2.5v-15A2.5 2.5 0 0019.5 2z',
-            badge: '3'
-        },
-        {
-            name: 'Documents',
-            href: '/dashboard/documents',
-            icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-            badge: '12'
-        },
-        {
             name: 'Help & Support',
             href: '/dashboard/help',
             icon: 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
             badge: null
         }
-    ];
-
-    // Quick stats for user
-    const userStats = [
-        { label: 'Projects', value: '12' },
-        { label: 'Tasks', value: '24' },
-        { label: 'Teams', value: '3' }
     ];
 
     return (
@@ -201,16 +176,6 @@ export default function UserProfileDropdown({ user, isDarkMode, toggleDarkMode }
                                 </div>
                             </div>
                         </div>
-
-                        {/* Quick Stats */}
-                        <div className="grid grid-cols-3 gap-4 mt-6">
-                            {userStats.map((stat, index) => (
-                                <div key={index} className="text-center">
-                                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
-                                    <p className="text-xs text-gray-600 dark:text-gray-400">{stat.label}</p>
-                                </div>
-                            ))}
-                        </div>
                     </div>
 
                     {/* Navigation Items */}
@@ -244,49 +209,8 @@ export default function UserProfileDropdown({ user, isDarkMode, toggleDarkMode }
 
                         <div className="my-4 border-t border-gray-100 dark:border-gray-800"></div>
 
-                        {/* Theme Toggle and Logout */}
+                        {/* Logout */}
                         <div className="space-y-1">
-                            <button
-                                onClick={toggleDarkMode}
-                                className="flex items-center justify-between w-full px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                                        {isDarkMode ? (
-                                            <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                                            </svg>
-                                        ) : (
-                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                                            </svg>
-                                        )}
-                                    </div>
-                                    <span className="font-medium text-gray-700 dark:text-gray-300">
-                                        {isDarkMode ? 'Light Mode' : 'Dark Mode'}
-                                    </span>
-                                </div>
-                                <div className={`w-12 h-6 flex items-center rounded-full p-1 transition-all duration-300 ${isDarkMode ? 'bg-gray-200 dark:bg-gray-700' : 'bg-gray-300 dark:bg-gray-600'}`}>
-                                    <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300 ${isDarkMode ? 'translate-x-6' : 'translate-x-0'}`}></div>
-                                </div>
-                            </button>
-
-                            <Link
-                                href="/dashboard/integrations"
-                                className="flex items-center justify-between px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                                onClick={() => setDropdownOpen(false)}
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                                        <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                                        </svg>
-                                    </div>
-                                    <span className="font-medium text-gray-700 dark:text-gray-300">Integrations</span>
-                                </div>
-                                <span className="text-xs text-sky-600 dark:text-sky-400 font-medium">New</span>
-                            </Link>
-
                             <div className="pt-2">
                                 <LogoutButton className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-sky-500 to-emerald-500 text-white font-semibold rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-[1.02]" />
                             </div>
