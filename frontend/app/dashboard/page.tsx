@@ -4,8 +4,11 @@ import { useState, useEffect } from 'react';
 import { DashboardHeader } from '@/components/dashboard/Header';
 import { StatsCards } from '@/components/dashboard/StatsCards';
 import { QuickAccess } from '@/components/dashboard/QuickAccess';
+
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import { SkeletonDashboard } from '@/components/dashboard/SkeletonDashboard';
+
+import DashboardCharts from '@/components/dashboard/ChartSummary';
 
 export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
@@ -31,8 +34,16 @@ export default function DashboardPage() {
 
             {/* Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full">
-                <div className="lg:col-span-2 w-full">
-                    <QuickAccess />
+                <div className="lg:col-span-2 w-full space-y-8">
+                    {/* Chart Summary - Visible on Desktop and Mobile */}
+                    <div className="block">
+                        <DashboardCharts />
+                    </div>
+
+                    {/* Quick Access - Visible on Mobile only */}
+                    <div className="block lg:hidden">
+                        <QuickAccess />
+                    </div>
                 </div>
 
                 <div className="lg:col-span-1 w-full">
