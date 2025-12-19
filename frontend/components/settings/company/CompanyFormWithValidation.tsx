@@ -7,8 +7,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 import {
-    Save, Building2, MapPin, Phone, FileText,
+    ArrowLeft, Save, Building2, MapPin, Phone, FileText,
     Users, Briefcase, Globe, UserCircle,
     Hash, Mail, Link, FileDigit, BadgePercent,
     Upload, XCircle, AlertCircle
@@ -40,6 +41,7 @@ interface CompanyFormProps {
 
 export default function CompanyForm({ initialData }: CompanyFormProps) {
     const { theme } = useTheme();
+    const router = useRouter();
     const isEditMode = Boolean(initialData?.id);
     const [progress, setProgress] = React.useState(0);
     const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -1067,6 +1069,17 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                             </AlertDialogFooter>
                                                         </AlertDialogContent>
                                                     </AlertDialog>
+
+                                                    {/* Back Button */}
+                                                    <Button
+                                                        variant="outline"
+                                                        type="button"
+                                                        onClick={() => router.push('/dashboard/settings')}
+                                                        className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white px-2 hover:bg-red-500 hover:text-white"
+                                                    >
+                                                        <ArrowLeft className="h-4 w-4" />
+                                                        <span>Kembali ke Menu</span>
+                                                    </Button>
 
                                                     <Button
                                                         type="submit"

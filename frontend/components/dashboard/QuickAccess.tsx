@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 const quickAccessItems = [
     {
@@ -24,7 +26,8 @@ const quickAccessItems = [
         color: 'bg-blue-500 text-white', // Icon background warna solid
         bgColor: 'bg-blue-50 dark:bg-blue-900/20', // Card background warna soft
         borderColor: 'border-blue-200 dark:border-blue-800',
-        iconColor: 'text-blue-600' // Warna untuk icon jika tidak pakai background
+        iconColor: 'text-blue-600', // Warna untuk icon jika tidak pakai background
+        href: '/dashboard/attendance'
     },
     {
         title: 'Lembur',
@@ -33,7 +36,8 @@ const quickAccessItems = [
         color: 'bg-purple-500 text-white',
         bgColor: 'bg-purple-50 dark:bg-purple-900/20',
         borderColor: 'border-purple-200 dark:border-purple-800',
-        iconColor: 'text-purple-600'
+        iconColor: 'text-purple-600',
+        href: null
     },
     {
         title: 'Gaji',
@@ -42,7 +46,8 @@ const quickAccessItems = [
         color: 'bg-emerald-500 text-white',
         bgColor: 'bg-emerald-50 dark:bg-emerald-900/20',
         borderColor: 'border-emerald-200 dark:border-emerald-800',
-        iconColor: 'text-emerald-600'
+        iconColor: 'text-emerald-600',
+        href: '/dashboard/payroll'
     },
     {
         title: 'Uang Makan',
@@ -51,7 +56,8 @@ const quickAccessItems = [
         color: 'bg-amber-500 text-white',
         bgColor: 'bg-amber-50 dark:bg-amber-900/20',
         borderColor: 'border-amber-200 dark:border-amber-800',
-        iconColor: 'text-amber-600'
+        iconColor: 'text-amber-600',
+        href: null
     },
     {
         title: 'Ijin',
@@ -60,7 +66,8 @@ const quickAccessItems = [
         color: 'bg-indigo-500 text-white',
         bgColor: 'bg-indigo-50 dark:bg-indigo-900/20',
         borderColor: 'border-indigo-200 dark:border-indigo-800',
-        iconColor: 'text-indigo-600'
+        iconColor: 'text-indigo-600',
+        href: '/dashboard/leaves'
     },
     {
         title: 'Cuti',
@@ -69,7 +76,8 @@ const quickAccessItems = [
         color: 'bg-rose-500 text-white',
         bgColor: 'bg-rose-50 dark:bg-rose-900/20',
         borderColor: 'border-rose-200 dark:border-rose-800',
-        iconColor: 'text-rose-600'
+        iconColor: 'text-rose-600',
+        href: '/dashboard/leaves'
     },
     {
         title: 'Laporan',
@@ -78,7 +86,8 @@ const quickAccessItems = [
         color: 'bg-teal-500 text-white',
         bgColor: 'bg-teal-50 dark:bg-teal-900/20',
         borderColor: 'border-teal-200 dark:border-teal-800',
-        iconColor: 'text-teal-600'
+        iconColor: 'text-teal-600',
+        href: '/dashboard/reports'
     },
     {
         title: 'Settings',
@@ -87,17 +96,30 @@ const quickAccessItems = [
         color: 'bg-gray-500 text-white',
         bgColor: 'bg-gray-50 dark:bg-gray-900/20',
         borderColor: 'border-gray-200 dark:border-gray-700',
-        iconColor: 'text-gray-600'
-    }
+        iconColor: 'text-gray-600',
+        href: '/dashboard/settings'
+    },
 ];
 
 export const QuickAccess = () => {
     const [showAll, setShowAll] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
+    const router = useRouter();
 
     useEffect(() => {
         setIsMounted(true);
     }, []);
+
+    const handleNavigation = (href: string | null) => {
+        if (href) {
+            router.push(href);
+        } else {
+            toast.info("Fitur Dalam Pengembangan", {
+                description: "Kami sedang bekerja keras untuk menghadirkan fitur ini.",
+                duration: 3000,
+            });
+        }
+    };
 
     if (!isMounted) {
         return (
@@ -121,12 +143,14 @@ export const QuickAccess = () => {
                 <CardContent className="px-3 md:px-6">
                     <div className="hidden md:grid md:grid-cols-4 lg:grid-cols-8 gap-3">
                         {quickAccessItems.map((item, index) => (
-                            <div
+                            <button
                                 key={index}
+                                onClick={() => handleNavigation(item.href)}
                                 className={`
                                     ${item.bgColor}
                                     p-4 rounded-xl border ${item.borderColor}
                                     flex flex-col items-center justify-center text-center
+                                    cursor-pointer hover:opacity-90 transition-opacity
                                 `}
                             >
                                 <div className={`${item.color} p-2.5 rounded-lg mb-2.5`}>
@@ -138,14 +162,15 @@ export const QuickAccess = () => {
                                 <p className="text-xs text-gray-500 dark:text-gray-400">
                                     {item.description}
                                 </p>
-                            </div>
+                            </button>
                         ))}
                     </div>
                     <div className="md:hidden">
                         <div className="grid grid-cols-3 gap-2">
                             {quickAccessItems.slice(0, 6).map((item, index) => (
-                                <div
+                                <button
                                     key={index}
+                                    onClick={() => handleNavigation(item.href)}
                                     className={`
                                         ${item.bgColor}
                                         p-3 rounded-lg border ${item.borderColor}
@@ -161,7 +186,7 @@ export const QuickAccess = () => {
                                     <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
                                         {item.description}
                                     </p>
-                                </div>
+                                </button>
                             ))}
                         </div>
                     </div>
@@ -194,6 +219,7 @@ export const QuickAccess = () => {
                     {quickAccessItems.map((item, index) => (
                         <button
                             key={index}
+                            onClick={() => handleNavigation(item.href)}
                             className={`
                                 ${item.bgColor}
                                 p-4 rounded-xl border ${item.borderColor}
@@ -221,6 +247,7 @@ export const QuickAccess = () => {
                         {quickAccessItems.slice(0, showAll ? quickAccessItems.length : 6).map((item, index) => (
                             <button
                                 key={index}
+                                onClick={() => handleNavigation(item.href)}
                                 className={`
                                     ${item.bgColor}
                                     p-3 rounded-lg border ${item.borderColor}

@@ -22,7 +22,7 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="w-full max-w-full space-y-8 animate-in fade-in duration-500">
+        <div className="w-full max-w-full px-4 space-y-8 animate-in fade-in duration-500">
             {/* Header */}
             <DashboardHeader />
 
