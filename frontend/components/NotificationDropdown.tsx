@@ -176,6 +176,7 @@ export default function NotificationBell({ isMobile = false }: NotificationBellP
                                     unreadCount={unreadCount}
                                     onMarkAllAsRead={markAllAsRead}
                                     onClose={() => setNotificationOpen(false)}
+                                    isMobile={isMobile}
                                 />
                             </div>
                         </>
@@ -185,6 +186,7 @@ export default function NotificationBell({ isMobile = false }: NotificationBellP
                             unreadCount={unreadCount}
                             onMarkAllAsRead={markAllAsRead}
                             onClose={() => setNotificationOpen(false)}
+                            isMobile={isMobile}
                         />
                     )}
                 </div>
@@ -197,12 +199,14 @@ function NotificationContent({
     notifications,
     unreadCount,
     onMarkAllAsRead,
-    onClose
+    onClose,
+    isMobile
 }: {
     notifications: Notification[];
     unreadCount: number;
     onMarkAllAsRead: () => void;
     onClose: () => void;
+    isMobile?: boolean;
 }) {
     const getNotificationIcon = (type: string) => {
         switch (type) {
@@ -238,10 +242,10 @@ function NotificationContent({
             <div className="p-4 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-r from-sky-50 to-emerald-50 dark:from-gray-800 dark:to-gray-900">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        <h3 className={`font-semibold text-gray-900 dark:text-white ${isMobile ? 'text-sm' : 'text-lg'}`}>
                             Notifications
                         </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className={`text-gray-600 dark:text-gray-400 ${isMobile ? 'text-[11px]' : 'text-sm'}`}>
                             {unreadCount > 0
                                 ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}`
                                 : 'All caught up!'
@@ -251,7 +255,7 @@ function NotificationContent({
                     {unreadCount > 0 && (
                         <button
                             onClick={onMarkAllAsRead}
-                            className="text-sm font-medium text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 px-3 py-1 rounded-lg hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-colors"
+                            className={`font-medium text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 px-3 py-1 rounded-lg hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-colors ${isMobile ? 'text-[11px]' : 'text-sm'}`}
                         >
                             Mark all as read
                         </button>
@@ -286,10 +290,10 @@ function NotificationContent({
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-start justify-between gap-2">
                                             <div>
-                                                <h4 className={`font-medium ${!notification.read ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>
+                                                <h4 className={`font-medium ${!notification.read ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'} ${isMobile ? 'text-[11px]' : 'text-sm'}`}>
                                                     {notification.title}
                                                 </h4>
-                                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                                                <p className={`text-gray-600 dark:text-gray-400 mt-1 line-clamp-2 ${isMobile ? 'text-[11px]' : 'text-sm'}`}>
                                                     {notification.message}
                                                 </p>
                                             </div>
@@ -298,10 +302,10 @@ function NotificationContent({
                                             )}
                                         </div>
                                         <div className="flex items-center justify-between mt-2">
-                                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                                            <span className={`text-gray-500 dark:text-gray-400 ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
                                                 {notification.time}
                                             </span>
-                                            <button className="text-xs font-medium text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300">
+                                            <button className={`font-medium text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
                                                 View details
                                             </button>
                                         </div>
@@ -317,10 +321,10 @@ function NotificationContent({
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                             </svg>
                         </div>
-                        <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                        <h4 className={`font-semibold text-gray-900 dark:text-white mb-2 ${isMobile ? 'text-sm' : 'text-lg'}`}>
                             No notifications
                         </h4>
-                        <p className="text-gray-600 dark:text-gray-400">
+                        <p className={`text-gray-600 dark:text-gray-400 ${isMobile ? 'text-[11px]' : 'text-sm'}`}>
                             You're all caught up! Check back later for updates.
                         </p>
                     </div>
@@ -331,7 +335,7 @@ function NotificationContent({
             <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
                 <Link
                     href="/notifications"
-                    className="block w-full text-center py-2.5 text-sm font-medium text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/30 rounded-lg transition-colors"
+                    className={`block w-full text-center py-2.5 font-medium text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/30 rounded-lg transition-colors ${isMobile ? 'text-[11px]' : 'text-sm'}`}
                     onClick={onClose}
                 >
                     View all notifications
