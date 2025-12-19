@@ -1075,7 +1075,7 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                         variant="outline"
                                                         type="button"
                                                         onClick={() => router.push('/dashboard/settings')}
-                                                        className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white px-2 hover:bg-red-500 hover:text-white"
+                                                        className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white px-2 hover:bg-red-500 hover:text-white text-[11px] sm:text-sm"
                                                     >
                                                         <ArrowLeft className="h-4 w-4" />
                                                         <span>Kembali ke Menu</span>
