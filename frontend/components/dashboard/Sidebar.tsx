@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/app/hooks/use-store";
 import { Menu } from "@/components/dashboard/menu";
@@ -40,10 +41,14 @@ export function Sidebar({ role, className }: SidebarProps) {
         <div className="flex-shrink-0 mb-6">
           <Link href="#" className={cn("group flex items-center gap-3", !sidebar.isOpen && "justify-center")}>
             <div className="relative">
-              <div className="w-10 h-10 bg-gradient-to-br from-sky-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
+              <div className="w-10 h-10 bg-gradient-to-br from-sky-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105 p-0.5">
+                <Image
+                  src="/icons/axon-hrm-icon-192x192.png"
+                  alt="Axon HRM"
+                  width={32}
+                  height={32}
+                  className="w-full h-full object-contain"
+                />
               </div>
               {/* Only show ping animation on client */}
               {mounted && (
@@ -53,7 +58,7 @@ export function Sidebar({ role, className }: SidebarProps) {
             {sidebar.isOpen && (
               <div className="flex flex-col">
                 <span className="text-[14px] md:text-xl font-bold bg-gradient-to-r from-sky-600 to-emerald-600 bg-clip-text text-transparent">
-                  HRM Pro
+                  Axon HRM
                 </span>
                 <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 font-medium">
                   Human Resource Management

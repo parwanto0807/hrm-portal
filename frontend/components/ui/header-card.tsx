@@ -21,6 +21,7 @@ interface HeaderCardProps {
   className?: string;
   titleClassName?: string;
   descriptionClassName?: string;
+  patternText?: string;
 }
 
 const HeaderCard = ({
@@ -36,6 +37,7 @@ const HeaderCard = ({
   className = "",
   titleClassName = "",
   descriptionClassName = "",
+  patternText,
 }: HeaderCardProps) => {
   const isCompact = variant === "compact";
   const isElegant = variant === "elegant";
@@ -48,7 +50,7 @@ const HeaderCard = ({
       case "solid":
         return "bg-slate-700 shadow-xl";
       case "pattern":
-        return `bg-gradient-to-r ${gradientFrom} ${gradientTo} relative overflow-visible`;
+        return `bg-gradient-to-r ${gradientFrom} ${gradientTo} relative overflow-hidden`;
       default:
         return `bg-gradient-to-br ${gradientFrom} ${gradientTo} shadow-lg`;
     }
@@ -56,7 +58,7 @@ const HeaderCard = ({
 
   // Pattern overlay for pattern background
   const PatternOverlay = () => (
-    <div className="absolute inset-0 opacity-15">
+    <div className="absolute inset-0 opacity-15 pointer-events-none">
       <div className="absolute inset-0" style={{
         backgroundImage: `radial-gradient(circle at 25px 25px, white 2%, transparent 2.5%)`,
         backgroundSize: '50px 50px'
@@ -64,13 +66,31 @@ const HeaderCard = ({
     </div>
   );
 
+  // Text Pattern Overlay (Requested Feature)
+  const TextPatternOverlay = ({ text }: { text: string }) => {
+    // Generate large array for full coverage without performance heavy 4000+ nodes
+    const repeats = Array(1500).fill(text);
+
+    return (
+      <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-[0.1] select-none">
+        <div className="absolute -inset-[50%] flex flex-wrap content-center justify-center gap-x-3 gap-y-1 -rotate-12 transform scale-125">
+          {repeats.map((t, i) => (
+            <span key={i} className="text-[9px] font-bold text-white whitespace-nowrap tracking-widest uppercase">
+              {t}
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   // Default icon dengan desain yang lebih modern
   const defaultIcon = (
     <div className={`flex items-center justify-center rounded-2xl backdrop-blur-sm border border-white/25 shadow-lg ${isCompact
-        ? "h-10 w-10"
-        : isElegant
-          ? "h-16 w-16 rounded-3xl"
-          : "h-14 w-14"
+      ? "h-10 w-10"
+      : isElegant
+        ? "h-16 w-16 rounded-3xl"
+        : "h-14 w-14"
       } ${backgroundStyle === "glass"
         ? "bg-white/25"
         : "bg-white/20"
@@ -95,7 +115,7 @@ const HeaderCard = ({
     <div className="relative overflow-visible">
       <CardHeader
         className={`
-          text-white rounded-2xl relative overflow-visible
+          text-white rounded-2xl relative overflow-hidden
           transition-all duration-500 ease-out
           hover:shadow-xl
           ${getBackgroundStyle()}
@@ -106,16 +126,17 @@ const HeaderCard = ({
         `}
       >
         {backgroundStyle === "pattern" && <PatternOverlay />}
+        {patternText && <TextPatternOverlay text={patternText} />}
 
         <div className={`relative flex flex-col space-y-4 ${showActionArea ? "md:flex-row md:items-center md:justify-between md:space-y-0" : ""
-          }`}>
+          } z-10`}>
           <div className={`flex items-center space-x-3 md:space-x-4 ${isElegant ? "space-x-3 sm:space-x-5" : ""
             }`}>
             <div className={`flex items-center justify-center rounded-2xl backdrop-blur-sm border border-white/25 shadow-lg ${isCompact
-                ? "h-8 w-8 sm:h-10 sm:w-10"
-                : isElegant
-                  ? "h-12 w-12 rounded-xl sm:h-16 sm:w-16 sm:rounded-3xl"
-                  : "h-10 w-10 sm:h-14 sm:w-14"
+              ? "h-8 w-8 sm:h-10 sm:w-10"
+              : isElegant
+                ? "h-12 w-12 rounded-xl sm:h-16 sm:w-16 sm:rounded-3xl"
+                : "h-10 w-10 sm:h-14 sm:w-14"
               } ${backgroundStyle === "glass"
                 ? "bg-white/25"
                 : "bg-white/20"

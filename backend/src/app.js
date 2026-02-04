@@ -8,6 +8,16 @@ import userRoute from './routes/auth/userRoutes.js';
 import authRoute from './routes/auth/authRoutes.js';
 import companyRouter from './routes/company/companyRouters.js';
 import uploadRouter from './routes/uploadRoutes.js';
+import mysqlRoute from './routes/mysql.routes.js';
+import bankRoute from './routes/bankRoutes.js';
+import positionRoute from './routes/positionRoutes.js';
+import orgRoute from './routes/master/orgStructureRoutes.js';
+import employeeLevelRoute from './routes/master/employeeLevelRoutes.js';
+import factoryRoute from './routes/master/factoryRoutes.js';
+import employeeRoute from './routes/master/employeeRoutes.js';
+import payrollRoute from './routes/payrollRoutes.js';
+import requestRoute from './routes/requestRoutes.js';
+import menuRoute from './routes/menuRoutes.js';
 
 const express = packages.express();
 const cors = packages.cors();
@@ -109,6 +119,16 @@ app.use('/api/auth', authRoute);
 app.use('/api/users', userRoute);
 app.use('/api/company', companyRouter);
 app.use('/api/upload', uploadRouter);
+app.use('/api/mysql', mysqlRoute);
+app.use('/api/banks', bankRoute);
+app.use('/api/positions', positionRoute);
+app.use('/api/org', orgRoute);
+app.use('/api/levels', employeeLevelRoute);
+app.use('/api/factories', factoryRoute);
+app.use('/api/employees', employeeRoute);
+app.use('/api/payroll', payrollRoute);
+app.use('/api/requests', requestRoute);
+app.use('/api/menus', menuRoute);
 
 // Error Handler
 app.use((err, req, res, next) => {

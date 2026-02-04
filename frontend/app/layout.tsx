@@ -37,12 +37,12 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3002"),
   title: {
-    template: "%s | Project HRM",
-    default: "Project HRM - Sistem Manajemen SDM",
+    template: "%s | Axon HRM",
+    default: "Axon HRM - Sistem Manajemen SDM",
   },
   description: "Aplikasi ERP dan HRM terpadu untuk efisiensi manajemen karyawan.",
-  applicationName: "Project HRM",
-  authors: [{ name: "Your Company Name" }], // Tambahkan nama perusahaan
+  applicationName: "Axon HRM",
+  authors: [{ name: "Grafindo Mitrasemesta" }], // Tambahkan nama perusahaan
   keywords: ["HRM", "ERP", "Manajemen Karyawan", "SDM", "Payroll"], // SEO keywords
 
   // PWA Manifest
@@ -51,20 +51,20 @@ export const metadata: Metadata = {
   // Icons dengan multiple sizes
   icons: {
     icon: [
-      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
+      { url: "/icons/axon-hrm-icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/axon-hrm-icon-512x512.png", sizes: "512x512", type: "image/png" },
     ],
     apple: [
-      { url: "/icons/icon-192x192.png", sizes: "180x180", type: "image/png" },
+      { url: "/icons/axon-hrm-icon-192x192.png", sizes: "180x180", type: "image/png" },
     ],
-    shortcut: "/icons/icon-192x192.png",
+    shortcut: "/icons/axon-hrm-icon-192x192.png",
   },
 
   // Apple Web App
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent", // Lebih modern dari "default"
-    title: "Project HRM",
+    title: "Axon HRM",
   },
 
   // Format Detection (Disable auto-formatting untuk nomor)
@@ -79,15 +79,15 @@ export const metadata: Metadata = {
     type: "website",
     locale: "id_ID",
     url: "https://yourapp.com", // Ganti dengan URL production
-    siteName: "Project HRM",
-    title: "Project HRM - Sistem Manajemen SDM",
+    siteName: "Axon HRM",
+    title: "Axon HRM - Sistem Manajemen SDM",
     description: "Aplikasi ERP dan HRM terpadu untuk efisiensi manajemen karyawan.",
     images: [
       {
         url: "/og-image.png", // Tambahkan gambar untuk social sharing
         width: 1200,
         height: 630,
-        alt: "Project HRM",
+        alt: "Axon HRM",
       },
     ],
   },

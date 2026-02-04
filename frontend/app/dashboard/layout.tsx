@@ -9,6 +9,7 @@ import { useAuth } from "@/app/hooks/useAuth";
 import { useStore } from "@/app/hooks/use-store";
 import { useSidebarToggle } from "@/app/hooks/use-sidebar-toggle";
 import { Sidebar } from "@/components/dashboard/Sidebar";
+import { BottomNav } from "@/components/dashboard/BottomNav";
 
 
 export default function DashboardLayout({
@@ -75,13 +76,17 @@ export default function DashboardLayout({
                     {/* PAGE CONTENT */}
                     <main className="flex-1">
                         <div className="w-full h-full overflow-y-auto">
-                            <div className="min-h-full py-2 md:p-6 lg:p-8">
+                            <div className={cn(
+                                "min-h-full py-2",
+                                user?.role?.toLowerCase() === 'employee' ? "px-1 md:p-6 lg:p-8" : "px-4 sm:px-6 md:p-6 lg:p-8"
+                            )}>
                                 {children}
                             </div>
                         </div>
                     </main>
                 </div>
             </div>
+            {user?.role?.toLowerCase() === 'employee' && <BottomNav />}
         </ThemeProvider>
     );
 }

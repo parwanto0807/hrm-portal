@@ -61,7 +61,7 @@ export default function NotificationBell({ isMobile = false }: NotificationBellP
         {
             id: 5,
             title: 'System Update',
-            message: 'HRM Pro will undergo maintenance this weekend',
+            message: 'Axon HRM will undergo maintenance this weekend',
             time: '2 days ago',
             type: 'system',
             read: true,

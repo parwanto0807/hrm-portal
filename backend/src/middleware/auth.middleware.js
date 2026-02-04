@@ -40,6 +40,8 @@ export const protect = async (req, res, next) => {
     // D. Verifikasi Token
     const secret = process.env.JWT_SECRET || config.jwt.secret;
     const decoded = jwt.verify(token, secret);
+    
+    // console.log('✅ Token decoded:', { userId: decoded.userId, id: decoded.id });
 
     // E. Cek User di Database
     const userIdToCheck = decoded.userId || decoded.id;
@@ -50,6 +52,7 @@ export const protect = async (req, res, next) => {
     });
 
     if (!user) {
+      console.warn('⚠️  User not found in DB for ID:', userIdToCheck);
       return res.status(401).json({
         success: false,
         message: "User tidak ditemukan atau akun telah dinonaktifkan."
@@ -62,9 +65,25 @@ export const protect = async (req, res, next) => {
     req.userRole = user.role;
     req.userEmail = user.email;
 
+    // G. Find linked employee by userId or email
+    const employee = await prisma.karyawan.findFirst({
+      where: { 
+        OR: [
+          { userId: user.id },
+          { email: { equals: user.email, mode: 'insensitive' } }
+        ]
+      },
+      select: { emplId: true }
+    });
+    
+    if (employee) {
+      req.user.emplId = employee.emplId;
+    }
+
     next();
 
   } catch (error) {
+    console.error('❌ Protect middleware error:', error.message);
     if (error.name === 'TokenExpiredError') {
       return res.status(403).json({
         success: false,
@@ -75,7 +94,7 @@ export const protect = async (req, res, next) => {
     
     return res.status(403).json({
       success: false,
-      message: "Token tidak valid."
+      message: "Token tidak valid: " + error.message
     });
   }
 };

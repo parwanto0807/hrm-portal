@@ -10,6 +10,9 @@ const router = express.Router();
 // Apply JWT authentication to all user routes
 router.use(passport.authenticate('jwt', { session: false }));
 
+// Get current user profile (Must be above /:id to avoid shadowing)
+router.get('/me', protect, getProfile);
+
 // Get all users (Admin only)
 router.get('/', async (req, res) => {
   try {
@@ -141,7 +144,5 @@ router.put('/:id', async (req, res) => {
     });
   }
 });
-
-router.get('/me', protect, getProfile);
 
 export default router;

@@ -3,12 +3,14 @@
 import React from "react";
 import Link from "next/link";
 import {
-    Building2, Factory, Network, Layers,
+    Building2, Factory,
     Briefcase, GraduationCap, Landmark, Settings2,
-    CalendarDays, CalendarRange, UserCog, Boxes,
+    CalendarDays, CalendarRange, UserCog,
     ChevronRight, Cpu, Shield, Database,
     Globe, Bell, Key, Mail, Users2,
-    Zap
+    Zap, HardDrive, RefreshCcw,
+    BookOpen, Info,
+    AlertTriangle
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +18,8 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { MysqlOldDialog } from "@/components/settings/MysqlOldDialog";
+import { PayrollImportDialog } from "@/components/settings/PayrollImportDialog";
 
 // Data shortcut untuk semua item dengan model yang sama
 const shortcutItems = [
@@ -28,7 +32,7 @@ const shortcutItems = [
         bgColor: 'bg-blue-50 dark:bg-blue-900/20',
         borderColor: 'border-blue-200 dark:border-blue-800',
         category: 'master',
-        href: '/dashboard/settings/master/company' // Tambahkan href
+        href: '/dashboard/settings/master/company'
     },
     {
         title: 'Factory',
@@ -38,37 +42,7 @@ const shortcutItems = [
         bgColor: 'bg-orange-50 dark:bg-orange-900/20',
         borderColor: 'border-orange-200 dark:border-orange-800',
         category: 'master',
-        href: '/dashboard/settings/master/factory' // Sesuaikan dengan route Anda
-    },
-    {
-        title: 'Bagian',
-        description: 'Pengelolaan bagian',
-        icon: Boxes,
-        color: 'bg-emerald-500 text-white',
-        bgColor: 'bg-emerald-50 dark:bg-emerald-900/20',
-        borderColor: 'border-emerald-200 dark:border-emerald-800',
-        category: 'master',
-        href: '/dashboard/settings/master/bagian'
-    },
-    {
-        title: 'Departement',
-        description: 'Struktur departemen',
-        icon: Network,
-        color: 'bg-violet-500 text-white',
-        bgColor: 'bg-violet-50 dark:bg-violet-900/20',
-        borderColor: 'border-violet-200 dark:border-violet-800',
-        category: 'master',
-        href: '/dashboard/settings/master/department'
-    },
-    {
-        title: 'Section',
-        description: 'Pengaturan section',
-        icon: Layers,
-        color: 'bg-pink-500 text-white',
-        bgColor: 'bg-pink-50 dark:bg-pink-900/20',
-        borderColor: 'border-pink-200 dark:border-pink-800',
-        category: 'master',
-        href: '/dashboard/settings/master/section'
+        href: '/dashboard/settings/master/factory'
     },
     {
         title: 'Struktur Organisasi',
@@ -223,6 +197,28 @@ const shortcutItems = [
         borderColor: 'border-slate-200 dark:border-slate-700',
         category: 'system',
         href: '/dashboard/settings/system/user-roles'
+    },
+    {
+        title: 'Mysql Database Old',
+        description: 'Legacy data explorer',
+        icon: HardDrive,
+        color: 'bg-indigo-600 text-white',
+        bgColor: 'bg-indigo-50 dark:bg-indigo-900/20',
+        borderColor: 'border-indigo-200 dark:border-indigo-800',
+        category: 'system',
+        href: '#mysql-old',
+        isModal: true
+    },
+    {
+        title: 'Workflow',
+        description: 'Legacy data migration tools',
+        icon: RefreshCcw,
+        color: 'bg-teal-600 text-white',
+        bgColor: 'bg-teal-50 dark:bg-teal-900/20',
+        borderColor: 'border-teal-200 dark:border-teal-800',
+        category: 'system',
+        href: '#workflow',
+        isModal: true
     }
 ];
 
@@ -246,8 +242,13 @@ const menuGroups = [
 ];
 
 export default function SettingsPage() {
+    const [isMysqlOldOpen, setIsMysqlOldOpen] = React.useState(false);
+    const [isWorkflowOpen, setIsWorkflowOpen] = React.useState(false);
+
     return (
         <div className="min-h-screen w-full bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950">
+            <MysqlOldDialog open={isMysqlOldOpen} onOpenChange={setIsMysqlOldOpen} />
+            <PayrollImportDialog open={isWorkflowOpen} onOpenChange={setIsWorkflowOpen} />
             <div className="max-w-full mx-auto p-2 md:p-6 lg:p-6 space-y-8 w-full">
                 {/* Header */}
                 <div className="space-y-2">
@@ -274,12 +275,15 @@ export default function SettingsPage() {
                     <Separator className="bg-gradient-to-r from-transparent via-slate-200 to-transparent dark:via-slate-700" />
                 </div>
 
-                {/* Tabs untuk Shortcuts */}
                 <Tabs defaultValue="all" className="w-full">
-                    <TabsList className="grid w-full max-w-md grid-cols-3">
+                    <TabsList className="grid w-full max-w-xl grid-cols-4">
                         <TabsTrigger value="all">Semua</TabsTrigger>
                         <TabsTrigger value="master">Master Data</TabsTrigger>
                         <TabsTrigger value="system">System</TabsTrigger>
+                        <TabsTrigger value="guide" className="gap-2">
+                            <BookOpen className="h-4 w-4 text-blue-500" />
+                            Guide Import
+                        </TabsTrigger>
                     </TabsList>
 
                     {/* All Settings Tab */}
@@ -314,15 +318,21 @@ export default function SettingsPage() {
                                 <CardContent>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 w-full">
                                         {group.items.map((item, itemIdx) => {
-                                            if (item.category === 'system') {
+                                            if (item.isModal) {
                                                 return (
                                                     <div
                                                         key={itemIdx}
                                                         onClick={(e) => {
                                                             e.preventDefault();
-                                                            toast.info("Fitur Dalam Pengembangan", {
-                                                                description: "Modul ini sedang dalam tahap pengembangan.",
-                                                            });
+                                                            if (item.href === '#mysql-old') {
+                                                                setIsMysqlOldOpen(true);
+                                                            } else if (item.href === '#workflow') {
+                                                                setIsWorkflowOpen(true);
+                                                            } else {
+                                                                toast.info("Fitur Dalam Pengembangan", {
+                                                                    description: "Modul ini sedang dalam tahap pengembangan.",
+                                                                });
+                                                            }
                                                         }}
                                                         className="block cursor-pointer"
                                                     >
@@ -439,6 +449,10 @@ export default function SettingsPage() {
                                                 key={idx}
                                                 onClick={(e) => {
                                                     e.preventDefault();
+                                                    if (item.isModal && item.href === '#mysql-old') {
+                                                        setIsMysqlOldOpen(true);
+                                                        return;
+                                                    }
                                                     toast.info("Fitur Dalam Pengembangan", {
                                                         description: "Modul ini sedang dalam tahap pengembangan.",
                                                     });
@@ -466,7 +480,140 @@ export default function SettingsPage() {
                             </CardContent>
                         </Card>
                     </TabsContent>
+                    {/* Import Guide Tab */}
+                    <TabsContent value="guide" className="space-y-6">
+                        <Card className="border shadow-sm overflow-hidden">
+                            <CardHeader className="bg-slate-50/50 dark:bg-slate-900/20 border-b">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                                        <BookOpen className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                                    </div>
+                                    <div>
+                                        <CardTitle className="text-xl">Panduan Migrasi Data Legacy</CardTitle>
+                                        <p className="text-sm text-muted-foreground mt-1">Langkah-langkah penting untuk migrasi data dari MySQL ke Postgres</p>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="p-6">
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                    {/* Column 1: Pre-requisites */}
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100">
+                                            <div className="h-6 w-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xs">1</div>
+                                            Persiapan Awal
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div className="p-4 rounded-lg border bg-blue-50/30 dark:bg-blue-900/10 border-blue-100 dark:border-blue-900/30">
+                                                <div className="flex items-start gap-3">
+                                                    <Database className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+                                                    <div className="text-sm">
+                                                        <p className="font-semibold">Koneksi Database</p>
+                                                        <p className="text-muted-foreground text-xs mt-1">Pastikan status <strong>MySQL Database Old</strong> sudah ONLINE di menu System.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="p-4 rounded-lg border bg-amber-50/30 dark:bg-amber-900/10 border-amber-100 dark:border-amber-900/30">
+                                                <div className="flex items-start gap-3">
+                                                    <Info className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                                                    <div className="text-sm">
+                                                        <p className="font-semibold">Relasi Data</p>
+                                                        <p className="text-muted-foreground text-xs mt-1">Sistem menggunakan relasi Foreign Key yang ketat. Data master harus ada sebelum data transaksi diimport.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Column 2: Logical Flow */}
+                                    <div className="lg:col-span-2 space-y-6">
+                                        <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100">
+                                            <div className="h-6 w-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xs">2</div>
+                                            Urutan Import (Logical Flow)
+                                        </div>
+
+                                        <div className="relative space-y-4 pl-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
+                                            {/* Step 1 */}
+                                            <div className="relative flex items-start gap-4">
+                                                <div className="absolute -left-[2.35rem] p-1 bg-white dark:bg-slate-950 rounded-full border border-blue-500 z-10">
+                                                    <Building2 className="h-4 w-4 text-blue-500" />
+                                                </div>
+                                                <div className="flex-1 p-3 rounded-lg border bg-slate-50/50 dark:bg-slate-900/50">
+                                                    <h4 className="text-sm font-bold flex items-center justify-between">
+                                                        MASTER DATA ORGANISASI
+                                                        <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 border-blue-200">Tahap 1</Badge>
+                                                    </h4>
+                                                    <p className="text-xs text-muted-foreground mt-1">Company, Factory, Bagian, Department, Seksie.</p>
+                                                </div>
+                                            </div>
+
+                                            {/* Step 2 */}
+                                            <div className="relative flex items-start gap-4">
+                                                <div className="absolute -left-[2.35rem] p-1 bg-white dark:bg-slate-950 rounded-full border border-emerald-500 z-10">
+                                                    <Users2 className="h-4 w-4 text-emerald-500" />
+                                                </div>
+                                                <div className="flex-1 p-3 rounded-lg border bg-slate-50/50 dark:bg-slate-900/50">
+                                                    <h4 className="text-sm font-bold flex items-center justify-between">
+                                                        DATA KARYAWAN
+                                                        <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 border-emerald-200">Tahap 2</Badge>
+                                                    </h4>
+                                                    <p className="text-xs text-muted-foreground mt-1">Pastikan EMPL_ID & NIK sudah benar. Ini adalah anchor untuk data payroll.</p>
+                                                </div>
+                                            </div>
+
+                                            {/* Step 3 */}
+                                            <div className="relative flex items-start gap-4">
+                                                <div className="absolute -left-[2.35rem] p-1 bg-white dark:bg-slate-950 rounded-full border border-violet-500 z-10">
+                                                    <CalendarRange className="h-4 w-4 text-violet-500" />
+                                                </div>
+                                                <div className="flex-1 p-3 rounded-lg border bg-slate-50/50 dark:bg-slate-900/50">
+                                                    <h4 className="text-sm font-bold flex items-center justify-between">
+                                                        PERIODE & PARAMETER
+                                                        <Badge className="bg-violet-100 text-violet-700 dark:bg-violet-900/30 border-violet-200">Tahap 3</Badge>
+                                                    </h4>
+                                                    <p className="text-xs text-muted-foreground mt-1">Buka Periode Payroll & Absensi. Pastikan Jenis Potongan/Tunjangan sudah sesuai.</p>
+                                                </div>
+                                            </div>
+
+                                            {/* Step 4 */}
+                                            <div className="relative flex items-start gap-4">
+                                                <div className="absolute -left-[2.35rem] p-1 bg-white dark:bg-slate-950 rounded-full border border-rose-500 z-10">
+                                                    <RefreshCcw className="h-4 w-4 text-rose-500" />
+                                                </div>
+                                                <div className="flex-1 p-3 rounded-lg border-2 border-rose-200/50 dark:border-rose-900/30 bg-rose-50/20 dark:bg-rose-900/10 ring-2 ring-rose-500/5">
+                                                    <h4 className="text-sm font-bold flex items-center justify-between text-rose-700 dark:text-rose-400">
+                                                        WORKFLOW: IMPORT PAYROLL
+                                                        <Badge variant="destructive">FINAL</Badge>
+                                                    </h4>
+                                                    <p className="text-xs mt-1">Eksekusi migrasi data Gaji, Potongan, Tunjangan, dan Rapel.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <Separator className="my-8" />
+
+                                <div className="p-4 rounded-xl border-dashed border-2 bg-slate-50 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <AlertTriangle className="h-5 w-5 text-amber-500" />
+                                        <h4 className="font-bold text-sm">Ketentuan Re-Import (Upsert)</h4>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs leading-relaxed text-muted-foreground">
+                                        <div className="space-y-2 p-3 bg-white dark:bg-slate-950 rounded border">
+                                            <p className="font-bold text-slate-900 dark:text-slate-100 mb-1">Update Data Otomatis</p>
+                                            Jika Anda melakukan import ulang untuk <strong>Periode & Empl ID</strong> yang sama, sistem akan melakukan <em>Update</em> pada data yang sudah ada, bukan membuat data ganda.
+                                        </div>
+                                        <div className="space-y-2 p-3 bg-white dark:bg-slate-950 rounded border">
+                                            <p className="font-bold text-slate-900 dark:text-slate-100 mb-1">Integritas Data</p>
+                                            Data yang sudah di-import tidak bisa di-delete melalui workflow ini. Gunakan menu Database di tab System untuk pembersihan data jika diperlukan.
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
                 </Tabs>
+
 
                 {/* Footer Info */}
                 <Card className="border-dashed bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10">
@@ -498,6 +645,6 @@ export default function SettingsPage() {
                     </CardContent>
                 </Card>
             </div>
-        </div>
+        </div >
     );
 }

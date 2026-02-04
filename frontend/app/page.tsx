@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function AppPortal() {
@@ -130,7 +131,7 @@ export default function AppPortal() {
                   }}
                 />
 
-                <motion.svg
+                <motion.div
                   initial={{ opacity: 0, rotate: -180 }}
                   animate={{ opacity: 1, rotate: 0 }}
                   transition={{
@@ -138,13 +139,15 @@ export default function AppPortal() {
                     delay: 0.7,
                     ease: [0.22, 0.61, 0.36, 1]
                   }}
-                  className="w-8 h-8 md:w-12 md:h-12 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+                  className="w-10 h-10 md:w-16 md:h-16 relative"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </motion.svg>
+                  <Image
+                    src="/icons/axon-hrm-icon-512x512.png"
+                    alt="Axon HRM Logo"
+                    fill
+                    className="object-contain"
+                  />
+                </motion.div>
 
                 {/* Animated dot on logo */}
                 <motion.div
@@ -172,7 +175,7 @@ export default function AppPortal() {
                   }}
                   className="text-xl font-bold text-gray-900 mb-2"
                 >
-                  HR Management System
+                  Axon HRM
                 </motion.h1>
 
                 <motion.div
@@ -379,7 +382,7 @@ export default function AppPortal() {
             className="flex mt-6 flex-col items-center gap-3"
           >
             <div className="text-center text-sky-500/80 text-sm tracking-widest uppercase font-medium">
-              Grafindo HRM v3.2
+              Axon HRM v3.2
             </div>
             <div className="flex items-center gap-2">
               <div className="w-20 h-0.5 overflow-hidden rounded-full">
@@ -400,7 +403,7 @@ export default function AppPortal() {
                   }}
                 />
               </div>
-              <div className="text-xs text-sky-600/70">© 2025</div>
+              <div className="text-xs text-sky-600/70">© 2026</div>
               <div className="w-20 h-0.5 overflow-hidden rounded-full">
                 <motion.div
                   initial={{ x: '100%' }}

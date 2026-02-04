@@ -12,9 +12,33 @@ export const api = axios.create({
     withCredentials: true, // WAJIB: Agar cookie dikirim/diterima
 });
 
-// Opsional: Tambahkan interceptor jika nanti ada auth token
-api.interceptors.request.use((config) => {
-    // const token = ... logic ambil token
-    // if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-});
+// Response Interceptor: Handle 401 & Auto Refresh
+api.interceptors.response.use(
+    (response) => {
+        return response;
+    },
+    async (error) => {
+        const originalRequest = error.config;
+
+        // Jika error 401 dan belum pernah diretry
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            originalRequest._retry = true;
+
+            try {
+                // Call Refresh Token Endpoint
+                // Assumes BASE_URL points to /api, so this becomes /api/auth/refresh
+                await api.post('/auth/refresh');
+
+                // Retry Original Request
+                return api(originalRequest);
+            } catch (refreshError) {
+                // Jika Refresh Token juga expired/invalid, redirect ke login
+                console.error('Session expired, redirecting to login...');
+                window.location.href = '/login';
+                return Promise.reject(refreshError);
+            }
+        }
+
+        return Promise.reject(error);
+    }
+);

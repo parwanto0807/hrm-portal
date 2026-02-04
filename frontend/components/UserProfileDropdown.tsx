@@ -220,7 +220,7 @@ export default function UserProfileDropdown({ user }: Omit<UserProfileDropdownPr
                     {/* Footer */}
                     <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
                         <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                            <span>© 2024 HRM Pro</span>
+                            <span>© 2026 Axon HRM</span>
                             <span>v2.1.0</span>
                         </div>
                     </div>

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useGoogleLogin } from '@react-oauth/google'; // Import Wajib
+import Image from 'next/image';
 
 interface LoginFormProps {
     onSuccess?: () => void;
@@ -207,11 +208,15 @@ export default function LoginForm({
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                        className="mx-auto w-16 h-16 bg-gradient-to-br from-sky-600 to-emerald-600 rounded-xl flex items-center justify-center shadow-md mb-4"
+                        className="mx-auto w-16 h-16 bg-gradient-to-br from-sky-600 to-emerald-600 rounded-xl flex items-center justify-center shadow-md mb-4 p-1"
                     >
-                        <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                        </svg>
+                        <Image
+                            src="/icons/axon-hrm-icon-192x192.png"
+                            alt="Axon HRM"
+                            width={48}
+                            height={48}
+                            className="w-full h-full object-contain"
+                        />
                     </motion.div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back</h2>
                     <p className="text-gray-600 text-sm">Sign in to your account</p>

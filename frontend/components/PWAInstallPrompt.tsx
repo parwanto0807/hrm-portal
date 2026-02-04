@@ -71,7 +71,7 @@ export default function PWAInstallPrompt() {
                         </svg>
                     </div>
                     <div>
-                        <h3 className="font-bold text-gray-900 dark:text-white">Install HRM Pro</h3>
+                        <h3 className="font-bold text-gray-900 dark:text-white">Install Axon HRM</h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Akses lebih cepat & notifikasi realtime.</p>
                     </div>
                 </div>

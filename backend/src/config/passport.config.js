@@ -7,6 +7,8 @@ import { generateTokens } from '../utils/jwt.utils.js';
 // Load passport packages
 const passport = packages.passport();
 const GoogleStrategy = packages['passport-google-oauth20']().Strategy;
+const JwtStrategy = packages['passport-jwt']().Strategy;
+const ExtractJwt = packages['passport-jwt']().ExtractJwt;
 
 console.log('🔄 Initializing Passport strategies...');
 
@@ -97,6 +99,24 @@ passport.use(new GoogleStrategy({
           }
         });
 
+        // ==========================================
+        // 🔗 AUTOMATED LINKAGE: USER TO KARYAWAN
+        // ==========================================
+        // Cari karyawan dengan email yang sama dan belum tertaut userId-nya
+        const employee = await tx.karyawan.findFirst({
+          where: {
+            email: { equals: email, mode: 'insensitive' }
+          }
+        });
+
+        if (employee) {
+          await tx.karyawan.update({
+            where: { id: employee.id },
+            data: { userId: user.id }
+          });
+          console.log(`🔗 Auto-linked User ${email} to Employee ${employee.nama}`);
+        }
+
         return user;
       });
 
@@ -123,6 +143,39 @@ passport.use(new GoogleStrategy({
 
     } catch (error) {
       console.error('❌ Google strategy error:', error);
+      return done(error, false);
+    }
+  }
+));
+
+// JWT Strategy
+passport.use(new JwtStrategy({
+    jwtFromRequest: ExtractJwt.fromExtractors([
+      ExtractJwt.fromAuthHeaderAsBearerToken(),
+      (req) => req.cookies?.accessToken
+    ]),
+    secretOrKey: config.jwt.secret
+  },
+  async (jwtPayload, done) => {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: jwtPayload.userId },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          image: true,
+          role: true,
+          isActive: true
+        }
+      });
+      
+      if (!user) {
+        return done(null, false);
+      }
+      
+      return done(null, user);
+    } catch (error) {
       return done(error, false);
     }
   }

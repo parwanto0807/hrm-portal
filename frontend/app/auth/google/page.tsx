@@ -3,6 +3,7 @@
 import { Suspense } from 'react'; // 1. Import Suspense
 import LoginForm from '@/components/auth/LoginForm';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 export default function LoginPage() {
     const handleLoginSuccess = () => {
@@ -21,13 +22,17 @@ export default function LoginPage() {
                 className="md:hidden p-4 flex items-center justify-center bg-gradient-to-r from-sky-600 to-emerald-600 shadow-md"
             >
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white/20 rounded-xl backdrop-blur-sm flex items-center justify-center">
-                        <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
+                    <div className="w-10 h-10 bg-white/20 rounded-xl backdrop-blur-sm flex items-center justify-center p-0.5">
+                        <Image
+                            src="/icons/axon-hrm-icon-192x192.png"
+                            alt="Axon HRM Logo"
+                            width={32}
+                            height={32}
+                            className="w-full h-full object-contain"
+                        />
                     </div>
                     <div className="text-white">
-                        <h1 className="text-lg font-bold">HRM Portal</h1>
+                        <h1 className="text-lg font-bold">Axon HRM</h1>
                         <p className="text-xs text-sky-100 uppercase tracking-wide">PT. Grafindo Mitrasemesta</p>
                     </div>
                 </div>
@@ -48,11 +53,15 @@ export default function LoginPage() {
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ delay: 0.2, type: "spring" }}
-                        className="w-20 h-20 bg-white/20 rounded-2xl backdrop-blur-sm flex items-center justify-center mb-8 shadow-inner"
+                        className="w-24 h-24 bg-white/20 rounded-2xl backdrop-blur-sm flex items-center justify-center mb-8 shadow-inner p-1"
                     >
-                        <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
+                        <Image
+                            src="/icons/axon-hrm-icon-192x192.png"
+                            alt="Axon HRM Logo"
+                            width={80}
+                            height={80}
+                            className="w-full h-full object-contain"
+                        />
                     </motion.div>
 
                     <h1 className="text-4xl font-bold mb-4">HR Management System</h1>
@@ -137,7 +146,7 @@ export default function LoginPage() {
                                 </svg>
                                 <span>Secure 256-bit encryption</span>
                             </div>
-                            <p className="text-gray-400">© 2025 HRM Platform</p>
+                            <p className="text-gray-400">© 2026 Axon HRM</p>
                         </div>
                     </motion.div>
                 </motion.div>

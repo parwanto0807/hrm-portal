@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Ellipsis, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { getMenuList } from "@/lib/menu-list";
+// import { getMenuList } from "@/lib/menu-list"; // REMOVED
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState } from "react";
@@ -18,7 +18,15 @@ import {
   Popover,
   PopoverTrigger,
   PopoverContent
-} from "@/components/ui/popover"
+} from "@/components/ui/popover";
+import { useMenus } from "@/app/hooks/useMenus";
+import * as LucideIcons from "lucide-react";
+
+// Helper to map string icon name to Lucide Icon component
+const getIcon = (iconName: string) => {
+  // @ts-ignore
+  return LucideIcons[iconName] || LucideIcons.Circle;
+};
 
 interface MenuProps {
   isOpen?: boolean;
@@ -29,7 +37,7 @@ interface MenuProps {
 interface MenuItemProps {
   href: string;
   label: string;
-  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  icon: any; // Changed from React.ComponentType to any to support dynamic icon
   active: boolean;
   disabled?: boolean;
   isOpen?: boolean;
@@ -275,10 +283,13 @@ const MenuGroupLabel = ({
 };
 
 export function Menu({ isOpen, role, theme = 'dark' }: MenuProps) {
-  const pathname = usePathname();
-  const menuList = getMenuList(pathname, role);
+  const { menuList, isLoading } = useMenus();
 
   const [openSubmenuIndex, setOpenSubmenuIndex] = useState<string | null>(null);
+
+  if (isLoading) {
+    return <div className="p-4 text-xs text-center text-muted-foreground">Loading menus...</div>;
+  }
 
   const toggleSubmenu = (key: string) => {
     setOpenSubmenuIndex((prev) => (prev === key ? null : key));
@@ -293,21 +304,23 @@ export function Menu({ isOpen, role, theme = 'dark' }: MenuProps) {
           : "bg-white/95 backdrop-blur-sm border border-gray-200/50"
       )}>
         <ul className="flex flex-col items-start space-y-0.5 px-1">
-          {menuList.map(({ groupLabel, menus }, groupIndex) => (
+          {menuList.map(({ groupLabel, menus }: any, groupIndex: number) => (
             <li className={cn("w-full", groupLabel ? "pt-0" : "")} key={`group-${groupIndex}`}>
               {groupLabel && (
                 <MenuGroupLabel label={groupLabel} isOpen={isOpen} theme={theme} />
               )}
 
-              {menus.map((menu, menuIndex) => {
+              {menus.map((menu: any, menuIndex: number) => {
                 const {
                   href,
                   label,
-                  icon: Icon,
+                  icon: iconName, // Expecting string here from DB
                   active,
                   submenus = [],
                   disabled,
                 } = menu;
+
+                const Icon = getIcon(iconName);
 
                 const menuKey = `menu-${groupIndex}-${menuIndex}`;
                 const isSubmenuOpen = openSubmenuIndex === menuKey;
@@ -355,7 +368,8 @@ export function Menu({ isOpen, role, theme = 'dark' }: MenuProps) {
                                   theme === 'dark' && active ? "text-white" : "text-current",
                                   theme === 'light' && active ? "text-white" : "text-current"
                                 )} />
-                                <span className="text-sm">{label}</span>
+                                {/* Mobile Font adjustment: applied globally via className but can be specific here */}
+                                <span className="text-[10px] md:text-sm">{label}</span>
                               </div>
                               <div className="relative z-10 transition-transform duration-200">
                                 {isSubmenuOpen ? (
@@ -370,6 +384,7 @@ export function Menu({ isOpen, role, theme = 'dark' }: MenuProps) {
                           <Popover>
                             <PopoverTrigger asChild>
                               <button
+                                onClick={() => toggleSubmenu(menuKey)}
                                 className={cn(
                                   "w-10 h-10 flex items-center justify-center rounded-lg mb-1 transition-all duration-200 hover:scale-110",
                                   theme === 'dark' && cn(
@@ -386,7 +401,12 @@ export function Menu({ isOpen, role, theme = 'dark' }: MenuProps) {
                                   )
                                 )}
                               >
-                                <Icon className="h-4 w-4" />
+                                <div className="flex items-center space-x-2 relative z-10">
+                                  <Icon width={16} height={16} className={cn(
+                                    theme === 'dark' && active ? "text-white" : "text-current",
+                                    theme === 'light' && active ? "text-white" : "text-current"
+                                  )} />
+                                </div>
                               </button>
                             </PopoverTrigger>
 
@@ -408,10 +428,10 @@ export function Menu({ isOpen, role, theme = 'dark' }: MenuProps) {
                                   theme === 'dark' ? "border-gray-700" : "border-gray-200"
                                 )}>
                                   <Icon className="h-3.5 w-3.5" />
-                                  {label}
+                                  <span className="text-[10px] md:text-sm">{label}</span>
                                 </div>
                                 <div className="space-y-0.5">
-                                  {submenus.map((submenu, subIndex) => (
+                                  {submenus.map((submenu: any, subIndex: number) => (
                                     <SubmenuItem
                                       key={`submenu-${groupIndex}-${menuIndex}-${subIndex}`}
                                       href={submenu.href}
@@ -437,7 +457,7 @@ export function Menu({ isOpen, role, theme = 'dark' }: MenuProps) {
                           isSubmenuOpen ? "max-h-96 opacity-100 mt-1" : "max-h-0 opacity-0"
                         )}
                       >
-                        {submenus.map((submenu, subIndex) => (
+                        {submenus.map((submenu: any, subIndex: number) => (
                           <SubmenuItem
                             key={`submenu-${groupIndex}-${menuIndex}-${subIndex}`}
                             href={submenu.href}

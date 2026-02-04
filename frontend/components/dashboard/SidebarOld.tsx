@@ -63,7 +63,7 @@ export const Sidebar = () => {
                         <Users className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                        <h1 className="font-bold text-lg text-gray-900 dark:text-white">HRM Portal</h1>
+                        <h1 className="font-bold text-lg text-gray-900 dark:text-white">Axon HRM</h1>
                         <p className="text-xs text-gray-500 dark:text-gray-400">Enterprise Edition</p>
                     </div>
                 </Link>

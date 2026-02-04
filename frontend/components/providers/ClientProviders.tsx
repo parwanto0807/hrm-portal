@@ -4,6 +4,7 @@
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { ThemeProvider } from "./theme-provider";
 import { useState, useEffect } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 
@@ -18,6 +19,16 @@ export default function ClientProviders({
 }: ClientProvidersProps) {
     // State untuk cek apakah sudah mounted
     const [mounted, setMounted] = useState(false);
+
+    // Create QueryClient instance
+    const [queryClient] = useState(() => new QueryClient({
+        defaultOptions: {
+            queries: {
+                staleTime: 60 * 1000, // 1 minute
+                refetchOnWindowFocus: false,
+            },
+        },
+    }));
 
     useEffect(() => {
         setMounted(true);
@@ -36,29 +47,33 @@ export default function ClientProviders({
     // Setelah mounted, render full providers
     if (!googleClientId) {
         return (
-            <ThemeProvider
-                attribute="class"
-                defaultTheme="system"
-                enableSystem
-                disableTransitionOnChange
-            >
-                {children}
-                <PWAInstallPrompt />
-            </ThemeProvider>
+            <QueryClientProvider client={queryClient}>
+                <ThemeProvider
+                    attribute="class"
+                    defaultTheme="system"
+                    enableSystem
+                    disableTransitionOnChange
+                >
+                    {children}
+                    <PWAInstallPrompt />
+                </ThemeProvider>
+            </QueryClientProvider>
         );
     }
 
     return (
-        <GoogleOAuthProvider clientId={googleClientId}>
-            <ThemeProvider
-                attribute="class"
-                defaultTheme="system"
-                enableSystem
-                disableTransitionOnChange
-            >
-                {children}
-                <PWAInstallPrompt />
-            </ThemeProvider>
-        </GoogleOAuthProvider>
+        <QueryClientProvider client={queryClient}>
+            <GoogleOAuthProvider clientId={googleClientId}>
+                <ThemeProvider
+                    attribute="class"
+                    defaultTheme="system"
+                    enableSystem
+                    disableTransitionOnChange
+                >
+                    {children}
+                    <PWAInstallPrompt />
+                </ThemeProvider>
+            </GoogleOAuthProvider>
+        </QueryClientProvider>
     );
 }

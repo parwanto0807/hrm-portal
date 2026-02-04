@@ -123,7 +123,7 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
 
     // Menu items mapping based on current path
     const getActiveMenuItem = useCallback(() => {
-        const userRole = authState.user?.role || 'user'; // Default to user if not available
+        const userRole = authState.user?.role || 'GUEST'; // Default to GUEST if not available
         const allMenus = getMenuList(pathname, userRole);
 
         // Flatten menus from all groups
@@ -190,7 +190,7 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                                             );
                                         })()}
                                         <span className="text-sky-600 dark:text-sky-400 font-bold text-lg tracking-wide uppercase">
-                                            {activeMenuItem.label}
+                                            {activeMenuItem?.label}
                                         </span>
                                     </div>
                                     {/* Animated underline */}
@@ -205,15 +205,12 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                                         // Animasi halus saat active
                                         "opacity-100 scale-x-100"
                                     )} />
-                                    {/* Glow effect */}
-                                    <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-sky-400/20 to-blue-400/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10"></div>
                                 </div>
                             </div>
 
                             {/* Mobile: Current Page Title */}
                             <div className="lg:hidden">
                                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-sky-50/80 to-blue-50/80 dark:from-sky-900/30 dark:to-blue-900/30">
-                                    {/* Render Icon Dynamically for Mobile */}
                                     {activeMenuItem?.icon && (() => {
                                         const Icon = activeMenuItem.icon;
                                         if (typeof Icon === 'function' || typeof Icon === 'object') {
@@ -227,7 +224,7 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                                         );
                                     })()}
                                     <span className="text-sky-600 dark:text-sky-400 font-bold text-sm tracking-wide uppercase">
-                                        {activeMenuItem.label}
+                                        {activeMenuItem?.label}
                                     </span>
                                 </div>
                             </div>
@@ -288,50 +285,42 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                                         {/* Notification Mobile */}
                                         <NotificationBell isMobile={true} />
 
-                                        {/* User Avatar */}
-                                        <div className="flex items-center">
-                                            <div className="relative w-9 h-9 rounded-full overflow-hidden bg-gradient-to-r from-sky-400 to-blue-500 flex items-center justify-center text-white font-bold shadow-lg">
-                                                {user?.image && !mobileImgError ? (
-                                                    <img
-                                                        src={user.image}
-                                                        alt={user.name || 'User'}
-                                                        className="w-full h-full object-cover"
-                                                        referrerPolicy="no-referrer"
-                                                        onError={() => setMobileImgError(true)}
-                                                    />
-                                                ) : (
-                                                    <span className="text-sm">{getUserInitials()}</span>
-                                                )}
+                                        {/* User Profile Dropdown Mobile */}
+                                        {user && (
+                                            <div className="flex items-center">
+                                                <UserProfileDropdown user={user} />
                                             </div>
-                                        </div>
+                                        )}
 
-                                        {/* Hamburger Menu Button */}
-                                        <button
-                                            onClick={() => {
-                                                if (onMenuClick) {
-                                                    onMenuClick();
-                                                } else {
-                                                    setMobileMenuOpen(!mobileMenuOpen);
-                                                }
-                                            }}
-                                            className="p-2 text-gray-500 dark:text-gray-400 hover:text-sky-600 dark:hover:text-sky-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                                            aria-label="Toggle menu"
-                                        >
-                                            <div className="relative w-5 h-5">
-                                                <span className={`
-                                                    absolute left-0 top-1 w-5 h-0.5 bg-current rounded-full transition-all duration-300
-                                                    ${mobileMenuOpen ? 'rotate-45 translate-y-1' : ''}
-                                                `}></span>
-                                                <span className={`
-                                                    absolute left-0 top-2 w-5 h-0.5 bg-current rounded-full transition-all duration-300
-                                                    ${mobileMenuOpen ? 'opacity-0' : ''}
-                                                `}></span>
-                                                <span className={`
-                                                    absolute left-0 top-3 w-5 h-0.5 bg-current rounded-full transition-all duration-300
-                                                    ${mobileMenuOpen ? '-rotate-45 -translate-y-1' : ''}
-                                                `}></span>
-                                            </div>
-                                        </button>
+                                        {/* Hamburger Menu Button - Hidden for employees on mobile because they have BottomNav */}
+                                        {user?.role?.toLowerCase() !== 'employee' && (
+                                            <button
+                                                onClick={() => {
+                                                    if (onMenuClick) {
+                                                        onMenuClick();
+                                                    } else {
+                                                        setMobileMenuOpen(!mobileMenuOpen);
+                                                    }
+                                                }}
+                                                className="p-2 text-gray-500 dark:text-gray-400 hover:text-sky-600 dark:hover:text-sky-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                                                aria-label="Toggle menu"
+                                            >
+                                                <div className="relative w-5 h-5">
+                                                    <span className={`
+                                                        absolute left-0 top-1 w-5 h-0.5 bg-current rounded-full transition-all duration-300
+                                                        ${mobileMenuOpen ? 'rotate-45 translate-y-1' : ''}
+                                                    `}></span>
+                                                    <span className={`
+                                                        absolute left-0 top-2 w-5 h-0.5 bg-current rounded-full transition-all duration-300
+                                                        ${mobileMenuOpen ? 'opacity-0' : ''}
+                                                    `}></span>
+                                                    <span className={`
+                                                        absolute left-0 top-3 w-5 h-0.5 bg-current rounded-full transition-all duration-300
+                                                        ${mobileMenuOpen ? '-rotate-45 -translate-y-1' : ''}
+                                                    `}></span>
+                                                </div>
+                                            </button>
+                                        )}
                                     </div>
                                 </>
                             ) : (
@@ -464,7 +453,7 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                     ) : (
                         <div className="p-6">
                             <div className="text-center mb-8">
-                                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 uppercase tracking-wide">Welcome to HRM Pro</h3>
+                                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 uppercase tracking-wide">Welcome to Axon HRM</h3>
                                 <p className="text-gray-600 dark:text-gray-400 text-sm">Sign in to manage your HR operations</p>
                             </div>
                             <div className="space-y-4">

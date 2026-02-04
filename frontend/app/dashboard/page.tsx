@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAuth } from "@/app/hooks/useAuth";
+import EmployeeDashboard from "@/components/dashboard/EmployeeDashboard";
 import { DashboardHeader } from '@/components/dashboard/Header';
 import { StatsCards } from '@/components/dashboard/StatsCards';
 import { QuickAccess } from '@/components/dashboard/QuickAccess';
@@ -12,6 +14,9 @@ import DashboardCharts from '@/components/dashboard/ChartSummary';
 
 export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
+    const { getUser } = useAuth();
+    const user = getUser();
+    const isEmployee = user?.role?.toLowerCase() === 'employee';
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -22,6 +27,10 @@ export default function DashboardPage() {
 
     if (loading) {
         return <SkeletonDashboard />;
+    }
+
+    if (isEmployee) {
+        return <EmployeeDashboard />;
     }
 
     return (

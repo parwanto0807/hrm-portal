@@ -55,7 +55,7 @@ export const RecentActivity = () => {
                     Aktivitas Terbaru
                 </h2>
                 <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-0.5">
-                    Update terbaru dari sistem HRM
+                    Update terbaru dari sistem Axon HRM
                 </p>
             </CardHeader>
             <CardContent className="pt-0">

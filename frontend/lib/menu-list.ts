@@ -34,15 +34,17 @@ type Group = {
 };
 
 export function getMenuList(pathname: string, role: string): Group[] {
+  const userRole = role?.toUpperCase() || "GUEST";
+
   const isActive = (path: string) => {
     if (path === '/dashboard') return pathname === '/dashboard';
     return pathname.startsWith(path);
   };
 
-  return [
+  const allGroups: Group[] = [
     {
       groupLabel: "Menu Utama",
-      allowedRoles: ["super", "admin", "pic", "user"],
+      allowedRoles: ["SUPER_ADMIN", "ADMIN", "HR_MANAGER", "DEPARTMENT_MANAGER", "EMPLOYEE", "GUEST"],
       menus: [
         {
           href: "/dashboard",
@@ -56,41 +58,51 @@ export function getMenuList(pathname: string, role: string): Group[] {
           label: "Karyawan",
           active: isActive("/dashboard/employees"),
           icon: Users,
-          submenus: []
+          submenus: [],
+          // @ts-ignore - added custom property for filtering
+          roles: ["SUPER_ADMIN", "ADMIN", "HR_MANAGER"]
         },
         {
           href: "/dashboard/attendance",
           label: "Absensi",
           active: isActive("/dashboard/attendance"),
           icon: Calendar,
-          submenus: []
+          submenus: [],
+          // @ts-ignore
+          roles: ["SUPER_ADMIN", "ADMIN", "HR_MANAGER", "DEPARTMENT_MANAGER", "EMPLOYEE"]
         },
         {
           href: "/dashboard/leaves",
           label: "Pengajuan",
           active: isActive("/dashboard/leaves"),
           icon: FileText,
-          submenus: []
+          submenus: [],
+          // @ts-ignore
+          roles: ["SUPER_ADMIN", "ADMIN", "HR_MANAGER", "DEPARTMENT_MANAGER", "EMPLOYEE"]
         },
         {
           href: "/dashboard/payroll",
-          label: "Payroll",
+          label: userRole === "EMPLOYEE" ? "Lihat Slip Gaji" : "Payroll",
           active: isActive("/dashboard/payroll"),
           icon: DollarSign,
-          submenus: []
+          submenus: [],
+          // @ts-ignore
+          roles: ["SUPER_ADMIN", "ADMIN", "HR_MANAGER", "EMPLOYEE"]
         },
         {
           href: "/dashboard/reports",
           label: "Laporan",
           active: isActive("/dashboard/reports"),
           icon: BarChart3,
-          submenus: []
+          submenus: [],
+          // @ts-ignore
+          roles: ["SUPER_ADMIN", "ADMIN", "HR_MANAGER"]
         }
       ]
     },
     {
       groupLabel: "Sistem",
-      allowedRoles: ["super", "admin", "pic", "user"],
+      allowedRoles: ["SUPER_ADMIN", "ADMIN", "HR_MANAGER", "DEPARTMENT_MANAGER", "EMPLOYEE", "GUEST"],
       menus: [
         {
           href: "/dashboard/notifications",
@@ -104,7 +116,9 @@ export function getMenuList(pathname: string, role: string): Group[] {
           label: "Pengaturan",
           active: isActive("/dashboard/settings"),
           icon: Settings,
-          submenus: []
+          submenus: [],
+          // @ts-ignore
+          roles: ["SUPER_ADMIN", "ADMIN"]
         },
         {
           href: "/dashboard/help",
@@ -116,4 +130,17 @@ export function getMenuList(pathname: string, role: string): Group[] {
       ]
     }
   ];
+
+  // Filter groups and their menus based on role
+  return allGroups
+    .filter(group => group.allowedRoles.includes(userRole))
+    .map(group => ({
+      ...group,
+      menus: group.menus.filter(menu => {
+        // @ts-ignore
+        if (!menu.roles) return true; // Default to all if not specified
+        // @ts-ignore
+        return menu.roles.includes(userRole);
+      })
+    }));
 }
