@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { Factory } from "@/types/master";
 
 const formSchema = z.object({
     kdFact: z.string().min(1, "Kode wajib diisi").max(20, "Maksimal 20 karakter"),
@@ -35,7 +36,7 @@ const formSchema = z.object({
 interface FactoryDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    factory?: any;
+    factory?: Factory | null;
     onSuccess: () => void;
 }
 
@@ -77,8 +78,9 @@ export function FactoryDialog({ open, onOpenChange, factory, onSuccess }: Factor
             }
             onSuccess();
             onOpenChange(false);
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || "Gagal menyimpan data");
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: { message?: string } } };
+            toast.error(err.response?.data?.message || "Gagal menyimpan data");
         }
     }
 

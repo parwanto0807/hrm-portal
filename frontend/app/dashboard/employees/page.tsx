@@ -3,9 +3,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-    User, // Ensure User icon is imported
-    Briefcase, Building2, Calendar, Phone, Mail,
-    CreditCard, Banknote, AlertTriangle, Search, Plus, Download, Upload, RefreshCcw
+    User, Search, Plus, Download, RefreshCcw
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -119,8 +117,9 @@ export default function EmployeesPage() {
             await api.delete(`/employees/${employee.id}`);
             toast.success('Karyawan berhasil dihapus');
             refetch();
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Gagal menghapus karyawan');
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: { message?: string } } };
+            toast.error(err.response?.data?.message || 'Gagal menghapus karyawan');
             console.error(error);
         }
     };
@@ -217,7 +216,7 @@ export default function EmployeesPage() {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Departments</SelectItem>
-                        {departments?.data?.map((dept: any) => (
+                        {departments?.data?.map((dept: { kdDept: string; nmDept: string }) => (
                             <SelectItem key={dept.kdDept} value={dept.kdDept}>
                                 {dept.nmDept}
                             </SelectItem>
@@ -231,7 +230,7 @@ export default function EmployeesPage() {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Positions</SelectItem>
-                        {positions?.data?.map((pos: any) => (
+                        {positions?.data?.map((pos: { kdJab: string; nmJab: string }) => (
                             <SelectItem key={pos.kdJab} value={pos.kdJab}>
                                 {pos.nmJab}
                             </SelectItem>

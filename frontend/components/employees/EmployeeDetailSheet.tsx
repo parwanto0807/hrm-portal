@@ -9,11 +9,18 @@ import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import {
-    User, Briefcase, Building2, Calendar, Phone, Mail,
+    User, Briefcase, Calendar,
     CreditCard, Banknote, AlertTriangle
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+
+interface PayrollHistoryRecord {
+    id: string;
+    periodName: string;
+    processDate: string;
+    takeHomePay: number;
+}
 
 interface EmployeeDetailSheetProps {
     employee: Employee | null;
@@ -263,7 +270,7 @@ export function EmployeeDetailSheet({ employee, open, onOpenChange }: EmployeeDe
                                 </div>
                             ) : (
                                 <div className="space-y-3">
-                                    {history.map((record: any) => (
+                                    {history.map((record: PayrollHistoryRecord) => (
                                         <div key={record.id} className="group relative flex items-center justify-between p-4 bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl hover:border-blue-200 dark:hover:border-blue-900 transition-all hover:shadow-xl hover:shadow-slate-200/40 dark:hover:shadow-none overflow-hidden">
                                             <div className="absolute left-0 top-0 w-1 h-full bg-blue-500 scale-y-0 group-hover:scale-y-100 transition-transform origin-top" />
                                             <div className="flex items-center gap-4">
@@ -295,7 +302,14 @@ export function EmployeeDetailSheet({ employee, open, onOpenChange }: EmployeeDe
 }
 
 // Internal Helper Components for consistent styling
-function InfoItem({ label, value, fontMono = false, copyable = false, isBadge = false, uppercase = false }: any) {
+function InfoItem({ label, value, fontMono = false, isBadge = false, uppercase = false }: {
+    label: string;
+    value: React.ReactNode;
+    fontMono?: boolean;
+    copyable?: boolean;
+    isBadge?: boolean;
+    uppercase?: boolean;
+}) {
     return (
         <div className="space-y-1">
             <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mb-1">{label}</p>
@@ -316,7 +330,7 @@ function InfoItem({ label, value, fontMono = false, copyable = false, isBadge = 
     );
 }
 
-function AllowanceRow({ label, value, active }: any) {
+function AllowanceRow({ label, value, active }: { label: string; value: number; active: boolean }) {
     const formatCurrency = (v: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(v);
     return (
         <div className={cn(

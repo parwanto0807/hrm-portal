@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
+import { User } from '@/types/auth';
+
 export const STORAGE_KEYS = {
     // New format
     ACCESS_TOKEN: 'hrm_access_token',
@@ -15,7 +17,7 @@ export const STORAGE_KEYS = {
 export const useAuth = () => {
     const router = useRouter();
     const [authState, setAuthState] = useState<{
-        user: any | null;
+        user: User | null;
         token: string | null;
         isLoading: boolean;
     }>({
@@ -87,8 +89,9 @@ export const useAuth = () => {
 
     // Effect 1: Set mounted flag
     useEffect(() => {
-        setIsMounted(true);
+        const timer = setTimeout(() => setIsMounted(true), 0);
         return () => {
+            clearTimeout(timer);
             setIsMounted(false);
             initRef.current = false;
         };
@@ -98,7 +101,7 @@ export const useAuth = () => {
     useEffect(() => {
         if (!isMounted) return;
 
-        initializeAuth();
+        const timer = setTimeout(() => initializeAuth(), 0);
 
         const handleStorageChange = () => {
             initRef.current = false;
@@ -109,6 +112,7 @@ export const useAuth = () => {
         window.addEventListener('auth-change', handleStorageChange);
 
         return () => {
+            clearTimeout(timer);
             window.removeEventListener('storage', handleStorageChange);
             window.removeEventListener('auth-change', handleStorageChange);
         };
@@ -126,7 +130,7 @@ export const useAuth = () => {
         return authState.isLoading;
     }, [authState.isLoading]);
 
-    const login = useCallback((user: any, accessToken: string) => {
+    const login = useCallback((user: User, accessToken: string) => {
         if (!isMounted) return;
 
         try {

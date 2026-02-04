@@ -3,10 +3,9 @@
 
 import React, { useState, useEffect } from "react";
 import {
-    Factory,
+    Factory as FactoryIcon,
     Plus,
     Search,
-    RefreshCcw,
     Edit,
     Trash2,
     Database
@@ -26,14 +25,15 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { FactoryDialog } from "@/components/settings/master/FactoryDialog";
+import { Factory } from "@/types/master";
 import HeaderCard from "@/components/ui/header-card";
 
 export default function FactoryPage() {
-    const [factories, setFactories] = useState<any[]>([]);
+    const [factories, setFactories] = useState<Factory[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [diagOpen, setDiagOpen] = useState(false);
-    const [selectedFactory, setSelectedFactory] = useState<any>(null);
+    const [selectedFactory, setSelectedFactory] = useState<Factory | null>(null);
     const [isImporting, setIsImporting] = useState(false);
 
     const fetchFactories = async () => {
@@ -43,7 +43,7 @@ export default function FactoryPage() {
             if (response.data.success) {
                 setFactories(response.data.data);
             }
-        } catch (error) {
+        } catch (_error) {
             toast.error("Gagal mengambil data factory");
         } finally {
             setLoading(false);
@@ -60,7 +60,7 @@ export default function FactoryPage() {
             await api.delete(`/factories/${code}`);
             toast.success("Factory berhasil dihapus");
             fetchFactories();
-        } catch (error) {
+        } catch (_error) {
             toast.error("Gagal menghapus factory");
         }
     };
@@ -73,8 +73,9 @@ export default function FactoryPage() {
                 toast.success(`Berhasil mengimport ${response.data.stats.imported} factory`);
                 fetchFactories();
             }
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || "Gagal mengimport data dari MySQL");
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: { message?: string } } };
+            toast.error(err.response?.data?.message || "Gagal mengimport data dari MySQL");
         } finally {
             setIsImporting(false);
         }
@@ -90,7 +91,7 @@ export default function FactoryPage() {
             <HeaderCard
                 title="Data Factory (Pabrik)"
                 description="Kelola master data factory/lokasi pabrik"
-                icon={<Factory className="h-6 w-6 sm:h-8 sm:w-8" />}
+                icon={<FactoryIcon className="h-6 w-6 sm:h-8 sm:w-8" />}
                 gradientFrom="from-orange-600"
                 gradientTo="to-orange-900"
                 variant="elegant"

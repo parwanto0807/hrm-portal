@@ -27,7 +27,7 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
 
     const [authState, setAuthState] = useState<{
         isAuth: boolean;
-        user: any | null;
+        user: { id: string; name: string; email: string; role: string; image?: string } | null;
     }>({
         isAuth: false,
         user: null,
@@ -179,7 +179,6 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                                             const Icon = activeMenuItem.icon;
                                             // Check if it's a function/component (LucideIcon) or string (SVG path)
                                             if (typeof Icon === 'function' || typeof Icon === 'object') {
-                                                // @ts-ignore - Dynamic icon component
                                                 return <Icon className="w-5 h-5 text-sky-600 dark:text-sky-400" />;
                                             }
                                             // Fallback if it's still a string (though getMenuList uses components)
@@ -214,7 +213,6 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                                     {activeMenuItem?.icon && (() => {
                                         const Icon = activeMenuItem.icon;
                                         if (typeof Icon === 'function' || typeof Icon === 'object') {
-                                            // @ts-ignore
                                             return <Icon className="w-4 h-4 text-sky-600 dark:text-sky-400" />;
                                         }
                                         return (

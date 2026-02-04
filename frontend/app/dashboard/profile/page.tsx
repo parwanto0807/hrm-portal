@@ -4,10 +4,11 @@ import React from "react";
 import { useAuth } from "@/app/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { Employee } from "@/types/employee";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-    User, Briefcase, Mail, Calendar, MapPin, Hash, Phone, FileText,
+    User, Briefcase, Mail, MapPin, Hash, Phone, FileText,
     CreditCard, Building, Cake, Users, Star, Heart, ShieldCheck,
     Smartphone, Clock, Building2, GitFork, Landmark, CalendarCheck,
     BadgeCheck, Home
@@ -37,7 +38,7 @@ const validateData = (label: string, value: string | null | undefined) => {
 };
 
 // Helper for Sections with Dynamic Colors
-function InfoItem({ label, value, icon: Icon, color = "blue" }: { label: string, value: string | null | undefined, icon?: any, color?: string }) {
+function InfoItem({ label, value, icon: Icon, color = "blue" }: { label: string, value: string | null | undefined, icon?: React.ElementType, color?: string }) {
     const warning = validateData(label, value);
 
     const colorStyles: Record<string, string> = {
@@ -90,7 +91,7 @@ function InfoItem({ label, value, icon: Icon, color = "blue" }: { label: string,
     );
 }
 
-const calculateCompleteness = (data: any) => {
+const calculateCompleteness = (data: Employee | null | undefined) => {
     if (!data) return 0;
 
     const fields = [
@@ -100,9 +101,9 @@ const calculateCompleteness = (data: any) => {
         // Contact
         data.email, data.handphone, data.alamat1, data.kota,
         // Employment
-        data.emplId, data.company, data.tglMsk, data.jabatan, data.dept, data.sie, data.pkt,
+        data.emplId, data.kdCmpy, data.tglMsk, data.kdJab, data.kdDept, data.kdSeksie, data.pkt,
         // Bank
-        data.bank, data.bankRekNo, data.bankRekName
+        data.bankCode, data.bankRekNo, data.bankRekName
     ];
 
     const filled = fields.filter(f => f !== null && f !== undefined && f !== '').length;
@@ -118,16 +119,17 @@ export default function ProfilePage() {
         setMounted(true);
     }, []);
 
-    const { data: employeeData, isLoading, error } = useQuery({
+    const { data: employeeData, isLoading } = useQuery({
         queryKey: ['employeeProfile', user?.email],
         queryFn: async () => {
             try {
                 const res = await api.get('/users/me');
                 console.log('✅ Profile API Success:', res.data);
-                return res.data.employee;
-            } catch (err: any) {
+                return res.data.employee as Employee;
+            } catch (error: unknown) {
+                const err = error as { response?: { data?: { message?: string } }; message: string };
                 console.error('❌ Profile API Error:', err.response?.data || err.message);
-                throw err;
+                throw error;
             }
         },
         enabled: mounted && !!user?.email,

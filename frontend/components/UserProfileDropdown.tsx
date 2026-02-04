@@ -49,7 +49,8 @@ export default function UserProfileDropdown({ user }: Omit<UserProfileDropdownPr
 
     // Close dropdown on route change
     useEffect(() => {
-        setDropdownOpen(false);
+        const timer = setTimeout(() => setDropdownOpen(false), 0);
+        return () => clearTimeout(timer);
     }, [pathname]);
 
     // Get user initials for avatar fallback

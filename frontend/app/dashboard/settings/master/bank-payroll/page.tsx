@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
     DropdownMenu,
@@ -34,14 +34,15 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import Link from "next/link";
 import { BankDialog } from "@/components/settings/master/BankDialog";
+import { Bank } from "@/types/master";
 import HeaderCard from "@/components/ui/header-card";
 
 export default function BankPayrollPage() {
-    const [banks, setBanks] = useState<any[]>([]);
+    const [banks, setBanks] = useState<Bank[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [selectedBank, setSelectedBank] = useState<any>(null);
+    const [selectedBank, setSelectedBank] = useState<Bank | null>(null);
     const [isImporting, setIsImporting] = useState(false);
 
     const fetchBanks = async () => {
@@ -51,7 +52,7 @@ export default function BankPayrollPage() {
             if (response.data.success) {
                 setBanks(response.data.data);
             }
-        } catch (error) {
+        } catch (_error) {
             toast.error("Gagal mengambil data bank");
         } finally {
             setLoading(false);
@@ -68,7 +69,7 @@ export default function BankPayrollPage() {
             await api.delete(`/banks/${code}`);
             toast.success("Bank berhasil dihapus");
             fetchBanks();
-        } catch (error) {
+        } catch (_error) {
             toast.error("Gagal menghapus bank");
         }
     };
@@ -81,8 +82,9 @@ export default function BankPayrollPage() {
                 toast.success(`Berhasil mengimport ${response.data.stats.imported} bank`);
                 fetchBanks();
             }
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || "Gagal mengimport data dari MySQL");
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: { message?: string } } };
+            toast.error(err.response?.data?.message || "Gagal mengimport data dari MySQL");
         } finally {
             setIsImporting(false);
         }

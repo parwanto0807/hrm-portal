@@ -32,15 +32,17 @@ import {
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { PayrollPeriod } from '@/types/payroll';
+import { PayrollHistoryRow } from './PayrollHistoryRow';
 
 interface PayrollHistoryTableProps {
     data: PayrollPeriod[];
     isLoading: boolean;
     showAllStatus?: boolean;
     showAmount?: boolean;
+    isEmployee?: boolean;
 }
 
-export function PayrollHistoryTable({ data, isLoading, showAllStatus = true, showAmount = false }: PayrollHistoryTableProps) {
+export function PayrollHistoryTable({ data, isLoading, showAllStatus = true, showAmount = false, isEmployee = false }: PayrollHistoryTableProps) {
     const router = useRouter();
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
@@ -189,50 +191,12 @@ export function PayrollHistoryTable({ data, isLoading, showAllStatus = true, sho
                             </TableRow>
                         ) : (
                             paginatedData.map((period) => (
-                                <TableRow key={period.id} className="hover:bg-slate-50/50 transition-colors group">
-                                    <TableCell className="font-medium">
-                                        <div className="flex items-center gap-3">
-                                            <div className="h-9 w-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-                                                <Calendar className="h-4.5 w-4.5" />
-                                            </div>
-                                            <div>
-                                                <div className="text-sm font-bold text-slate-900 dark:text-slate-100">{period.name}</div>
-                                                <div className="text-[10px] text-muted-foreground dark:text-slate-400 uppercase">ID: #{period.id}</div>
-                                            </div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex flex-col text-xs">
-                                            <span className="text-slate-600 dark:text-slate-300">
-                                                {format(new Date(period.startDate), 'dd MMM yyyy', { locale: localeId })}
-                                            </span>
-                                            <span className="text-[10px] text-muted-foreground dark:text-slate-400 uppercase font-medium">sampai {format(new Date(period.endDate), 'dd MMM yyyy', { locale: localeId })}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        <Badge variant="outline" className="text-[10px] font-semibold border-slate-200 px-2 py-0 h-5">
-                                            {period.totalEmployees} Karyawan
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right font-black text-slate-800 dark:text-white text-sm">
-                                        {showAmount ? formatCurrency(period.totalAmount) : 'Rp XX.XXX.XXX'}
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        <Badge variant="secondary" className={`text-[10px] font-bold px-2 py-0 h-5 ${getStatusColor(period.status)}`}>
-                                            {getStatusText(period.status)}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 p-2 h-8 group-hover:translate-x-1 transition-transform"
-                                            onClick={() => router.push(`/dashboard/payroll/${period.id}`)}
-                                        >
-                                            <ArrowRight className="h-4 w-4" />
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
+                                <PayrollHistoryRow
+                                    key={period.id}
+                                    period={period}
+                                    showAmount={showAmount}
+                                    isEmployee={isEmployee}
+                                />
                             ))
                         )}
                     </TableBody>

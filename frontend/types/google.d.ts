@@ -9,7 +9,7 @@ interface GoogleOAuthTokenResponse {
 }
 
 interface GoogleTokenClient {
-    requestAccessToken: (options?: any) => void;
+    requestAccessToken: (options?: Record<string, unknown>) => void;
 }
 
 interface GoogleAccounts {
@@ -18,7 +18,7 @@ interface GoogleAccounts {
             client_id: string;
             scope: string;
             callback: (response: GoogleOAuthTokenResponse) => void;
-            error_callback?: (error: any) => void;
+            error_callback?: (error: unknown) => void;
         }) => GoogleTokenClient;
     };
 }

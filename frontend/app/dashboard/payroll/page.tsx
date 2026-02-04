@@ -4,7 +4,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { Banknote, Calculator, Plus, Download } from 'lucide-react';
+import { Banknote, Plus, Download } from 'lucide-react';
 import HeaderCard from '@/components/ui/header-card';
 import { PayrollHistoryTable } from '@/components/payroll/PayrollHistoryTable';
 import { toast } from 'sonner';
@@ -153,6 +153,7 @@ export default function PayrollPage() {
                     isLoading={isLoading}
                     showAllStatus={!isEmployee}
                     showAmount={showAmount}
+                    isEmployee={isEmployee}
                 />
             </div>
         </div>

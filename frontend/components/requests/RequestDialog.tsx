@@ -11,7 +11,6 @@ import {
     FileText,
     FileUp,
     CheckCircle2,
-    Briefcase,
     Clock,
     Plane
 } from 'lucide-react';
@@ -68,9 +67,10 @@ export function RequestDialog({ open, onOpenChange, onSuccess }: RequestDialogPr
             onSuccess();
             onOpenChange(false);
             form.reset();
-        } catch (error: any) {
+        } catch (error) {
+            const err = error as { response?: { data?: { message?: string } } };
             console.error('Submission error:', error);
-            toast.error(error.response?.data?.message || 'Failed to submit request');
+            toast.error(err.response?.data?.message || 'Failed to submit request');
         }
     };
 

@@ -24,6 +24,34 @@ interface HeaderCardProps {
   patternText?: string;
 }
 
+// Pattern overlay for pattern background
+const PatternOverlay = () => (
+  <div className="absolute inset-0 opacity-15 pointer-events-none">
+    <div className="absolute inset-0" style={{
+      backgroundImage: `radial-gradient(circle at 25px 25px, white 2%, transparent 2.5%)`,
+      backgroundSize: '50px 50px'
+    }} />
+  </div>
+);
+
+// Text Pattern Overlay (Requested Feature)
+const TextPatternOverlay = ({ text }: { text: string }) => {
+  // Generate large array for full coverage without performance heavy 4000+ nodes
+  const repeats = Array(1500).fill(text);
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-[0.1] select-none">
+      <div className="absolute -inset-[50%] flex flex-wrap content-center justify-center gap-x-3 gap-y-1 -rotate-12 transform scale-125">
+        {repeats.map((t, i) => (
+          <span key={i} className="text-[9px] font-bold text-white whitespace-nowrap tracking-widest uppercase">
+            {t}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const HeaderCard = ({
   title,
   description,
@@ -55,61 +83,6 @@ const HeaderCard = ({
         return `bg-gradient-to-br ${gradientFrom} ${gradientTo} shadow-lg`;
     }
   };
-
-  // Pattern overlay for pattern background
-  const PatternOverlay = () => (
-    <div className="absolute inset-0 opacity-15 pointer-events-none">
-      <div className="absolute inset-0" style={{
-        backgroundImage: `radial-gradient(circle at 25px 25px, white 2%, transparent 2.5%)`,
-        backgroundSize: '50px 50px'
-      }} />
-    </div>
-  );
-
-  // Text Pattern Overlay (Requested Feature)
-  const TextPatternOverlay = ({ text }: { text: string }) => {
-    // Generate large array for full coverage without performance heavy 4000+ nodes
-    const repeats = Array(1500).fill(text);
-
-    return (
-      <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-[0.1] select-none">
-        <div className="absolute -inset-[50%] flex flex-wrap content-center justify-center gap-x-3 gap-y-1 -rotate-12 transform scale-125">
-          {repeats.map((t, i) => (
-            <span key={i} className="text-[9px] font-bold text-white whitespace-nowrap tracking-widest uppercase">
-              {t}
-            </span>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  // Default icon dengan desain yang lebih modern
-  const defaultIcon = (
-    <div className={`flex items-center justify-center rounded-2xl backdrop-blur-sm border border-white/25 shadow-lg ${isCompact
-      ? "h-10 w-10"
-      : isElegant
-        ? "h-16 w-16 rounded-3xl"
-        : "h-14 w-14"
-      } ${backgroundStyle === "glass"
-        ? "bg-white/25"
-        : "bg-white/20"
-      } transition-all duration-300 hover:scale-105 hover:bg-white/25`}>
-      {icon || (
-        <svg
-          className={
-            isCompact ? "h-5 w-5" :
-              isElegant ? "h-7 w-7" : "h-6 w-6"
-          }
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-        </svg>
-      )}
-    </div>
-  );
 
   return (
     <div className="relative overflow-visible">

@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import {
-    Users,
     Plus,
     Search,
     RefreshCcw,
@@ -10,14 +9,10 @@ import {
     Trash2,
     ArrowLeft,
     Database,
-    Network,
     GitGraph,
-    LayoutGrid,
     Building2,
     Briefcase,
     Users2,
-    Eye,
-    MoreVertical,
     ChevronRight
 } from "lucide-react";
 import {
@@ -30,7 +25,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -38,6 +33,7 @@ import { api } from "@/lib/api";
 import Link from "next/link";
 import HeaderCard from "@/components/ui/header-card";
 import { DivisionDialog, DepartmentDialog, SectionDialog } from "@/components/settings/master/OrgStructureDialogs";
+import { Division, Department, Section } from "@/types/master";
 import {
     Tooltip,
     TooltipContent,
@@ -47,16 +43,16 @@ import {
 
 export default function OrgStructurePage() {
     const [activeTab, setActiveTab] = useState("divisions");
-    const [divisions, setDivisions] = useState<any[]>([]);
-    const [departments, setDepartments] = useState<any[]>([]);
-    const [sections, setSections] = useState<any[]>([]);
+    const [divisions, setDivisions] = useState<Division[]>([]);
+    const [departments, setDepartments] = useState<Department[]>([]);
+    const [sections, setSections] = useState<Section[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [isImporting, setIsImporting] = useState(false);
 
     // Dialog states
     const [diagOpen, setDiagOpen] = useState(false);
-    const [selectedData, setSelectedData] = useState<any>(null);
+    const [selectedData, setSelectedData] = useState<Division | Department | Section | null>(null);
 
     const fetchData = async () => {
         setLoading(true);
@@ -69,7 +65,7 @@ export default function OrgStructurePage() {
             if (resDiv.data.success) setDivisions(resDiv.data.data);
             if (resDept.data.success) setDepartments(resDept.data.data);
             if (resSec.data.success) setSections(resSec.data.data);
-        } catch (error) {
+        } catch (_error) {
             toast.error("Gagal mengambil data struktur organisasi");
         } finally {
             setLoading(false);
@@ -89,8 +85,9 @@ export default function OrgStructurePage() {
                 toast.success(`Import selesai: ${stats.divisions.imported} Bagian, ${stats.departments.imported} Dept, ${stats.sections.imported} Seksie`);
                 fetchData();
             }
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || "Gagal mengimport data");
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: { message?: string } } };
+            toast.error(err.response?.data?.message || "Gagal mengimport data");
         } finally {
             setIsImporting(false);
         }
@@ -107,7 +104,7 @@ export default function OrgStructurePage() {
             await api.delete(`/org/${endpoint}/${code}`);
             toast.success(`${type} berhasil dihapus`);
             fetchData();
-        } catch (error) {
+        } catch (_error: unknown) {
             toast.error(`Gagal menghapus ${type}`);
         }
     };
@@ -129,14 +126,14 @@ export default function OrgStructurePage() {
         s.dept?.nmDept?.toLowerCase().includes(search.toLowerCase())
     );
 
-    const getTabIcon = (tab: string) => {
-        switch (tab) {
-            case "divisions": return <Building2 className="h-4 w-4" />;
-            case "departments": return <Briefcase className="h-4 w-4" />;
-            case "sections": return <Users2 className="h-4 w-4" />;
-            default: return <LayoutGrid className="h-4 w-4" />;
-        }
-    };
+    // const getTabIcon = (tab: string) => {
+    //     switch (tab) {
+    //         case "divisions": return <Building2 className="h-4 w-4" />;
+    //         case "departments": return <Briefcase className="h-4 w-4" />;
+    //         case "sections": return <Users2 className="h-4 w-4" />;
+    //         default: return <Building2 className="h-4 w-4" />;
+    //     }
+    // };
 
     return (
         <div className="p-4 md:p-6 md:px-2 space-y-6 w-full max-w-full">
@@ -234,7 +231,7 @@ export default function OrgStructurePage() {
                                     <OrgTable
                                         data={filteredDivisions}
                                         columns={["Kode Bagian", "Nama Bagian", "Keterangan"]}
-                                        onEdit={(d: any) => { setSelectedData(d); setDiagOpen(true); }}
+                                        onEdit={(d: OrgData) => { setSelectedData(d); setDiagOpen(true); }}
                                         onDelete={(code: string) => handleDelete("Bagian", code)}
                                         codeKey="kdBag"
                                         nameKey="nmBag"
@@ -246,7 +243,7 @@ export default function OrgStructurePage() {
                                     <OrgTable
                                         data={filteredDepartments}
                                         columns={["Kode Dept", "Nama Departemen", "Bagian", "Keterangan"]}
-                                        onEdit={(d: any) => { setSelectedData(d); setDiagOpen(true); }}
+                                        onEdit={(d: OrgData) => { setSelectedData(d); setDiagOpen(true); }}
                                         onDelete={(code: string) => handleDelete("Departemen", code)}
                                         codeKey="kdDept"
                                         nameKey="nmDept"
@@ -260,7 +257,7 @@ export default function OrgStructurePage() {
                                     <OrgTable
                                         data={filteredSections}
                                         columns={["Kode Seksie", "Nama Seksie", "Departemen", "Keterangan"]}
-                                        onEdit={(d: any) => { setSelectedData(d); setDiagOpen(true); }}
+                                        onEdit={(d: OrgData) => { setSelectedData(d); setDiagOpen(true); }}
                                         onDelete={(code: string) => handleDelete("Seksie", code)}
                                         codeKey="kdSeksie"
                                         nameKey="nmSeksie"
@@ -277,19 +274,32 @@ export default function OrgStructurePage() {
             </Tabs>
 
             {activeTab === "divisions" && (
-                <DivisionDialog open={diagOpen} onOpenChange={setDiagOpen} data={selectedData} onSuccess={fetchData} />
+                <DivisionDialog open={diagOpen} onOpenChange={setDiagOpen} data={selectedData as Division} onSuccess={fetchData} />
             )}
             {activeTab === "departments" && (
-                <DepartmentDialog open={diagOpen} onOpenChange={setDiagOpen} data={selectedData} onSuccess={fetchData} divisions={divisions} />
+                <DepartmentDialog open={diagOpen} onOpenChange={setDiagOpen} data={selectedData as Department} onSuccess={fetchData} divisions={divisions} />
             )}
             {activeTab === "sections" && (
-                <SectionDialog open={diagOpen} onOpenChange={setDiagOpen} data={selectedData} onSuccess={fetchData} divisions={divisions} departments={departments} />
+                <SectionDialog open={diagOpen} onOpenChange={setDiagOpen} data={selectedData as Section} onSuccess={fetchData} divisions={divisions} departments={departments} />
             )}
         </div>
     );
 }
 
-function OrgTable({ data, columns, onEdit, onDelete, codeKey, nameKey, relationKey, relationSubKey, icon, colorClass }: any) {
+type OrgData = Division | Department | Section;
+
+function OrgTable({ data, columns, onEdit, onDelete, codeKey, nameKey, relationKey, relationSubKey, icon, colorClass }: {
+    data: OrgData[];
+    columns: string[];
+    onEdit: (data: OrgData) => void;
+    onDelete: (code: string) => void;
+    codeKey: string;
+    nameKey: string;
+    relationKey?: string;
+    relationSubKey?: string;
+    icon: React.ReactNode;
+    colorClass: string;
+}) {
     const getColorClasses = () => {
         switch (colorClass) {
             case "indigo": return {
@@ -356,102 +366,105 @@ function OrgTable({ data, columns, onEdit, onDelete, codeKey, nameKey, relationK
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {data.map((item: any, index: number) => (
-                        <TableRow
-                            key={item[codeKey]}
-                            className={`hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-all duration-200 ${index !== data.length - 1 ? 'border-slate-100 dark:border-slate-800' : ''
-                                }`}
-                        >
-                            <TableCell className="py-4">
-                                <div className={`flex items-center justify-center w-10 h-10 rounded-lg ${colors.iconBg}`}>
-                                    {icon}
-                                </div>
-                            </TableCell>
-                            <TableCell className="py-4 pl-0">
-                                <div className="flex items-center gap-3">
-                                    <Badge
-                                        variant="outline"
-                                        className={`font-mono font-bold tracking-wide px-3 py-1.5 ${colors.badge}`}
-                                    >
-                                        {item[codeKey]}
-                                    </Badge>
-                                    <ChevronRight className="h-4 w-4 text-slate-400" />
-                                </div>
-                            </TableCell>
-                            <TableCell className="py-4">
-                                <div className="flex flex-col">
-                                    <span className="font-semibold text-slate-800 dark:text-slate-200">
-                                        {item[nameKey]}
-                                    </span>
-                                    {item.keterangan && (
-                                        <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-1">
-                                            {item.keterangan}
-                                        </span>
-                                    )}
-                                </div>
-                            </TableCell>
-                            {relationKey && (
+                    {data.map((item: Division | Department | Section, index: number) => {
+                        const record = item as unknown as Record<string, unknown>;
+                        return (
+                            <TableRow
+                                key={record[codeKey] as string}
+                                className={`hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-all duration-200 ${index !== data.length - 1 ? 'border-slate-100 dark:border-slate-800' : ''
+                                    }`}
+                            >
                                 <TableCell className="py-4">
-                                    {item[relationKey]?.[relationSubKey] ? (
-                                        <Badge
-                                            variant="secondary"
-                                            className={`px-3 py-1.5 font-medium ${colors.relationBadge}`}
-                                        >
-                                            {item[relationKey][relationSubKey]}
-                                        </Badge>
-                                    ) : (
-                                        <span className="text-slate-400 italic text-sm">-</span>
-                                    )}
+                                    <div className={`flex items-center justify-center w-10 h-10 rounded-lg ${colors.iconBg}`}>
+                                        {icon}
+                                    </div>
                                 </TableCell>
-                            )}
-                            <TableCell className="py-4 max-w-[250px]">
-                                <p className="text-slate-600 dark:text-slate-400 text-sm line-clamp-2">
-                                    {item.keterangan || (
-                                        <span className="text-slate-400 italic">Tidak ada keterangan</span>
-                                    )}
-                                </p>
-                            </TableCell>
-                            <TableCell className="py-4 text-right">
-                                <div className="flex items-center justify-end gap-1">
-                                    <TooltipProvider>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => onEdit(item)}
-                                                    className={`h-9 w-9 rounded-lg transition-all hover:scale-105 ${colors.buttonEdit}`}
-                                                >
-                                                    <Edit2 className="h-4 w-4" />
-                                                </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                <p>Edit data</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
+                                <TableCell className="py-4 pl-0">
+                                    <div className="flex items-center gap-3">
+                                        <Badge
+                                            variant="outline"
+                                            className={`font-mono font-bold tracking-wide px-3 py-1.5 ${colors.badge}`}
+                                        >
+                                            {String(record[codeKey])}
+                                        </Badge>
+                                        <ChevronRight className="h-4 w-4 text-slate-400" />
+                                    </div>
+                                </TableCell>
+                                <TableCell className="py-4 pl-0">
+                                    <div className="flex flex-col">
+                                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                                            {String(record[nameKey])}
+                                        </span>
+                                        {item.keterangan && (
+                                            <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-1">
+                                                {item.keterangan}
+                                            </span>
+                                        )}
+                                    </div>
+                                </TableCell>
+                                {relationKey && relationSubKey && (
+                                    <TableCell className="py-4">
+                                        {(record[relationKey as string] as Record<string, unknown> | undefined)?.[relationSubKey as string] ? (
+                                            <Badge
+                                                variant="secondary"
+                                                className={`px-3 py-1.5 font-medium ${colors.relationBadge}`}
+                                            >
+                                                {String((record[relationKey as string] as Record<string, unknown> | undefined)?.[relationSubKey as string])}
+                                            </Badge>
+                                        ) : (
+                                            <span className="text-slate-400 italic text-sm">-</span>
+                                        )}
+                                    </TableCell>
+                                )}
+                                <TableCell className="py-4 max-w-[250px]">
+                                    <p className="text-slate-600 dark:text-slate-400 text-sm line-clamp-2">
+                                        {item.keterangan || (
+                                            <span className="text-slate-400 italic">Tidak ada keterangan</span>
+                                        )}
+                                    </p>
+                                </TableCell>
+                                <TableCell className="py-4 text-right">
+                                    <div className="flex items-center justify-end gap-1">
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => onEdit(item)}
+                                                        className={`h-9 w-9 rounded-lg transition-all hover:scale-105 ${colors.buttonEdit}`}
+                                                    >
+                                                        <Edit2 className="h-4 w-4" />
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>Edit data</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
 
-                                    <TooltipProvider>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => onDelete(item[codeKey])}
-                                                    className={`h-9 w-9 rounded-lg transition-all hover:scale-105 ${colors.buttonDelete}`}
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                <p>Hapus data</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
-                                </div>
-                            </TableCell>
-                        </TableRow>
-                    ))}
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => onDelete(record[codeKey] as string)}
+                                                        className={`h-9 w-9 rounded-lg transition-all hover:scale-105 ${colors.buttonDelete}`}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>Hapus data</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        );
+                    })}
                 </TableBody>
             </Table>
 

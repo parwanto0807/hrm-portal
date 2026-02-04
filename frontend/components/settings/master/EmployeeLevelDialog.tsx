@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { EmployeeLevel } from "@/types/master";
 
 const formSchema = z.object({
     kdPkt: z.string().min(1, "Kode wajib diisi").max(5, "Maksimal 5 karakter"),
@@ -35,7 +36,7 @@ const formSchema = z.object({
 interface EmployeeLevelDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    level?: any; // If editing
+    level?: EmployeeLevel | null; // If editing
     onSuccess: () => void;
 }
 
@@ -77,8 +78,9 @@ export function EmployeeLevelDialog({ open, onOpenChange, level, onSuccess }: Em
             }
             onSuccess();
             onOpenChange(false);
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || "Gagal menyimpan data");
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: { message?: string } } };
+            toast.error(err.response?.data?.message || "Gagal menyimpan data");
         }
     }
 

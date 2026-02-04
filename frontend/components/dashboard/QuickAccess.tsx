@@ -107,7 +107,8 @@ export const QuickAccess = () => {
     const router = useRouter();
 
     useEffect(() => {
-        setIsMounted(true);
+        const timer = setTimeout(() => setIsMounted(true), 0);
+        return () => clearTimeout(timer);
     }, []);
 
     const handleNavigation = (href: string | null) => {

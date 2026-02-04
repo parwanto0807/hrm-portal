@@ -14,31 +14,17 @@ import {
     BreadcrumbPage,
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Badge } from "@/components/ui/badge"; // Import Badge
+import { Badge } from "@/components/ui/badge";
 import { Building2, AlertCircle, ChevronRight } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import CompanyForm from "@/components/settings/company/CompanyFormWithValidation";
 import HeaderCard from "@/components/ui/header-card";
-import SearchInput from "@/components/ui/SearchInput";
+import { CompanyData } from "@/types/company/companyType";
 
 export default function CompanyPage() {
-    const [data, setData] = useState<any>(null);
+    const [data, setData] = useState<CompanyData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
-    // Search state (placeholder functionality)
-    const [searchTerm, setSearchTerm] = useState("");
-    const [isSearching, setIsSearching] = useState(false);
-
-    const handleSearch = (term: string) => {
-        setSearchTerm(term);
-        setIsSearching(true);
-        // Simulate search delay
-        setTimeout(() => {
-            setIsSearching(false);
-        }, 500);
-        console.log("Searching for:", term);
-    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -133,7 +119,7 @@ export default function CompanyPage() {
             </div>
 
             {/* Form Section */}
-            <CompanyForm initialData={data} />
+            <CompanyForm initialData={data || undefined} />
         </div>
     );
 }

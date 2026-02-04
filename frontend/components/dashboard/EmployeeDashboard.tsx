@@ -6,8 +6,6 @@ import {
     CalendarCheck,
     FileText,
     User,
-    LogOut,
-    Briefcase,
     AlertCircle,
     Bell,
     ChevronRight,
@@ -16,8 +14,8 @@ import {
     X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { useAuth } from "@/app/hooks/useAuth";
 import Image from "next/image";
 import { cn } from "@/lib/utils";

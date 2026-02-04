@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import {
     RefreshCcw,
@@ -29,10 +28,20 @@ interface PayrollImportDialogProps {
     onOpenChange: (open: boolean) => void;
 }
 
+interface ImportStat {
+    total: number;
+    imported: number;
+    failed: number;
+}
+
+interface ImportStats {
+    [key: string]: ImportStat;
+}
+
 export function PayrollImportDialog({ open, onOpenChange }: PayrollImportDialogProps) {
     const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
     const [progress, setProgress] = useState(0);
-    const [stats, setStats] = useState<any>(null);
+    const [stats, setStats] = useState<ImportStats | null>(null);
     const [isConnecting, setIsConnecting] = useState(false);
     const [mysqlStatus, setMysqlStatus] = useState<"online" | "offline">("offline");
     const [abortController, setAbortController] = useState<AbortController | null>(null);
@@ -43,7 +52,7 @@ export function PayrollImportDialog({ open, onOpenChange }: PayrollImportDialogP
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002/api'}/mysql/test`);
             const data = await response.json();
             setMysqlStatus(data.success ? "online" : "offline");
-        } catch (error) {
+        } catch (error: unknown) {
             setMysqlStatus("offline");
         } finally {
             setIsConnecting(false);
@@ -101,17 +110,18 @@ export function PayrollImportDialog({ open, onOpenChange }: PayrollImportDialogP
             } else {
                 throw new Error(data.message);
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             clearInterval(progressInterval);
 
-            if (error.name === 'AbortError') {
+            const err = error as Error;
+            if (err.name === 'AbortError') {
                 // User cancelled, already handled in handleCancel
                 return;
             }
 
             setStatus("error");
             setProgress(0);
-            toast.error(`Gagal import: ${error.message}`);
+            toast.error(`Gagal import: ${err.message}`);
         } finally {
             setAbortController(null);
         }
@@ -219,7 +229,7 @@ export function PayrollImportDialog({ open, onOpenChange }: PayrollImportDialogP
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">
-                                {Object.entries(stats).map(([key, val]: [string, any]) => (
+                                {Object.entries(stats).map(([key, val]) => (
                                     <div key={key} className="p-3 border rounded-lg bg-white dark:bg-slate-900">
                                         <p className="text-[10px] uppercase text-muted-foreground font-bold">{key}</p>
                                         <div className="flex items-end justify-between mt-1">

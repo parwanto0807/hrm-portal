@@ -35,14 +35,15 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import Link from "next/link";
 import { PositionDialog } from "@/components/settings/master/PositionDialog";
+import { Position } from "@/types/master";
 import HeaderCard from "@/components/ui/header-card";
 
 export default function PositionPage() {
-    const [positions, setPositions] = useState<any[]>([]);
+    const [positions, setPositions] = useState<Position[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [selectedPosition, setSelectedPosition] = useState<any>(null);
+    const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
     const [isImporting, setIsImporting] = useState(false);
 
     const fetchPositions = async () => {
@@ -52,7 +53,7 @@ export default function PositionPage() {
             if (response.data.success) {
                 setPositions(response.data.data);
             }
-        } catch (error) {
+        } catch (_error) {
             toast.error("Gagal mengambil data jabatan");
         } finally {
             setLoading(false);
@@ -69,7 +70,7 @@ export default function PositionPage() {
             await api.delete(`/positions/${code}`);
             toast.success("Jabatan berhasil dihapus");
             fetchPositions();
-        } catch (error) {
+        } catch (_error) {
             toast.error("Gagal menghapus jabatan");
         }
     };
@@ -82,8 +83,9 @@ export default function PositionPage() {
                 toast.success(`Berhasil mengimport ${response.data.stats.imported} jabatan`);
                 fetchPositions();
             }
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || "Gagal mengimport data dari MySQL");
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: { message?: string } } };
+            toast.error(err.response?.data?.message || "Gagal mengimport data dari MySQL");
         } finally {
             setIsImporting(false);
         }

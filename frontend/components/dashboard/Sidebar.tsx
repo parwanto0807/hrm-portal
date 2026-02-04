@@ -10,17 +10,17 @@ import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
 type SidebarProps = {
-  role: "super" | "admin" | "pic" | "user";
   className?: string;
 };
 
-export function Sidebar({ role, className }: SidebarProps) {
+export function Sidebar({ className }: SidebarProps) {
   const sidebar = useStore(useSidebarToggle, (state) => state);
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   if (!sidebar) return null;
@@ -72,7 +72,6 @@ export function Sidebar({ role, className }: SidebarProps) {
         <div className="flex-1 px-1 overflow-y-auto">
           <Menu
             isOpen={sidebar.isOpen}
-            role={role}
             theme={theme === "dark" || theme === "light" ? theme : "light"}
           />
         </div>

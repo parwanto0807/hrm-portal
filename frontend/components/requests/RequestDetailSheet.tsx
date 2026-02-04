@@ -13,10 +13,7 @@ import { format } from "date-fns";
 import { Pengajuan, RequestStatus } from "@/types/request";
 import {
     Calendar,
-    Clock,
-    FileText,
     User,
-    MapPin,
     CheckCircle2,
     XCircle,
     Info,
@@ -113,7 +110,7 @@ export function RequestDetailSheet({ request, open, onOpenChange }: RequestDetai
                             <div className="space-y-1 pt-2">
                                 <label className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Reason / Description</label>
                                 <div className="text-xs font-medium italic text-slate-600 dark:text-slate-400 leading-relaxed bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                                    "{request.reason}"
+                                    &quot;{request.reason}&quot;
                                 </div>
                             </div>
                         </section>
@@ -129,7 +126,7 @@ export function RequestDetailSheet({ request, open, onOpenChange }: RequestDetai
                             <div className="space-y-4">
                                 {[1, 2, 3].map((step) => {
                                     const log = request.approvals?.find(l => l.level === step);
-                                    let stepName = step === 1 ? 'Atasan 1' : step === 2 ? 'Atasan 2' : 'HRD Manager';
+                                    const stepName = step === 1 ? 'Atasan 1' : step === 2 ? 'Atasan 2' : 'HRD Manager';
 
                                     return (
                                         <div key={step} className="relative pl-6">

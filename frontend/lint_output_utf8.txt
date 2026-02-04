@@ -1,0 +1,409 @@
+﻿
+> frontend@0.1.0 lint
+> eslint
+
+
+D:\Project WebApp\project-hrm\frontend\app\dashboard\employees\page.tsx
+  7:5   warning  'Briefcase' is defined but never used      @typescript-eslint/no-unused-vars
+  7:16  warning  'Building2' is defined but never used      @typescript-eslint/no-unused-vars
+  7:27  warning  'Calendar' is defined but never used       @typescript-eslint/no-unused-vars
+  7:37  warning  'Phone' is defined but never used          @typescript-eslint/no-unused-vars
+  7:44  warning  'Mail' is defined but never used           @typescript-eslint/no-unused-vars
+  8:5   warning  'CreditCard' is defined but never used     @typescript-eslint/no-unused-vars
+  8:17  warning  'Banknote' is defined but never used       @typescript-eslint/no-unused-vars
+  8:27  warning  'AlertTriangle' is defined but never used  @typescript-eslint/no-unused-vars
+  8:66  warning  'Upload' is defined but never used         @typescript-eslint/no-unused-vars
+
+D:\Project WebApp\project-hrm\frontend\app\dashboard\leaves\page.tsx
+   9:5   warning  'Briefcase' is defined but never used     @typescript-eslint/no-unused-vars
+  75:25  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  88:25  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Project WebApp\project-hrm\frontend\app\dashboard\payroll\[id]\page.tsx
+  52:64  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  66:65  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  67:66  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  68:66  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  69:94  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Project WebApp\project-hrm\frontend\app\dashboard\payroll\create\page.tsx
+  16:5   warning  'AlertCircle' is defined but never used   @typescript-eslint/no-unused-vars
+  49:5   warning  'CardFooter' is defined but never used    @typescript-eslint/no-unused-vars
+  80:25  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Project WebApp\project-hrm\frontend\app\dashboard\payroll\page.tsx
+  7:20  warning  'Calculator' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Project WebApp\project-hrm\frontend\app\dashboard\profile\page.tsx
+   10:28   warning  'Calendar' is defined but never used                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+   40:123  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   93:38   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  121:44   warning  'error' is assigned a value but never used                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+  128:27   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  186:45   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Project WebApp\project-hrm\frontend\app\dashboard\settings\documentation\page.tsx
+  24:10  warning  'ScrollArea' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Project WebApp\project-hrm\frontend\app\dashboard\settings\master\bank-payroll\page.tsx
+  25:52  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars
+  40:40  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  44:54  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  54:18  warning  'error' is defined but never used            @typescript-eslint/no-unused-vars
+  71:18  warning  'error' is defined but never used            @typescript-eslint/no-unused-vars
+  84:25  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+
+D:\Project WebApp\project-hrm\frontend\app\dashboard\settings\master\company\page.tsx
+  22:8   warning  'SearchInput' is defined but never used            @typescript-eslint/no-unused-vars
+  25:38  error    Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+  30:12  warning  'searchTerm' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  31:12  warning  'isSearching' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  33:11  warning  'handleSearch' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\Project WebApp\project-hrm\frontend\app\dashboard\settings\master\employee-level\page.tsx
+   9:5   warning  'RefreshCcw' is defined but never used    @typescript-eslint/no-unused-vars
+  32:42  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  36:56  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  46:18  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  63:18  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  76:25  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Project WebApp\project-hrm\frontend\app\dashboard\settings\master\factory\page.tsx
+   9:5   warning  'RefreshCcw' is defined but never used    @typescript-eslint/no-unused-vars
+  32:48  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  36:60  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  46:18  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  63:18  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  76:25  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Project WebApp\project-hrm\frontend\app\dashboard\settings\master\organization-structure\page.tsx
+    5:5    warning  'Users' is defined but never used                @typescript-eslint/no-unused-vars
+   13:5    warning  'Network' is defined but never used              @typescript-eslint/no-unused-vars
+   19:5    warning  'Eye' is defined but never used                  @typescript-eslint/no-unused-vars
+   20:5    warning  'MoreVertical' is defined but never used         @typescript-eslint/no-unused-vars
+   33:29   warning  'CardHeader' is defined but never used           @typescript-eslint/no-unused-vars
+   33:41   warning  'CardTitle' is defined but never used            @typescript-eslint/no-unused-vars
+   50:48   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   51:52   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   52:46   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   59:54   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   72:18   warning  'error' is defined but never used                @typescript-eslint/no-unused-vars
+   92:25   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  110:18   warning  'error' is defined but never used                @typescript-eslint/no-unused-vars
+  132:11   warning  'getTabIcon' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  237:53   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  249:53   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  263:53   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  292:121  error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  359:38   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+
+D:\Project WebApp\project-hrm\frontend\app\dashboard\settings\master\position\page.tsx
+  41:48  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  45:62  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  55:18  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  72:18  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  85:25  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Project WebApp\project-hrm\frontend\components\ErrorBoundary.tsx
+  26:48  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Project WebApp\project-hrm\frontend\components\NotificationDropdown.tsx
+   76:8   warning  React Hook useEffect has a missing dependency: 'sampleNotifications'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+   89:11  warning  'getNotificationIcon' is assigned a value but never used                                                                @typescript-eslint/no-unused-vars
+  106:11  warning  'getPriorityClass' is assigned a value but never used                                                                   @typescript-eslint/no-unused-vars
+
+D:\Project WebApp\project-hrm\frontend\components\PWAInstallPrompt.tsx
+   6:58  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  11:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Project WebApp\project-hrm\frontend\components\UserProfileDropdown.tsx
+   92:29  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  142:41  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Project WebApp\project-hrm\frontend\components\auth\LoginForm.tsx
+  116:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  173:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Project WebApp\project-hrm\frontend\components\dashboard\ChartSummary.tsx
+   68:52   error    Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+   74:42   error    Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+   92:121  error    Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+  101:34   error    Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+  106:34   error    Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+  193:17   warning  'type' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  307:56   error    Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+  369:75   error    Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+  508:91   error    Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+
+D:\Project WebApp\project-hrm\frontend\components\dashboard\EmployeeDashboard.tsx
+   9:5   warning  'LogOut' is defined but never used             @typescript-eslint/no-unused-vars
+  10:5   warning  'Briefcase' is defined but never used          @typescript-eslint/no-unused-vars
+  19:29  warning  'CardHeader' is defined but never used         @typescript-eslint/no-unused-vars
+  19:41  warning  'CardTitle' is defined but never used          @typescript-eslint/no-unused-vars
+  19:52  warning  'CardDescription' is defined but never used    @typescript-eslint/no-unused-vars
+  20:60  warning  'DialogDescription' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Project WebApp\project-hrm\frontend\components\dashboard\Header.tsx
+  62:39  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  69:39  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Project WebApp\project-hrm\frontend\components\dashboard\RecentActivity.tsx
+  4:62  warning  'FileText' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Project WebApp\project-hrm\frontend\components\dashboard\SidebarOld.tsx
+   41:9   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\Project WebApp\project-hrm\frontend\components\dashboard\SidebarOld.tsx:41:9
+  39 |
+  40 |     useEffect(() => {
+> 41 |         setMounted(true);
+     |         ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  42 |     }, []);
+  43 |
+  44 |     // Helper to check active state  react-hooks/set-state-in-effect
+  106:29  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    @next/next/no-img-element
+
+D:\Project WebApp\project-hrm\frontend\components\dashboard\menu.tsx
+    5:10  warning  'usePathname' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+   27:3   error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  285:32  warning  'role' is defined but never used                                                                                     @typescript-eslint/no-unused-vars
+
+D:\Project WebApp\project-hrm\frontend\components\employees\EmployeeDetailSheet.tsx
+   12:22   warning  'Building2' is defined but never used          @typescript-eslint/no-unused-vars
+   12:43   warning  'Phone' is defined but never used              @typescript-eslint/no-unused-vars
+   12:50   warning  'Mail' is defined but never used               @typescript-eslint/no-unused-vars
+  266:59   error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  298:53   warning  'copyable' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  298:109  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  319:49   error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+
+D:\Project WebApp\project-hrm\frontend\components\employees\EmployeeDialog.tsx
+   57:11   warning  'queryClient' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+  465:134  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+D:\Project WebApp\project-hrm\frontend\components\employees\EmployeeDialog.tsx:465:134
+  463 |                                                         <SelectContent className="dark:bg-slate-900 dark:border-slate-800">
+  464 |                                                             <SelectItem value="none" className="font-bold text-slate-400 italic">No Second Superior</SelectItem>
+> 465 |                                                             {employeesList.filter(e => e.emplId !== employee?.emplId && e.emplId !== form.watch('superiorId')).map((emp) => (
+      |                                                                                                                                      ^^^^ React Hook Form's `useForm()` API returns a `watch()` function which cannot be memoized safely.
+  466 |                                                                 <SelectItem key={emp.emplId} value={emp.emplId} className="font-bold">
+  467 |                                                                     {emp.nama} ({emp.emplId})
+  468 |                                                                 </SelectItem>  react-hooks/incompatible-library
+
+D:\Project WebApp\project-hrm\frontend\components\layout\navbar.tsx
+   30:15  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  182:49  error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free                                                                                                                                                                      @typescript-eslint/ban-ts-comment
+  217:45  error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free                                                                                                                                                                      @typescript-eslint/ban-ts-comment
+  374:45  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Project WebApp\project-hrm\frontend\components\requests\RequestDetailSheet.tsx
+   16:5   warning  'Clock' is defined but never used                    @typescript-eslint/no-unused-vars
+   17:5   warning  'FileText' is defined but never used                 @typescript-eslint/no-unused-vars
+   19:5   warning  'MapPin' is defined but never used                   @typescript-eslint/no-unused-vars
+   22:5   warning  'Info' is defined but never used                     @typescript-eslint/no-unused-vars
+  132:41  error    'stepName' is never reassigned. Use 'const' instead  prefer-const
+
+D:\Project WebApp\project-hrm\frontend\components\requests\RequestDialog.tsx
+  14:5   warning  'Briefcase' is defined but never used     @typescript-eslint/no-unused-vars
+  71:25  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Project WebApp\project-hrm\frontend\components\requests\RequestTable.tsx
+  231:81  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Project WebApp\project-hrm\frontend\components\settings\MysqlOldDialog.tsx
+   45:48  error    Unexpected any. Specify a different type                                                                            @typescript-eslint/no-explicit-any
+  117:18  warning  'error' is defined but never used                                                                                   @typescript-eslint/no-unused-vars
+  150:18  warning  'error' is defined but never used                                                                                   @typescript-eslint/no-unused-vars
+  165:8   warning  React Hook useEffect has a missing dependency: 'checkConnection'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  321:95  error    Unexpected any. Specify a different type                                                                            @typescript-eslint/no-explicit-any
+
+D:\Project WebApp\project-hrm\frontend\components\settings\PayrollImportDialog.tsx
+   13:10  warning  'ScrollArea' is defined but never used    @typescript-eslint/no-unused-vars
+   35:40  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   46:18  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  104:25  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  222:82  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Project WebApp\project-hrm\frontend\components\settings\company\CompanyFormWithValidation.tsx
+   14:17  warning  'Link' is defined but never used       @typescript-eslint/no-unused-vars
+   19:10  warning  'Separator' is defined but never used  @typescript-eslint/no-unused-vars
+  987:86  warning  'e' is defined but never used          @typescript-eslint/no-unused-vars
+
+D:\Project WebApp\project-hrm\frontend\components\settings\master\BankDialog.tsx
+  36:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  75:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Project WebApp\project-hrm\frontend\components\settings\master\EmployeeLevelDialog.tsx
+  38:13  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  80:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Project WebApp\project-hrm\frontend\components\settings\master\FactoryDialog.tsx
+  38:15  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  80:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Project WebApp\project-hrm\frontend\components\settings\master\OrgStructureDialogs.tsx
+    3:28  warning  'useState' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+   10:5   warning  'DialogDescription' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+  230:89  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+D:\Project WebApp\project-hrm\frontend\components\settings\master\OrgStructureDialogs.tsx:230:89
+  228 |     }, [data, form, open]);
+  229 |
+> 230 |     const filteredDepartmentsLabels = departments.filter((d: Department) => d.kdBag === form.watch("kdBag"));
+      |                                                                                         ^^^^ React Hook Form's `useForm()` API returns a `watch()` function which cannot be memoized safely.
+  231 |
+  232 |     const onSubmit = async (values: z.infer<typeof sectionSchema>) => {
+  233 |         try {  react-hooks/incompatible-library
+
+D:\Project WebApp\project-hrm\frontend\components\settings\master\PositionDialog.tsx
+   44:16  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   50:26  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  104:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  120:71  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  122:58  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  135:58  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  149:62  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  162:62  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  177:62  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  190:62  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  205:62  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  218:62  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  232:58  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Project WebApp\project-hrm\frontend\lib\actions\companyAction.ts
+   45:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   80:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  107:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Project WebApp\project-hrm\frontend\lib\generatePayslipPDF.ts
+   5:11  warning  'PayslipData' is defined but never used             @typescript-eslint/no-unused-vars
+  44:42  error    Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+  96:17  error    'xOffset' is never reassigned. Use 'const' instead  prefer-const
+
+D:\Project WebApp\project-hrm\frontend\lib\menu-list.ts
+   11:8   warning  'LucideIcon' is defined but never used                                                                               @typescript-eslint/no-unused-vars
+   16:3   warning  'MenuItem' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+   17:3   warning  'SubmenuItem' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+   46:11  error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+   55:11  error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+   64:11  error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+   73:11  error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+   82:11  error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  104:11  error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  123:9   error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  125:9   error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+
+D:\Project WebApp\project-hrm\frontend\public\sw.js
+  1:156    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:209    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:626    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:10746  warning  'e' is defined but never used                                          @typescript-eslint/no-unused-vars
+
+D:\Project WebApp\project-hrm\frontend\public\swe-worker-5c72df51bb1f6ee0.js
+  1:700  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+D:\Project WebApp\project-hrm\frontend\public\workbox-f1770938.js
+  1:49     warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:87     warning  't' is defined but never used                                          @typescript-eslint/no-unused-vars
+  1:211    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:257    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:298    warning  't' is defined but never used                                          @typescript-eslint/no-unused-vars
+  1:381    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:642    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:813    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:989    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:1093   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:1738   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:2263   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:3058   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:3102   warning  't' is defined but never used                                          @typescript-eslint/no-unused-vars
+  1:3598   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:3727   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:7052   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:7234   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:7954   warning  'i' is defined but never used                                          @typescript-eslint/no-unused-vars
+  1:7962   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:8066   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:8368   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:9440   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:9550   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:9566   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:9627   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:9962   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:10038  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:10065  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:10081  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:10163  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:10963  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:11007  warning  't' is defined but never used                                          @typescript-eslint/no-unused-vars
+  1:11122  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:11194  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:11301  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:11382  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:11623  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:11941  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:12060  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:12464  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:12684  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:13012  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:13272  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:13319  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:13367  warning  't' is defined but never used                                          @typescript-eslint/no-unused-vars
+  1:14423  warning  't' is defined but never used                                          @typescript-eslint/no-unused-vars
+  1:14555  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:14599  warning  't' is defined but never used                                          @typescript-eslint/no-unused-vars
+  1:15097  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:15191  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:15404  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:15514  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:16025  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:16057  warning  't' is defined but never used                                          @typescript-eslint/no-unused-vars
+  1:16165  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:16591  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:16958  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:17076  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:17178  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:17458  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:17719  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:17903  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:19089  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:20040  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:20129  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:20260  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:20317  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:20514  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:20635  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:20768  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:20988  warning  't' is defined but never used                                          @typescript-eslint/no-unused-vars
+  1:21080  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:21657  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:21768  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:21988  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:22227  warning  'e' is defined but never used                                          @typescript-eslint/no-unused-vars
+  1:22385  warning  's' is defined but never used                                          @typescript-eslint/no-unused-vars
+  1:22450  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:22748  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:22962  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1:23349  warning  't' is defined but never used                                          @typescript-eslint/no-unused-vars
+  1:23479  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+D:\Project WebApp\project-hrm\frontend\types\google.d.ts
+  12:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  21:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Project WebApp\project-hrm\frontend\types\menu.ts
+  12:11  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+Γ£û 272 problems (100 errors, 172 warnings)
+  2 errors and 0 warnings potentially fixable with the `--fix` option.
+

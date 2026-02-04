@@ -31,7 +31,8 @@ export default function ClientProviders({
     }));
 
     useEffect(() => {
-        setMounted(true);
+        const timer = setTimeout(() => setMounted(true), 0);
+        return () => clearTimeout(timer);
     }, []);
 
     // Render minimal version sebelum mounted

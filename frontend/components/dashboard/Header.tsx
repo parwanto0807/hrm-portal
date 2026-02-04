@@ -14,7 +14,8 @@ export const DashboardHeader = () => {
 
     // 3. Pastikan komponen sudah mounted sebelum menampilkan data user
     useEffect(() => {
-        setMounted(true);
+        const timer = setTimeout(() => setMounted(true), 0);
+        return () => clearTimeout(timer);
     }, []);
 
     // Helper untuk tanggal hari ini
@@ -57,19 +58,15 @@ export const DashboardHeader = () => {
                     <h1 className="text-xl md:text-3xl font-bold text-gray-900 dark:text-white">
                         Selamat Datang,{' '}
                         <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                            {/* 4. Tampilkan Nama User Real */}
                             {user?.name || 'User'}
                         </span>{' '}
                         👋
                     </h1>
                     <p className="text-gray-600 dark:text-gray-400 mt-2 flex items-center gap-2 text-sm md:text-base">
                         <span className="font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded text-xs uppercase tracking-wide">
-                            {/* 5. Tampilkan Role Real */}
                             {user?.role || 'Employee'}
                         </span>
                         <span>•</span>
-                        {/* Karena lastLogin biasanya tidak disimpan di token JWT sederhana, 
-                            kita tampilkan sesi aktif saat ini atau tanggal hari ini */}
                         <span>Session started: {timeNow}</span>
                     </p>
                 </motion.div>

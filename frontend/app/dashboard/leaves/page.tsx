@@ -6,7 +6,6 @@ import {
     Plus,
     FileText,
     CheckSquare,
-    Briefcase,
     LayoutDashboard,
     History
 } from 'lucide-react';
@@ -72,9 +71,10 @@ export default function LeavesPage() {
             toast.success(`Request ${action === 'APPROVE' ? 'approved' : 'rejected'} successfully`);
             refetchPending();
             refetchHistory();
-        } catch (error: any) {
-            console.error('Approval error:', error);
-            toast.error(error.response?.data?.message || 'Failed to process approval');
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: { message?: string } }; message: string };
+            console.error('Approval error:', err);
+            toast.error(err.response?.data?.message || 'Failed to process approval');
         }
     };
 
@@ -85,9 +85,10 @@ export default function LeavesPage() {
             await api.delete(`/requests/${request.id}`);
             toast.success('Application cancelled successfully');
             refetchMy();
-        } catch (error: any) {
-            console.error('Cancel error:', error);
-            toast.error(error.response?.data?.message || 'Failed to cancel application');
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: { message?: string } }; message: string };
+            console.error('Cancel error:', err);
+            toast.error(err.response?.data?.message || 'Failed to cancel application');
         }
     };
 

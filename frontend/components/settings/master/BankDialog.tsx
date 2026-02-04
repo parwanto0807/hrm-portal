@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { Bank } from "@/types/master";
 
 const formSchema = z.object({
     bankCode: z.string().min(1, "Kode Bank wajib diisi").max(2, "Maksimal 2 karakter"),
@@ -33,7 +34,7 @@ const formSchema = z.object({
 interface BankDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    bank?: any; // If editing
+    bank?: Bank | null; // If editing
     onSuccess: () => void;
 }
 
@@ -72,8 +73,9 @@ export function BankDialog({ open, onOpenChange, bank, onSuccess }: BankDialogPr
             }
             onSuccess();
             onOpenChange(false);
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || "Gagal menyimpan data");
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: { message?: string } } };
+            toast.error(err.response?.data?.message || "Gagal menyimpan data");
         }
     }
 

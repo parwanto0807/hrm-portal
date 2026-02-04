@@ -7,33 +7,14 @@ import {
   BarChart3,
   Bell,
   Settings,
-  HelpCircle,
-  type LucideIcon
+  HelpCircle
 } from "lucide-react";
 
-type Submenu = {
-  href: string;
-  label: string;
-  active?: boolean;
-  disabled?: boolean;
-};
+import {
+  MenuGroup
+} from "@/types/menu";
 
-type Menu = {
-  href: string;
-  label: string;
-  active?: boolean;
-  disabled?: boolean;
-  icon: LucideIcon;
-  submenus: Submenu[];
-};
-
-type Group = {
-  groupLabel: string;
-  allowedRoles: string[];
-  menus: Menu[];
-};
-
-export function getMenuList(pathname: string, role: string): Group[] {
+export function getMenuList(pathname: string, role: string): MenuGroup[] {
   const userRole = role?.toUpperCase() || "GUEST";
 
   const isActive = (path: string) => {
@@ -41,7 +22,7 @@ export function getMenuList(pathname: string, role: string): Group[] {
     return pathname.startsWith(path);
   };
 
-  const allGroups: Group[] = [
+  const allGroups: MenuGroup[] = [
     {
       groupLabel: "Menu Utama",
       allowedRoles: ["SUPER_ADMIN", "ADMIN", "HR_MANAGER", "DEPARTMENT_MANAGER", "EMPLOYEE", "GUEST"],
@@ -59,7 +40,6 @@ export function getMenuList(pathname: string, role: string): Group[] {
           active: isActive("/dashboard/employees"),
           icon: Users,
           submenus: [],
-          // @ts-ignore - added custom property for filtering
           roles: ["SUPER_ADMIN", "ADMIN", "HR_MANAGER"]
         },
         {
@@ -68,7 +48,6 @@ export function getMenuList(pathname: string, role: string): Group[] {
           active: isActive("/dashboard/attendance"),
           icon: Calendar,
           submenus: [],
-          // @ts-ignore
           roles: ["SUPER_ADMIN", "ADMIN", "HR_MANAGER", "DEPARTMENT_MANAGER", "EMPLOYEE"]
         },
         {
@@ -77,7 +56,6 @@ export function getMenuList(pathname: string, role: string): Group[] {
           active: isActive("/dashboard/leaves"),
           icon: FileText,
           submenus: [],
-          // @ts-ignore
           roles: ["SUPER_ADMIN", "ADMIN", "HR_MANAGER", "DEPARTMENT_MANAGER", "EMPLOYEE"]
         },
         {
@@ -86,7 +64,6 @@ export function getMenuList(pathname: string, role: string): Group[] {
           active: isActive("/dashboard/payroll"),
           icon: DollarSign,
           submenus: [],
-          // @ts-ignore
           roles: ["SUPER_ADMIN", "ADMIN", "HR_MANAGER", "EMPLOYEE"]
         },
         {
@@ -95,7 +72,6 @@ export function getMenuList(pathname: string, role: string): Group[] {
           active: isActive("/dashboard/reports"),
           icon: BarChart3,
           submenus: [],
-          // @ts-ignore
           roles: ["SUPER_ADMIN", "ADMIN", "HR_MANAGER"]
         }
       ]
@@ -117,7 +93,6 @@ export function getMenuList(pathname: string, role: string): Group[] {
           active: isActive("/dashboard/settings"),
           icon: Settings,
           submenus: [],
-          // @ts-ignore
           roles: ["SUPER_ADMIN", "ADMIN"]
         },
         {
@@ -131,15 +106,12 @@ export function getMenuList(pathname: string, role: string): Group[] {
     }
   ];
 
-  // Filter groups and their menus based on role
   return allGroups
-    .filter(group => group.allowedRoles.includes(userRole))
+    .filter(group => !group.allowedRoles || group.allowedRoles.includes(userRole))
     .map(group => ({
       ...group,
       menus: group.menus.filter(menu => {
-        // @ts-ignore
         if (!menu.roles) return true; // Default to all if not specified
-        // @ts-ignore
         return menu.roles.includes(userRole);
       })
     }));

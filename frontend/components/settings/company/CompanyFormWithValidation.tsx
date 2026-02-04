@@ -11,12 +11,11 @@ import { useRouter } from "next/navigation";
 import {
     ArrowLeft, Save, Building2, MapPin, Phone, FileText,
     Users, Briefcase, Globe, UserCircle,
-    Hash, Mail, Link, FileDigit, BadgePercent,
+    Hash, Mail, FileDigit, BadgePercent,
     Upload, XCircle, AlertCircle
 } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { companySchema, CompanyFormValues } from "@/schemas/company/companySchema";
-import { Separator } from "@/components/ui/separator";
 import { useTheme } from "next-themes";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -146,9 +145,9 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                 toast.error(result.error || "Terjadi kesalahan saat menyimpan data");
             }
 
-        } catch (error) {
-            console.error("Error submitting form:", error);
-            const errorMessage = error instanceof Error ? error.message : "Terjadi kesalahan internal";
+        } catch (_error: unknown) {
+            console.error("Error submitting form:", _error);
+            const errorMessage = _error instanceof Error ? _error.message : "Terjadi kesalahan internal";
             toast.error(errorMessage);
         } finally {
             setIsSubmitting(false);
@@ -984,7 +983,7 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                                                     `;
                                                                                 }
                                                                             }}
-                                                                            onLoad={(e) => {
+                                                                            onLoad={() => {
                                                                                 console.log("Image loaded successfully");
                                                                             }}
                                                                         />

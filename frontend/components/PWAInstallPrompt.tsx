@@ -2,18 +2,24 @@
 
 import { useState, useEffect } from 'react';
 
+interface BeforeInstallPromptEvent extends Event {
+    prompt: () => void;
+    userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
 export default function PWAInstallPrompt() {
-    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+    const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
         // Handler untuk event beforeinstallprompt
-        const handleBeforeInstallPrompt = (e: any) => {
+        const handleBeforeInstallPrompt = (e: Event) => {
+            const ev = e as BeforeInstallPromptEvent;
             // 1. Cegah browser menampilkan prompt bawaan
-            e.preventDefault();
+            ev.preventDefault();
 
             // 2. Simpan event-nya agar bisa dipanggil nanti saat tombol Install diklik
-            setDeferredPrompt(e);
+            setDeferredPrompt(ev);
 
             // 3. Tampilkan UI kustom kita jika belum pernah di-skip session ini
             const isDismissed = sessionStorage.getItem('pwa_prompt_dismissed');

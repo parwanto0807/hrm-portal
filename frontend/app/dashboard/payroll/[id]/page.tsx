@@ -11,6 +11,7 @@ import { PayrollDetailHeader } from '@/components/payroll/PayrollDetailHeader';
 import { PayrollDetailTable } from '@/components/payroll/PayrollDetailTable';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { PayrollDetail } from '@/types/payroll';
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -49,7 +50,7 @@ export default function PayrollDetailPage({ params }: { params: Promise<{ id: st
     const filteredData = useMemo(() => {
         if (!detailData?.employees) return { employees: [], summary: detailData?.summary };
 
-        const employees = detailData.employees.filter((detail: any) => {
+        const employees = detailData.employees.filter((detail: PayrollDetail) => {
             const matchesSearch = detail.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 detail.employeeIdNumber.toLowerCase().includes(searchTerm.toLowerCase());
             const matchesDept = selectedDept === 'all' || detail.department === selectedDept;
@@ -63,10 +64,10 @@ export default function PayrollDetailPage({ params }: { params: Promise<{ id: st
         const summary = {
             ...detailData.summary,
             employeeCount: employees.length,
-            totalNetSalary: employees.reduce((sum: number, emp: any) => sum + emp.netSalary, 0),
-            totalDeductions: employees.reduce((sum: number, emp: any) => sum + emp.totalDeductions, 0),
-            totalAllowances: employees.reduce((sum: number, emp: any) => {
-                const allowances = Object.values(emp.allowances || {}).reduce((a: number, b: any) => a + (b || 0), 0);
+            totalNetSalary: employees.reduce((sum: number, emp: PayrollDetail) => sum + emp.netSalary, 0),
+            totalDeductions: employees.reduce((sum: number, emp: PayrollDetail) => sum + emp.totalDeductions, 0),
+            totalAllowances: employees.reduce((sum: number, emp: PayrollDetail) => {
+                const allowances = Object.values(emp.allowances || {}).reduce((a: number, b: number | undefined) => a + (b || 0), 0);
                 return sum + allowances;
             }, 0),
         };

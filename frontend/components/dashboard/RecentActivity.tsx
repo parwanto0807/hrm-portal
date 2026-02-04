@@ -1,7 +1,7 @@
 // components/dashboard/RecentActivity.tsx
 'use client';
 
-import { CheckCircle, Clock, AlertTriangle, Users, Calendar, FileText } from 'lucide-react';
+import { CheckCircle, Clock, AlertTriangle, Users, Calendar } from 'lucide-react';
 import { Card, CardHeader, CardContent } from '../ui/card';
 
 const activities = [

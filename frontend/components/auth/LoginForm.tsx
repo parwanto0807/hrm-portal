@@ -113,9 +113,10 @@ export default function LoginForm({
                 if (onSuccess) onSuccess();
                 router.push(redirectPath);
 
-            } catch (err: any) {
-                console.error("Google Auth Error:", err);
-                setError(err.message || "Terjadi kesalahan saat login Google");
+            } catch (err: unknown) {
+                const error = err as Error;
+                console.error("Google Auth Error:", error);
+                setError(error.message || "Terjadi kesalahan saat login Google");
             } finally {
                 setGoogleLoading(false);
             }
@@ -170,8 +171,9 @@ export default function LoginForm({
             if (onSuccess) onSuccess();
             router.push(redirectPath);
 
-        } catch (err: any) {
-            setError(err.message || 'Login failed');
+        } catch (err: unknown) {
+            const error = err as Error;
+            setError(error.message || 'Login failed');
         } finally {
             setLoading(false);
         }
@@ -404,7 +406,7 @@ export default function LoginForm({
             {!compact && (
                 <div className="mt-6 text-center">
                     <p className="text-gray-600 text-sm">
-                        Don't have an account?{' '}
+                        Don&apos;t have an account?{' '}
                         <Link
                             href="/register"
                             className="text-sky-600 font-semibold hover:text-sky-700 hover:underline"

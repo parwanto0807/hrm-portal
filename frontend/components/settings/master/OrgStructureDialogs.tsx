@@ -24,6 +24,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { Division, Department, Section } from "@/types/master";
+
 
 // --- DIVISIONS ---
 const divisionSchema = z.object({
@@ -32,9 +34,9 @@ const divisionSchema = z.object({
     keterangan: z.string().optional().or(z.literal("")),
 });
 
-export function DivisionDialog({ open, onOpenChange, data, onSuccess }: any) {
+export function DivisionDialog({ open, onOpenChange, data, onSuccess }: { open: boolean; onOpenChange: (open: boolean) => void; data?: Division | null; onSuccess: () => void }) {
     const isEditing = !!data;
-    const form = useForm<any>({
+    const form = useForm<z.infer<typeof divisionSchema>>({
         resolver: zodResolver(divisionSchema),
         defaultValues: { kdBag: "", nmBag: "", keterangan: "" },
     });
@@ -44,15 +46,16 @@ export function DivisionDialog({ open, onOpenChange, data, onSuccess }: any) {
         else form.reset({ kdBag: "", nmBag: "", keterangan: "" });
     }, [data, form, open]);
 
-    const onSubmit = async (values: any) => {
+    const onSubmit = async (values: z.infer<typeof divisionSchema>) => {
         try {
-            if (isEditing) await api.put(`/org/divisions/${data.kdBag}`, values);
+            if (isEditing) await api.put(`/org/divisions/${data!.kdBag}`, values);
             else await api.post(`/org/divisions`, values);
             toast.success("Bagian berhasil disimpan");
             onSuccess();
             onOpenChange(false);
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || "Gagal menyimpan data");
+        } catch (error) {
+            const err = error as { response?: { data?: { message?: string } } };
+            toast.error(err.response?.data?.message || "Gagal menyimpan data");
         }
     };
 
@@ -103,9 +106,9 @@ const departmentSchema = z.object({
     keterangan: z.string().optional().or(z.literal("")),
 });
 
-export function DepartmentDialog({ open, onOpenChange, data, onSuccess, divisions }: any) {
+export function DepartmentDialog({ open, onOpenChange, data, onSuccess, divisions }: { open: boolean; onOpenChange: (open: boolean) => void; data?: Department; onSuccess: () => void; divisions: Division[] }) {
     const isEditing = !!data;
-    const form = useForm<any>({
+    const form = useForm<z.infer<typeof departmentSchema>>({
         resolver: zodResolver(departmentSchema),
         defaultValues: { kdDept: "", nmDept: "", kdBag: "", keterangan: "" },
     });
@@ -115,15 +118,16 @@ export function DepartmentDialog({ open, onOpenChange, data, onSuccess, division
         else form.reset({ kdDept: "", nmDept: "", kdBag: "", keterangan: "" });
     }, [data, form, open]);
 
-    const onSubmit = async (values: any) => {
+    const onSubmit = async (values: z.infer<typeof departmentSchema>) => {
         try {
-            if (isEditing) await api.put(`/org/departments/${data.kdDept}`, values);
+            if (isEditing) await api.put(`/org/departments/${data!.kdDept}`, values);
             else await api.post(`/org/departments`, values);
             toast.success("Departemen berhasil disimpan");
             onSuccess();
             onOpenChange(false);
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || "Gagal menyimpan data");
+        } catch (error) {
+            const err = error as { response?: { data?: { message?: string } } };
+            toast.error(err.response?.data?.message || "Gagal menyimpan data");
         }
     };
 
@@ -158,7 +162,7 @@ export function DepartmentDialog({ open, onOpenChange, data, onSuccess, division
                                         className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                                     >
                                         <option value="">Pilih Bagian</option>
-                                        {divisions.map((item: any) => (
+                                        {divisions.map((item: Division) => (
                                             <option key={item.kdBag} value={item.kdBag}>{item.nmBag}</option>
                                         ))}
                                     </select>
@@ -192,9 +196,9 @@ const sectionSchema = z.object({
     keterangan: z.string().optional().or(z.literal("")),
 });
 
-export function SectionDialog({ open, onOpenChange, data, onSuccess, divisions, departments }: any) {
+export function SectionDialog({ open, onOpenChange, data, onSuccess, divisions, departments }: { open: boolean; onOpenChange: (open: boolean) => void; data?: Section; onSuccess: () => void; divisions: Division[]; departments: Department[] }) {
     const isEditing = !!data;
-    const form = useForm<any>({
+    const form = useForm<z.infer<typeof sectionSchema>>({
         resolver: zodResolver(sectionSchema),
         defaultValues: { kdSeksie: "", nmSeksie: "", kdBag: "", kdDept: "", keterangan: "" },
     });
@@ -204,17 +208,22 @@ export function SectionDialog({ open, onOpenChange, data, onSuccess, divisions, 
         else form.reset({ kdSeksie: "", nmSeksie: "", kdBag: "", kdDept: "", keterangan: "" });
     }, [data, form, open]);
 
-    const filteredDepartments = departments.filter((d: any) => d.kdBag === form.watch("kdBag"));
+    const kdBag = form.watch("kdBag");
+    const filteredDepartmentsLabels = React.useMemo(() =>
+        departments.filter((d: Department) => d.kdBag === kdBag),
+        [departments, kdBag]
+    );
 
-    const onSubmit = async (values: any) => {
+    const onSubmit = async (values: z.infer<typeof sectionSchema>) => {
         try {
-            if (isEditing) await api.put(`/org/sections/${data.kdSeksie}`, values);
+            if (isEditing) await api.put(`/org/sections/${data!.kdSeksie}`, values);
             else await api.post(`/org/sections`, values);
             toast.success("Seksie berhasil disimpan");
             onSuccess();
             onOpenChange(false);
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || "Gagal menyimpan data");
+        } catch (error) {
+            const err = error as { response?: { data?: { message?: string } } };
+            toast.error(err.response?.data?.message || "Gagal menyimpan data");
         }
     };
 
@@ -254,7 +263,7 @@ export function SectionDialog({ open, onOpenChange, data, onSuccess, divisions, 
                                             className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                                         >
                                             <option value="">Pilih...</option>
-                                            {divisions.map((item: any) => (
+                                            {divisions.map((item: Division) => (
                                                 <option key={item.kdBag} value={item.kdBag}>{item.nmBag}</option>
                                             ))}
                                         </select>
@@ -272,7 +281,7 @@ export function SectionDialog({ open, onOpenChange, data, onSuccess, divisions, 
                                             className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                                         >
                                             <option value="">Pilih...</option>
-                                            {filteredDepartments.map((item: any) => (
+                                            {filteredDepartmentsLabels.map((item: Department) => (
                                                 <option key={item.kdDept} value={item.kdDept}>{item.nmDept}</option>
                                             ))}
                                         </select>

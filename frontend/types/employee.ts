@@ -5,6 +5,24 @@ export interface Employee {
     nik: string | null;
     idAbsen: string | null;
     nama: string;
+    ktpNo: string | null;
+    npwp: string | null;
+    noBpjsTk: string | null;
+    noBpjsKes: string | null;
+    tmpLhr: string | null;
+    agama?: {
+        kdAgm: string;
+        nmAgm: string;
+    };
+    jmlAnak?: number;
+    telpon?: string | null;
+    alamat1?: string | null;
+    kota?: string | null;
+    kdPos?: string | null;
+    pkt?: {
+        kdPkt: string;
+        nmPkt: string;
+    };
 
     // Foreign Keys
     kdCmpy: string | null;
@@ -15,6 +33,7 @@ export interface Employee {
     kdJab: string | null;
     bankCode: string | null;
     superiorId: string | null;
+    superior2Id: string | null;
 
     // Bank Details
     bankUnit: string | null;

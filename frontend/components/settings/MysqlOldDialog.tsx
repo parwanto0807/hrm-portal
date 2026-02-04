@@ -4,33 +4,37 @@ import React, { useState, useEffect } from "react";
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
     Database,
-    Search,
-    RefreshCw,
-    Table as TableIcon,
-    ChevronRight,
-    ChevronLeft,
-    ChevronsLeft,
-    ChevronsRight,
+    RefreshCcw,
     CheckCircle2,
     XCircle,
-    Loader2,
-    Settings2,
-    Save
+    Server,
+    Search,
+    ChevronLeft,
+    ChevronRight,
+    SearchX,
+    Table as TableIcon
 } from "lucide-react";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow
+} from "@/components/ui/table";
 import { toast } from "sonner";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 interface MysqlOldDialogProps {
     open: boolean;
@@ -38,23 +42,24 @@ interface MysqlOldDialogProps {
 }
 
 export function MysqlOldDialog({ open, onOpenChange }: MysqlOldDialogProps) {
-    const [status, setStatus] = useState<"loading" | "online" | "offline">("loading");
+    const [status, setStatus] = useState<"online" | "offline" | "loading">("offline");
     const [tables, setTables] = useState<string[]>([]);
-    const [searchQuery, setSearchQuery] = useState("");
     const [selectedTable, setSelectedTable] = useState<string | null>(null);
-    const [tableData, setTableData] = useState<any[]>([]);
+    const [tableData, setTableData] = useState<Record<string, unknown>[]>([]);
     const [isLoadingData, setIsLoadingData] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [activeTab, setActiveTab] = useState<"config" | "tables" | "preview">("config");
+
+    // Pagination
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
-    const [pagination, setPagination] = useState({
-        total: 0,
-        page: 1,
-        limit: 10,
-        totalPages: 0
-    });
-    const [dataSearchQuery, setDataSearchQuery] = useState("");
+    const [pagination, setPagination] = useState<{
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    } | null>(null);
 
-    // Config State
     const [config, setConfig] = useState({
         host: "localhost",
         port: "3306",
@@ -64,7 +69,19 @@ export function MysqlOldDialog({ open, onOpenChange }: MysqlOldDialogProps) {
     });
     const [isSavingConfig, setIsSavingConfig] = useState(false);
 
-    const checkConnection = async () => {
+    const fetchTables = React.useCallback(async () => {
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002/api'}/mysql/tables`);
+            const data = await response.json();
+            if (data.success) {
+                setTables(data.tables);
+            }
+        } catch (_error) {
+            console.error("Failed to fetch tables:", _error);
+        }
+    }, []);
+
+    const checkConnection = React.useCallback(async () => {
         setStatus("loading");
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002/api'}/mysql/test`);
@@ -75,13 +92,13 @@ export function MysqlOldDialog({ open, onOpenChange }: MysqlOldDialogProps) {
             } else {
                 setStatus("offline");
             }
-        } catch (error) {
+        } catch (_error) {
             setStatus("offline");
-            console.error("Connection check failed:", error);
+            console.error("Connection check failed:", _error);
         }
-    };
+    }, [fetchTables]);
 
-    const fetchConfig = async () => {
+    const fetchConfig = React.useCallback(async () => {
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002/api'}/mysql/config`);
             const data = await response.json();
@@ -94,10 +111,10 @@ export function MysqlOldDialog({ open, onOpenChange }: MysqlOldDialogProps) {
                     database: data.config.database || ""
                 });
             }
-        } catch (error) {
-            console.error("Failed to fetch config:", error);
+        } catch (_error) {
+            console.error("Failed to fetch config:", _error);
         }
-    };
+    }, []);
 
     const saveConfig = async () => {
         setIsSavingConfig(true);
@@ -114,22 +131,10 @@ export function MysqlOldDialog({ open, onOpenChange }: MysqlOldDialogProps) {
             } else {
                 toast.error(data.message || "Gagal menyimpan konfigurasi");
             }
-        } catch (error) {
+        } catch (_error) {
             toast.error("Gagal menyimpan konfigurasi");
         } finally {
             setIsSavingConfig(false);
-        }
-    };
-
-    const fetchTables = async () => {
-        try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002/api'}/mysql/tables`);
-            const data = await response.json();
-            if (data.success) {
-                setTables(data.tables);
-            }
-        } catch (error) {
-            console.error("Failed to fetch tables:", error);
         }
     };
 
@@ -147,7 +152,7 @@ export function MysqlOldDialog({ open, onOpenChange }: MysqlOldDialogProps) {
                     setPagination(data.pagination);
                 }
             }
-        } catch (error) {
+        } catch (_error) {
             toast.error("Gagal mengambil data tabel");
         } finally {
             setIsLoadingData(false);
@@ -158,313 +163,279 @@ export function MysqlOldDialog({ open, onOpenChange }: MysqlOldDialogProps) {
         if (open) {
             fetchConfig();
             checkConnection();
-        } else {
-            setSelectedTable(null);
-            setTableData([]);
         }
-    }, [open]);
+    }, [open, fetchConfig, checkConnection]);
 
-    const filteredTables = tables.filter(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
-
-    const filteredData = tableData.filter(row =>
-        Object.values(row).some(val =>
-            String(val).toLowerCase().includes(dataSearchQuery.toLowerCase())
-        )
+    const filteredTables = tables.filter(t =>
+        t.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
-                <DialogHeader className="p-6 pb-2 border-b">
+            <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl">
+                <DialogHeader className="p-6 pb-0">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                                <Database className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                            </div>
-                            <div>
-                                <DialogTitle>Old MySQL Database</DialogTitle>
-                                <DialogDescription>Explore legacy data from local MySQL</DialogDescription>
-                            </div>
+                        <div>
+                            <DialogTitle className="text-2xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent uppercase tracking-tight flex items-center gap-3">
+                                <Database className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                                MySQL Legacy Manager
+                            </DialogTitle>
+                            <DialogDescription className="mt-1 font-medium text-slate-500 dark:text-slate-400">
+                                Kelola koneksi dan lihat data dari database lama (Axon HR v1)
+                            </DialogDescription>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <Badge
-                                variant={status === "online" ? "outline" : status === "loading" ? "secondary" : "destructive"}
-                                className={`gap-1.5 py-1 ${status === "online" ? "bg-emerald-500 text-white hover:bg-emerald-600 border-transparent shadow-sm" : ""}`}
-                            >
-                                {status === "loading" ? (
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                ) : status === "online" ? (
-                                    <CheckCircle2 className="h-3 w-3" />
-                                ) : (
-                                    <XCircle className="h-3 w-3" />
+                        <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-900/50 p-1.5 px-3 rounded-full border border-slate-100 dark:border-slate-800 shadow-sm">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Status:</span>
+                            {status === "loading" ? (
+                                <Badge variant="secondary" className="bg-slate-100 text-slate-600 animate-pulse border-none h-5 px-2">
+                                    <RefreshCcw className="h-3 w-3 mr-1 animate-spin" /> Checking
+                                </Badge>
+                            ) : status === "online" ? (
+                                <Badge className="bg-emerald-50 text-emerald-600 border-none h-5 px-2 font-black tracking-wider text-[10px]">
+                                    <CheckCircle2 className="h-3 w-3 mr-1" /> ONLINE
+                                </Badge>
+                            ) : (
+                                <Badge variant="destructive" className="bg-rose-50 text-rose-600 border-none h-5 px-2 font-black tracking-wider text-[10px]">
+                                    <XCircle className="h-3 w-3 mr-1" /> OFFLINE
+                                </Badge>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 mt-6 border-b dark:border-slate-800">
+                        <button
+                            onClick={() => setActiveTab("config")}
+                            className={cn(
+                                "px-4 py-2 text-xs font-black uppercase tracking-widest transition-all relative",
+                                activeTab === "config" ? "text-blue-600 dark:text-blue-400" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                            )}
+                        >
+                            Konfigurasi
+                            {activeTab === "config" && <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 dark:bg-blue-400 rounded-t-full" />}
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("tables")}
+                            className={cn(
+                                "px-4 py-2 text-xs font-black uppercase tracking-widest transition-all relative",
+                                activeTab === "tables" ? "text-blue-600 dark:text-blue-400" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                            )}
+                        >
+                            Daftar Tabel
+                            {activeTab === "tables" && <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 dark:bg-blue-400 rounded-t-full" />}
+                        </button>
+                        {selectedTable && (
+                            <button
+                                onClick={() => setActiveTab("preview")}
+                                className={cn(
+                                    "px-4 py-2 text-xs font-black uppercase tracking-widest transition-all relative flex items-center gap-2",
+                                    activeTab === "preview" ? "text-blue-600 dark:text-blue-400" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                                 )}
-                                {status === "online" ? "Online" : status === "loading" ? "Checking..." : "Offline"}
-                            </Badge>
-                            <Button variant="outline" size="icon" onClick={checkConnection} disabled={status === "loading"}>
-                                <RefreshCw className={`h-4 w-4 ${status === "loading" ? "animate-spin" : ""}`} />
-                            </Button>
-                        </div>
+                            >
+                                Preview: {selectedTable}
+                                {activeTab === "preview" && <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 dark:bg-blue-400 rounded-t-full" />}
+                            </button>
+                        )}
                     </div>
                 </DialogHeader>
 
-                <Tabs defaultValue="explorer" className="flex-1 flex flex-col overflow-hidden">
-                    <div className="px-6 border-b">
-                        <TabsList className="h-10 bg-transparent gap-4">
-                            <TabsTrigger
-                                value="explorer"
-                                className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-500 rounded-none px-2 pb-2 transition-all"
-                            >
-                                <TableIcon className="h-4 w-4 mr-2" />
-                                Data Explorer
-                            </TabsTrigger>
-                            <TabsTrigger
-                                value="settings"
-                                className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-500 rounded-none px-2 pb-2 transition-all"
-                            >
-                                <Settings2 className="h-4 w-4 mr-2" />
-                                Connection Settings
-                            </TabsTrigger>
-                        </TabsList>
-                    </div>
-
-                    <TabsContent value="explorer" className="flex-1 m-0 flex overflow-hidden">
-                        <div className="w-64 border-r flex flex-col bg-slate-50/50 dark:bg-slate-900/20">
-                            <div className="p-4 border-b">
-                                <div className="relative">
-                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <div className="flex-1 overflow-hidden p-6 bg-slate-50/50 dark:bg-slate-900/30">
+                    <ScrollArea className="h-full pr-4">
+                        {activeTab === "config" && (
+                            <div className="space-y-6 max-w-xl mx-auto py-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Host</Label>
+                                        <Input
+                                            value={config.host}
+                                            onChange={(e) => setConfig({ ...config, host: e.target.value })}
+                                            className="bg-white dark:bg-slate-950 font-bold border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-blue-500/20"
+                                            placeholder="localhost"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Port</Label>
+                                        <Input
+                                            value={config.port}
+                                            onChange={(e) => setConfig({ ...config, port: e.target.value })}
+                                            className="bg-white dark:bg-slate-950 font-bold border-slate-200 dark:border-slate-800"
+                                            placeholder="3306"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Database Name</Label>
                                     <Input
-                                        placeholder="Cari tabel..."
-                                        className="pl-8 h-9"
+                                        value={config.database}
+                                        onChange={(e) => setConfig({ ...config, database: e.target.value })}
+                                        className="bg-white dark:bg-slate-950 font-bold border-slate-200 dark:border-slate-800"
+                                        placeholder="axon_v1"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">User</Label>
+                                        <Input
+                                            value={config.user}
+                                            onChange={(e) => setConfig({ ...config, user: e.target.value })}
+                                            className="bg-white dark:bg-slate-950 font-bold border-slate-200 dark:border-slate-800"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Password</Label>
+                                        <Input
+                                            type="password"
+                                            value={config.password}
+                                            onChange={(e) => setConfig({ ...config, password: e.target.value })}
+                                            className="bg-white dark:bg-slate-950 font-bold border-slate-200 dark:border-slate-800"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="pt-4 flex items-center justify-between">
+                                    <Button
+                                        variant="outline"
+                                        onClick={checkConnection}
+                                        disabled={status === "loading"}
+                                        className="font-black tracking-widest uppercase text-[10px] hover:bg-slate-100"
+                                    >
+                                        <RefreshCcw className={cn("h-3 w-3 mr-2", status === "loading" && "animate-spin")} />
+                                        Test Koneksi
+                                    </Button>
+                                    <Button
+                                        onClick={saveConfig}
+                                        disabled={isSavingConfig}
+                                        className="bg-blue-600 hover:bg-blue-700 text-white font-black tracking-widest uppercase text-[10px] px-8 shadow-lg shadow-blue-500/20"
+                                    >
+                                        {isSavingConfig ? "Saving..." : "Simpan Config"}
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === "tables" && (
+                            <div className="space-y-4">
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                    <Input
+                                        placeholder="Cari nama tabel..."
+                                        className="pl-10 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 font-medium"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                     />
                                 </div>
-                            </div>
-                            <ScrollArea className="flex-1">
-                                <div className="p-2 space-y-1">
-                                    {filteredTables.map((tableName) => (
-                                        <button
-                                            key={tableName}
-                                            onClick={() => fetchTablePreview(tableName)}
-                                            className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm transition-all ${selectedTable === tableName
-                                                ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 font-medium translate-x-1"
-                                                : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400"
-                                                }`}
-                                        >
-                                            <div className="flex items-center gap-2 truncate">
-                                                <TableIcon className="h-4 w-4 shrink-0 opacity-70" />
-                                                <span className="truncate">{tableName}</span>
-                                            </div>
-                                            <ChevronRight className={`h-3 w-3 shrink-0 transition-transform ${selectedTable === tableName ? "rotate-90" : "opacity-0"}`} />
-                                        </button>
-                                    ))}
-                                </div>
-                            </ScrollArea>
-                        </div>
 
-                        <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-slate-950">
-                            {!selectedTable ? (
-                                <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-muted-foreground">
-                                    <div className="p-4 bg-slate-100 dark:bg-white/5 rounded-full mb-4">
-                                        <TableIcon className="h-8 w-8 opacity-20" />
+                                {status !== "online" ? (
+                                    <div className="py-20 flex flex-col items-center justify-center text-center space-y-4">
+                                        <XCircle className="h-12 w-12 text-rose-500/50" />
+                                        <div>
+                                            <p className="font-black text-slate-400 uppercase tracking-widest text-xs">Database Offline</p>
+                                            <p className="text-sm text-slate-500 mt-1">Pastikan koneksi sudah online untuk melihat tabel</p>
+                                        </div>
+                                        <Button variant="outline" onClick={checkConnection} className="font-bold">
+                                            Reload Connection
+                                        </Button>
                                     </div>
-                                    <h3 className="font-medium text-slate-900 dark:text-white">Pilih Tabel</h3>
-                                    <p className="text-sm max-w-[240px] mt-1">Pilih tabel di sebelah kiri untuk melihat preview data lama.</p>
+                                ) : filteredTables.length === 0 ? (
+                                    <div className="py-20 flex flex-col items-center justify-center text-center space-y-4 opacity-50">
+                                        <SearchX className="h-12 w-12 text-slate-400" />
+                                        <p className="font-black text-slate-400 uppercase tracking-widest text-xs">Tabel tidak ditemukan</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                        {filteredTables.map((table) => (
+                                            <button
+                                                key={table}
+                                                onClick={() => {
+                                                    fetchTablePreview(table);
+                                                    setActiveTab("preview");
+                                                }}
+                                                className="flex items-center gap-3 p-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl hover:border-blue-500 dark:hover:border-blue-400 hover:shadow-md transition-all group text-left"
+                                            >
+                                                <div className="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                                    <TableIcon className="h-4 w-4" />
+                                                </div>
+                                                <span className="font-bold text-sm text-slate-700 dark:text-slate-300 truncate">{table}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {activeTab === "preview" && (
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-2">
+                                        <Badge className="bg-blue-600 text-white font-black tracking-widest text-[10px] uppercase">{selectedTable}</Badge>
+                                        <p className="text-[10px] font-bold text-slate-400">{pagination?.total || 0} Records Total</p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-8 w-8"
+                                            disabled={page <= 1 || isLoadingData}
+                                            onClick={() => fetchTablePreview(selectedTable!, page - 1)}
+                                        >
+                                            <ChevronLeft className="h-4 w-4" />
+                                        </Button>
+                                        <span className="text-[10px] font-black w-14 text-center">PAGE {page}</span>
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-8 w-8"
+                                            disabled={!pagination || page >= pagination.totalPages || isLoadingData}
+                                            onClick={() => fetchTablePreview(selectedTable!, page + 1)}
+                                        >
+                                            <ChevronRight className="h-4 w-4" />
+                                        </Button>
+                                    </div>
                                 </div>
-                            ) : (
-                                <>
-                                    <div className="p-4 border-b flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50 gap-4">
-                                        <div className="flex items-center gap-2 min-w-fit">
-                                            <TableIcon className="h-4 w-4 text-blue-500" />
-                                            <span className="font-semibold truncate max-w-[150px]">{selectedTable}</span>
-                                            <Badge variant="secondary" className="text-[10px] font-normal whitespace-nowrap">
-                                                {pagination.total} Rows
-                                            </Badge>
+
+                                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden shadow-sm relative min-h-[400px]">
+                                    {isLoadingData ? (
+                                        <div className="absolute inset-0 z-50 bg-white/50 dark:bg-slate-950/50 backdrop-blur-[1px] flex items-center justify-center">
+                                            <RefreshCcw className="h-8 w-8 animate-spin text-blue-500" />
                                         </div>
-                                        <div className="flex-1 max-w-sm relative">
-                                            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                                            <Input
-                                                placeholder="Filter hasil..."
-                                                className="h-8 pl-7 text-xs"
-                                                value={dataSearchQuery}
-                                                onChange={(e) => setDataSearchQuery(e.target.value)}
-                                            />
+                                    ) : tableData.length === 0 ? (
+                                        <div className="py-20 flex flex-col items-center justify-center text-center space-y-4">
+                                            <SearchX className="h-12 w-12 text-slate-300" />
+                                            <p className="font-black text-slate-300 uppercase tracking-widest text-xs">Tidak ada data</p>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <Button variant="ghost" size="sm" className="h-8" onClick={() => fetchTablePreview(selectedTable, page, pageSize)}>
-                                                <RefreshCw className={`h-3 w-3 mr-2 ${isLoadingData ? "animate-spin" : ""}`} />
-                                                Refresh
-                                            </Button>
-                                        </div>
-                                    </div>
-                                    <ScrollArea className="flex-1">
-                                        {isLoadingData ? (
-                                            <div className="p-20 flex flex-col items-center justify-center">
-                                                <Loader2 className="h-8 w-8 animate-spin text-blue-500 mb-2" />
-                                                <p className="text-sm text-muted-foreground">Loading data...</p>
-                                            </div>
-                                        ) : tableData.length > 0 ? (
-                                            <div className="min-w-full">
-                                                <Table>
-                                                    <TableHeader>
-                                                        <TableRow>
-                                                            {Object.keys(tableData[0]).map((key) => (
-                                                                <TableHead key={key} className="whitespace-nowrap uppercase text-[10px] font-bold tracking-wider">
-                                                                    {key}
-                                                                </TableHead>
+                                    ) : (
+                                        <div className="overflow-x-auto">
+                                            <Table>
+                                                <TableHeader className="bg-slate-50 dark:bg-slate-900 shadow-sm sticky top-0 z-10">
+                                                    <TableRow>
+                                                        {Object.keys(tableData[0]).map((key) => (
+                                                            <TableHead key={key} className="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 whitespace-nowrap min-w-[120px]">
+                                                                {key}
+                                                            </TableHead>
+                                                        ))}
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {tableData.map((row, idx) => (
+                                                        <TableRow key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
+                                                            {Object.values(row).map((val, vIdx) => (
+                                                                <TableCell key={vIdx} className="text-xs font-medium text-slate-600 dark:text-slate-300 py-3">
+                                                                    {val === null ? (
+                                                                        <span className="text-slate-300 text-[10px] italic">NULL</span>
+                                                                    ) : typeof val === 'object' ? (
+                                                                        JSON.stringify(val)
+                                                                    ) : String(val)}
+                                                                </TableCell>
                                                             ))}
                                                         </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {filteredData.map((row, i) => (
-                                                            <TableRow key={i}>
-                                                                {Object.values(row).map((val: any, j) => (
-                                                                    <TableCell key={j} className="whitespace-nowrap text-xs py-2">
-                                                                        {val === null ? <em className="text-slate-300">null</em> : String(val)}
-                                                                    </TableCell>
-                                                                ))}
-                                                            </TableRow>
-                                                        ))}
-                                                    </TableBody>
-                                                </Table>
-                                            </div>
-                                        ) : (
-                                            <div className="p-20 text-center text-muted-foreground">
-                                                Tabel kosong atau tidak ada data.
-                                            </div>
-                                        )}
-                                    </ScrollArea>
-
-                                    {/* Pagination Footer */}
-                                    <div className="p-3 border-t bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
-                                        <div className="flex items-center gap-4">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs text-muted-foreground">Rows per page:</span>
-                                                <select
-                                                    className="h-7 text-xs border rounded bg-background px-1 outline-none"
-                                                    value={pageSize}
-                                                    onChange={(e) => fetchTablePreview(selectedTable, 1, parseInt(e.target.value))}
-                                                >
-                                                    {[10, 20, 50, 100, 500].map(size => (
-                                                        <option key={size} value={size}>{size}</option>
                                                     ))}
-                                                </select>
-                                            </div>
-                                            <span className="text-xs text-muted-foreground font-medium">
-                                                Page {pagination.page} of {pagination.totalPages || 1}
-                                            </span>
+                                                </TableBody>
+                                            </Table>
                                         </div>
-
-                                        <div className="flex items-center gap-1">
-                                            <Button
-                                                variant="outline"
-                                                size="icon"
-                                                className="h-7 w-7"
-                                                disabled={page <= 1 || isLoadingData}
-                                                onClick={() => fetchTablePreview(selectedTable, 1, pageSize)}
-                                            >
-                                                <ChevronsLeft className="h-3.5 w-3.5" />
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="icon"
-                                                className="h-7 w-7"
-                                                disabled={page <= 1 || isLoadingData}
-                                                onClick={() => fetchTablePreview(selectedTable, page - 1, pageSize)}
-                                            >
-                                                <ChevronLeft className="h-3.5 w-3.5" />
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="icon"
-                                                className="h-7 w-7"
-                                                disabled={page >= pagination.totalPages || isLoadingData}
-                                                onClick={() => fetchTablePreview(selectedTable, page + 1, pageSize)}
-                                            >
-                                                <ChevronRight className="h-3.5 w-3.5" />
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="icon"
-                                                className="h-7 w-7"
-                                                disabled={page >= pagination.totalPages || isLoadingData}
-                                                onClick={() => fetchTablePreview(selectedTable, pagination.totalPages, pageSize)}
-                                            >
-                                                <ChevronsRight className="h-3.5 w-3.5" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    </TabsContent>
-
-                    <TabsContent value="settings" className="flex-1 m-0 p-8 flex flex-col bg-slate-50/30 dark:bg-slate-900/10">
-                        <div className="max-w-2xl mx-auto w-full space-y-6">
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label htmlFor="host">IP Address / Host</Label>
-                                    <Input
-                                        id="host"
-                                        placeholder="localhost"
-                                        value={config.host}
-                                        onChange={(e) => setConfig({ ...config, host: e.target.value })}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="port">Port</Label>
-                                    <Input
-                                        id="port"
-                                        placeholder="3306"
-                                        value={config.port}
-                                        onChange={(e) => setConfig({ ...config, port: e.target.value })}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="user">Username</Label>
-                                    <Input
-                                        id="user"
-                                        placeholder="root"
-                                        value={config.user}
-                                        onChange={(e) => setConfig({ ...config, user: e.target.value })}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="password">Password</Label>
-                                    <Input
-                                        id="password"
-                                        type="password"
-                                        placeholder="••••••••"
-                                        value={config.password}
-                                        onChange={(e) => setConfig({ ...config, password: e.target.value })}
-                                    />
-                                </div>
-                                <div className="space-y-2 col-span-2">
-                                    <Label htmlFor="database">Database Name</Label>
-                                    <Input
-                                        id="database"
-                                        placeholder="legacy_database"
-                                        value={config.database}
-                                        onChange={(e) => setConfig({ ...config, database: e.target.value })}
-                                    />
+                                    )}
                                 </div>
                             </div>
-
-                            <div className="pt-4 flex justify-end">
-                                <Button className="gap-2 px-8" onClick={saveConfig} disabled={isSavingConfig}>
-                                    {isSavingConfig ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                                    Simpan & Uji Koneksi
-                                </Button>
-                            </div>
-
-                            <div className="mt-8 p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30 rounded-lg">
-                                <p className="text-xs text-amber-700 dark:text-amber-400">
-                                    <strong>Note:</strong> Pengaturan ini akan disimpan ke database HRM saat ini dan digunakan untuk mengakses data lama secara read-only.
-                                </p>
-                            </div>
-                        </div>
-                    </TabsContent>
-                </Tabs>
+                        )}
+                    </ScrollArea>
+                </div>
             </DialogContent>
         </Dialog>
     );

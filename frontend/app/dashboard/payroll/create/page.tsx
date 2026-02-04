@@ -13,7 +13,6 @@ import {
     ArrowLeft,
     Info,
     CheckCircle2,
-    AlertCircle,
     Home
 } from 'lucide-react';
 
@@ -45,8 +44,7 @@ import {
     CardContent,
     CardDescription,
     CardHeader,
-    CardTitle,
-    CardFooter
+    CardTitle
 } from '@/components/ui/card';
 import { api } from '@/lib/api';
 
@@ -77,9 +75,10 @@ export default function CreatePayrollPage() {
             await api.post('/payroll/periods', values);
             toast.success('Periode payroll berhasil dibuat');
             router.push('/dashboard/payroll');
-        } catch (error: any) {
+        } catch (error) {
+            const err = error as { response?: { data?: { message?: string } } };
             console.error(error);
-            toast.error(error.response?.data?.message || 'Gagal membuat periode payroll');
+            toast.error(err.response?.data?.message || 'Gagal membuat periode payroll');
         }
     };
 

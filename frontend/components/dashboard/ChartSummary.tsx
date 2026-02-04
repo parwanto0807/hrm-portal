@@ -36,6 +36,13 @@ interface LeaveData {
     other: number;
 }
 
+interface PayloadEntry {
+    color: string;
+    dataKey: string;
+    value: number;
+    name: string;
+}
+
 // Data sample untuk 6 bulan terakhir
 const salaryData: SalaryData[] = [
     { month: 'Jul', salary: 45.2, bonus: 8.5, deductions: 2.3 },
@@ -65,13 +72,13 @@ const leaveData: LeaveData[] = [
 ];
 
 // Custom Tooltip untuk semua chart
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: PayloadEntry[]; label?: string }) => {
     if (active && payload && payload.length) {
         return (
             <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg p-3 sm:p-4 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 max-w-[280px]">
                 <p className="font-bold text-gray-900 dark:text-white mb-2 text-sm sm:text-base">{label} 2024</p>
                 <div className="space-y-1">
-                    {payload.map((entry: any, index: number) => (
+                    {payload.map((entry: PayloadEntry, index: number) => (
                         <div key={index} className="flex items-center justify-between gap-3 py-1">
                             <div className="flex items-center gap-2 min-w-0 flex-1">
                                 <div
@@ -89,7 +96,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
                     ))}
                 </div>
                 <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Total: {payload.reduce((sum: number, entry: any) => sum + entry.value, 0).toLocaleString()}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Total: {payload.reduce((sum: number, entry: PayloadEntry) => sum + entry.value, 0).toLocaleString()}</p>
                 </div>
             </div>
         );
@@ -98,12 +105,12 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 // Responsive Legend Component
-const ResponsiveLegend = (props: any) => {
+const ResponsiveLegend = (props: { payload?: { value: string; color: string }[] }) => {
     const { payload } = props;
 
     return (
         <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-4 px-2">
-            {payload.map((entry: any, index: number) => (
+            {payload?.map((entry: { value: string; color: string }, index: number) => (
                 <div key={`item-${index}`} className="flex items-center gap-2">
                     <div
                         className="w-2.5 h-2.5 rounded-full sm:w-3 sm:h-3"
@@ -190,7 +197,6 @@ export default function DashboardCharts() {
 
     // Render chart based on type
     const renderChart = () => {
-        const { type } = chartConfig;
 
         return (
             <ResponsiveContainer width="100%" height="100%">
@@ -304,7 +310,7 @@ export default function DashboardCharts() {
                                     fill="#374151"
                                     fontSize={window.innerWidth < 640 ? 9 : 11}
                                     fontWeight={600}
-                                    formatter={(value: any) => value}
+                                    formatter={(value: unknown) => String(value)}
                                     offset={5}
                                 />
                             )}
@@ -366,7 +372,7 @@ export default function DashboardCharts() {
                             return (
                                 <button
                                     key={tab.id}
-                                    onClick={() => setActiveTab(tab.id as any)}
+                                    onClick={() => setActiveTab(tab.id as 'salary' | 'attendance' | 'leave')}
                                     className={`
                                         flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-3 rounded-md sm:rounded-lg transition-all duration-300 text-xs sm:text-sm
                                         ${isActive
@@ -505,7 +511,7 @@ export default function DashboardCharts() {
                                         </span>
                                     </div>
                                     <span className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base whitespace-nowrap ml-2">
-                                        {currentData.reduce((sum, item) => sum + (item as any)[bar.key], 0)}
+                                        {currentData.reduce((sum, item) => sum + (item as unknown as Record<string, number>)[bar.key], 0)}
                                         {activeTab === 'salary' ? 'jt' : ''}
                                     </span>
                                 </div>

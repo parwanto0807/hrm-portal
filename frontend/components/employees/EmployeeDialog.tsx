@@ -54,8 +54,6 @@ interface EmployeeDialogProps {
 }
 
 export function EmployeeDialog({ employee, open, onOpenChange, onSuccess }: EmployeeDialogProps) {
-    const queryClient = useQueryClient();
-
     // Fetch potential superiors
     const { data: employeesData } = useQuery<EmployeeListResponse>({
         queryKey: ['employees', 'list', 'all'],
@@ -219,18 +217,19 @@ export function EmployeeDialog({ employee, open, onOpenChange, onSuccess }: Empl
             }
             onSuccess();
             onOpenChange(false);
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: { message?: string; error?: string } } };
             console.error('Submission error:', error);
-            if (error.response) {
-                console.error('Error response data:', error.response.data);
-                toast.error(error.response.data.message || error.response.data.error || 'Failed to save employee');
+            if (err.response?.data) {
+                console.error('Error response data:', err.response.data);
+                toast.error(err.response.data.message || err.response.data.error || 'Failed to save employee');
             } else {
                 toast.error('Failed to save employee. Please check your connection.');
             }
         }
     };
 
-    const onError = (errors: any) => {
+    const onError = (errors: unknown) => {
         console.error('Validation errors:', errors);
         toast.error('Please check the form for errors');
     };
@@ -525,7 +524,7 @@ export function EmployeeDialog({ employee, open, onOpenChange, onSuccess }: Empl
                                                             </SelectTrigger>
                                                         </FormControl>
                                                         <SelectContent className="dark:bg-slate-900 dark:border-slate-800">
-                                                            {departments?.map((d: any) => (
+                                                            {departments?.map((d: { kdDept: string; nmDept: string }) => (
                                                                 <SelectItem key={d.kdDept} value={d.kdDept} className="font-bold">{d.nmDept}</SelectItem>
                                                             ))}
                                                         </SelectContent>
@@ -550,7 +549,7 @@ export function EmployeeDialog({ employee, open, onOpenChange, onSuccess }: Empl
                                                             </SelectTrigger>
                                                         </FormControl>
                                                         <SelectContent className="dark:bg-slate-900 dark:border-slate-800">
-                                                            {positions?.map((p: any) => (
+                                                            {positions?.map((p: { kdJab: string; nmJab: string }) => (
                                                                 <SelectItem key={p.kdJab} value={p.kdJab} className="font-bold">{p.nmJab}</SelectItem>
                                                             ))}
                                                         </SelectContent>

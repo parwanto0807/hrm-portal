@@ -8,6 +8,7 @@ interface PayslipData {
     employeeIdNumber: string;
     position: string;
     department: string;
+    section?: string;
     joinDate?: string; // TMK
     taxStatus?: string;
 
@@ -41,7 +42,7 @@ interface PayslipData {
     netSalary: number;
 }
 
-export const generatePayslipPDF = (data: any[], periodName: string = '', periodId?: string) => {
+export const generatePayslipPDF = (data: PayslipData[], periodName: string = '', periodId?: string) => {
     // Ensure periodName is a string
     let displayPeriod = periodName || 'Unknown_Period';
 
@@ -93,7 +94,7 @@ export const generatePayslipPDF = (data: any[], periodName: string = '', periodI
 
         // Loop to fill page
         for (let y = 4; y < height; y += textHeight) {
-            let xOffset = (y % (textHeight * 2) === 0) ? 0 : 10;
+            const xOffset = (y % (textHeight * 2) === 0) ? 0 : 10;
 
             for (let x = 13 - 20; x < width - 13; x += textWidth) {
                 const drawX = x + xOffset;

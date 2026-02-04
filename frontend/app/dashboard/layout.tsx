@@ -32,8 +32,7 @@ export default function DashboardLayout({
             disableTransitionOnChange
         >
             <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
-                {/* ==================== 1. SIDEBAR (DESKTOP) ==================== */}
-                <Sidebar role={user?.role as any || "user"} />
+                <Sidebar />
 
                 {/* ==================== 2. SIDEBAR (MOBILE DRAWER) ==================== */}
                 <AnimatePresence>
@@ -57,7 +56,6 @@ export default function DashboardLayout({
                                 className="fixed inset-y-0 left-0 z-[70] w-64 md:hidden"
                             >
                                 <Sidebar
-                                    role={user?.role as any || "user"}
                                     className="w-full h-full static translate-x-0 bg-background"
                                 />
                             </motion.div>
@@ -78,7 +76,7 @@ export default function DashboardLayout({
                         <div className="w-full h-full overflow-y-auto">
                             <div className={cn(
                                 "min-h-full py-2",
-                                user?.role?.toLowerCase() === 'employee' ? "px-1 md:p-6 lg:p-8" : "px-4 sm:px-6 md:p-6 lg:p-8"
+                                (user?.role?.toLowerCase() === 'employee') ? "px-1 md:p-6 lg:p-8" : "px-4 sm:px-6 md:p-6 lg:p-8"
                             )}>
                                 {children}
                             </div>
@@ -86,7 +84,7 @@ export default function DashboardLayout({
                     </main>
                 </div>
             </div>
-            {user?.role?.toLowerCase() === 'employee' && <BottomNav />}
+            {(user?.role?.toLowerCase() === 'employee') && <BottomNav />}
         </ThemeProvider>
     );
 }

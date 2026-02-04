@@ -42,10 +42,10 @@ export async function createCompanyAction(data: CompanyFormValues) {
         revalidatePath("/dashboard/settings/master/company");
 
         return { success: true };
-    } catch (error: any) {
-        console.error("Create Error Full:", error);
-        const errorMsg = error?.response?.data?.message || error?.response?.data?.msg || error?.response?.data?.error || error.message || "Gagal membuat company";
-        console.error("Create Companies Error MSG:", errorMsg);
+    } catch (error: unknown) {
+        const err = error as { response?: { data?: { message?: string, msg?: string, error?: string } }, message: string };
+        console.error("Error Full:", err);
+        const errorMsg = err.response?.data?.message || err.response?.data?.msg || err.response?.data?.error || err.message || "Gagal memproses data";
 
         return {
             success: false,
@@ -77,9 +77,10 @@ export async function updateCompanyAction(id: string, data: CompanyFormValues) {
         revalidatePath("/dashboard/settings/master/company");
 
         return { success: true };
-    } catch (error: any) {
-        console.error("Update Error Full:", error);
-        const errorMsg = error?.response?.data?.message || error?.response?.data?.msg || error?.response?.data?.error || error.message || "Gagal mengupdate company";
+    } catch (error: unknown) {
+        const err = error as { response?: { data?: { message?: string, msg?: string, error?: string } }, message: string };
+        console.error("Update Error Full:", err);
+        const errorMsg = err.response?.data?.message || err.response?.data?.msg || err.response?.data?.error || err.message || "Gagal mengupdate company";
 
         return {
             success: false,
@@ -104,9 +105,10 @@ export async function deleteCompanyAction(id: string) {
         revalidatePath("/dashboard/settings/master/company");
 
         return { success: true };
-    } catch (error: any) {
-        console.error("Delete Error Full:", error);
-        const errorMsg = error?.response?.data?.message || error?.response?.data?.msg || error?.response?.data?.error || error.message || "Gagal menghapus data";
+    } catch (error: unknown) {
+        const err = error as { response?: { data?: { message?: string, msg?: string, error?: string } }, message: string };
+        console.error("Delete Error Full:", err);
+        const errorMsg = err.response?.data?.message || err.response?.data?.msg || err.response?.data?.error || err.message || "Gagal menghapus data";
 
         return {
             success: false,

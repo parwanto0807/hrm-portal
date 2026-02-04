@@ -169,8 +169,8 @@ export function RequestTable({ requests, isLoading, onAction, onCancel, onView, 
                     <div key={request.id} className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm relative overflow-hidden">
                         {/* Status Stripe */}
                         <div className={`absolute left-0 top-0 bottom-0 w-1 ${request.status === 'APPROVED' ? 'bg-emerald-500' :
-                                request.status === 'REJECTED' ? 'bg-red-500' :
-                                    request.status === 'PENDING' ? 'bg-amber-500' : 'bg-blue-500'
+                            request.status === 'REJECTED' ? 'bg-red-500' :
+                                request.status === 'PENDING' ? 'bg-amber-500' : 'bg-blue-500'
                             }`} />
 
                         <div className="pl-3 flex flex-col gap-3">
@@ -227,8 +227,16 @@ export function RequestTable({ requests, isLoading, onAction, onCancel, onView, 
     );
 }
 
+interface ActionButtonsProps {
+    request: Pengajuan;
+    isApprovalView?: boolean;
+    onAction?: (request: Pengajuan, action: 'APPROVE' | 'REJECT') => void;
+    onCancel?: (request: Pengajuan) => void;
+    onView?: (request: Pengajuan) => void;
+}
+
 // Sub-component for Action Keys to reduce duplication
-function ActionButtons({ request, isApprovalView, onAction, onCancel, onView }: any) {
+function ActionButtons({ request, isApprovalView, onAction, onCancel, onView }: ActionButtonsProps) {
     return (
         <TooltipProvider>
             {isApprovalView && (request.status === 'PENDING' || request.status === 'IN_PROGRESS') ? (

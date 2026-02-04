@@ -130,7 +130,7 @@ export default function DocumentationPage() {
                                                 </div>
                                                 <div className="space-y-1">
                                                     <p className="font-bold text-sm">Tahap 1: Master Organisasi</p>
-                                                    <p className="text-xs text-muted-foreground">Import Company, Factory, Bagian, Dept, Seksie. Tanpa ini, karyawan tidak punya 'rumah'.</p>
+                                                    <p className="text-xs text-muted-foreground">Import Company, Factory, Bagian, Dept, Seksie. Tanpa ini, karyawan tidak punya &apos;rumah&apos;.</p>
                                                 </div>
                                             </div>
 
@@ -141,7 +141,7 @@ export default function DocumentationPage() {
                                                 </div>
                                                 <div className="space-y-1">
                                                     <p className="font-bold text-sm">Tahap 2: Data Karyawan</p>
-                                                    <p className="text-xs text-muted-foreground">Import seluruh data personal karyawan. Gunakan tool "Sync Karyawan" di menu master.</p>
+                                                    <p className="text-xs text-muted-foreground">Import seluruh data personal karyawan. Gunakan tool &quot;Sync Karyawan&quot; di menu master.</p>
                                                 </div>
                                             </div>
 

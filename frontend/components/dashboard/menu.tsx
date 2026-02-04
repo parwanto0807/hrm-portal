@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Ellipsis, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { ChevronDown, ChevronUp, Sparkles, Ellipsis } from "lucide-react";
 import { cn } from "@/lib/utils";
 // import { getMenuList } from "@/lib/menu-list"; // REMOVED
 import { Button } from "@/components/ui/button";
@@ -19,12 +18,13 @@ import {
   PopoverTrigger,
   PopoverContent
 } from "@/components/ui/popover";
-import { useMenus } from "@/app/hooks/useMenus";
+import { useMenus, MenuGroup, MenuItem as IHooksMenuItem, SubmenuItem as IHooksSubmenuItem } from "@/app/hooks/useMenus";
 import * as LucideIcons from "lucide-react";
 
 // Helper to map string icon name to Lucide Icon component
-const getIcon = (iconName: string) => {
-  // @ts-ignore
+const getIcon = (iconName: string | React.ElementType) => {
+  if (typeof iconName !== 'string') return iconName;
+  // @ts-expect-error - Lucide icons are dynamically indexed
   return LucideIcons[iconName] || LucideIcons.Circle;
 };
 
@@ -37,7 +37,7 @@ interface MenuProps {
 interface MenuItemProps {
   href: string;
   label: string;
-  icon: any; // Changed from React.ComponentType to any to support dynamic icon
+  icon: React.ElementType; // Use React.ElementType instead of any
   active: boolean;
   disabled?: boolean;
   isOpen?: boolean;
@@ -282,7 +282,7 @@ const MenuGroupLabel = ({
   );
 };
 
-export function Menu({ isOpen, role, theme = 'dark' }: MenuProps) {
+export function Menu({ isOpen, theme = 'dark' }: Omit<MenuProps, 'role'>) {
   const { menuList, isLoading } = useMenus();
 
   const [openSubmenuIndex, setOpenSubmenuIndex] = useState<string | null>(null);
@@ -304,13 +304,13 @@ export function Menu({ isOpen, role, theme = 'dark' }: MenuProps) {
           : "bg-white/95 backdrop-blur-sm border border-gray-200/50"
       )}>
         <ul className="flex flex-col items-start space-y-0.5 px-1">
-          {menuList.map(({ groupLabel, menus }: any, groupIndex: number) => (
+          {menuList.map(({ groupLabel, menus }: MenuGroup, groupIndex: number) => (
             <li className={cn("w-full", groupLabel ? "pt-0" : "")} key={`group-${groupIndex}`}>
               {groupLabel && (
                 <MenuGroupLabel label={groupLabel} isOpen={isOpen} theme={theme} />
               )}
 
-              {menus.map((menu: any, menuIndex: number) => {
+              {menus.map((menu: IHooksMenuItem, menuIndex: number) => {
                 const {
                   href,
                   label,
@@ -431,7 +431,7 @@ export function Menu({ isOpen, role, theme = 'dark' }: MenuProps) {
                                   <span className="text-[10px] md:text-sm">{label}</span>
                                 </div>
                                 <div className="space-y-0.5">
-                                  {submenus.map((submenu: any, subIndex: number) => (
+                                  {submenus.map((submenu: IHooksSubmenuItem, subIndex: number) => (
                                     <SubmenuItem
                                       key={`submenu-${groupIndex}-${menuIndex}-${subIndex}`}
                                       href={submenu.href}
@@ -457,7 +457,7 @@ export function Menu({ isOpen, role, theme = 'dark' }: MenuProps) {
                           isSubmenuOpen ? "max-h-96 opacity-100 mt-1" : "max-h-0 opacity-0"
                         )}
                       >
-                        {submenus.map((submenu: any, subIndex: number) => (
+                        {submenus.map((submenu: IHooksSubmenuItem, subIndex: number) => (
                           <SubmenuItem
                             key={`submenu-${groupIndex}-${menuIndex}-${subIndex}`}
                             href={submenu.href}

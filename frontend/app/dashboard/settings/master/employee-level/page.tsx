@@ -6,7 +6,6 @@ import {
     GraduationCap,
     Plus,
     Search,
-    RefreshCcw,
     Edit,
     Trash2,
     Database
@@ -26,14 +25,15 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { EmployeeLevelDialog } from "@/components/settings/master/EmployeeLevelDialog";
+import { EmployeeLevel } from "@/types/master";
 import HeaderCard from "@/components/ui/header-card";
 
 export default function EmployeeLevelPage() {
-    const [levels, setLevels] = useState<any[]>([]);
+    const [levels, setLevels] = useState<EmployeeLevel[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [diagOpen, setDiagOpen] = useState(false);
-    const [selectedLevel, setSelectedLevel] = useState<any>(null);
+    const [selectedLevel, setSelectedLevel] = useState<EmployeeLevel | null>(null);
     const [isImporting, setIsImporting] = useState(false);
 
     const fetchLevels = async () => {
@@ -43,7 +43,7 @@ export default function EmployeeLevelPage() {
             if (response.data.success) {
                 setLevels(response.data.data);
             }
-        } catch (error) {
+        } catch (_error) {
             toast.error("Gagal mengambil data golongan");
         } finally {
             setLoading(false);
@@ -60,7 +60,7 @@ export default function EmployeeLevelPage() {
             await api.delete(`/levels/${code}`);
             toast.success("Golongan berhasil dihapus");
             fetchLevels();
-        } catch (error) {
+        } catch (_error) {
             toast.error("Gagal menghapus golongan");
         }
     };
@@ -73,8 +73,9 @@ export default function EmployeeLevelPage() {
                 toast.success(`Berhasil mengimport ${response.data.stats.imported} golongan`);
                 fetchLevels();
             }
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || "Gagal mengimport data dari MySQL");
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: { message?: string } } };
+            toast.error(err.response?.data?.message || "Gagal mengimport data dari MySQL");
         } finally {
             setIsImporting(false);
         }

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import LogoutButton from '../auth/LogoutButton';
 import { useAuth } from '@/app/hooks/useAuth';
+import Image from 'next/image';
 
 const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
@@ -38,7 +39,8 @@ export const Sidebar = () => {
     const user = mounted ? getUser() : null;
 
     useEffect(() => {
-        setMounted(true);
+        const timer = setTimeout(() => setMounted(true), 0);
+        return () => clearTimeout(timer);
     }, []);
 
     // Helper to check active state
@@ -103,11 +105,12 @@ export const Sidebar = () => {
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
                     <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gradient-to-r from-sky-500 to-emerald-600 flex items-center justify-center flex-shrink-0">
                         {mounted && user?.image ? (
-                            <img
+                            <Image
                                 src={user.image}
                                 alt={user.name || 'User'}
+                                width={40}
+                                height={40}
                                 className="w-full h-full object-cover"
-                                referrerPolicy="no-referrer"
                             />
                         ) : (
                             <span className="text-white font-bold">{getUserInitials()}</span>

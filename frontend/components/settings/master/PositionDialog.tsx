@@ -24,30 +24,33 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { Position } from "@/types/master";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const formSchema = z.object({
     kdJab: z.string().min(1, "Kode Jabatan wajib diisi").max(20, "Maksimal 20 karakter"),
     nmJab: z.string().min(1, "Nama Jabatan wajib diisi"),
-    nTjabatan: z.coerce.number(),
-    nTransport: z.coerce.number(),
-    nShiftAll: z.coerce.number(),
-    nPremiHdr: z.coerce.number(),
-    persenRmh: z.coerce.number(),
-    persenPph: z.coerce.number(),
+    nTjabatan: z.number(),
+    nTransport: z.number(),
+    nShiftAll: z.number(),
+    nPremiHdr: z.number(),
+    persenRmh: z.number(),
+    persenPph: z.number(),
     keterangan: z.string().optional().or(z.literal("")),
 });
+
+type PositionFormValues = z.infer<typeof formSchema>;
 
 interface PositionDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    position?: any;
+    position?: Position | null;
     onSuccess: () => void;
 }
 
 export function PositionDialog({ open, onOpenChange, position, onSuccess }: PositionDialogProps) {
     const isEditing = !!position;
-    const form = useForm<any>({
+    const form = useForm<PositionFormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             kdJab: "",
@@ -101,8 +104,9 @@ export function PositionDialog({ open, onOpenChange, position, onSuccess }: Posi
             }
             onSuccess();
             onOpenChange(false);
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || "Gagal menyimpan data");
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: { message?: string } } };
+            toast.error(err.response?.data?.message || "Gagal menyimpan data");
         }
     }
 
@@ -117,9 +121,9 @@ export function PositionDialog({ open, onOpenChange, position, onSuccess }: Posi
                 </DialogHeader>
                 <ScrollArea className="max-h-[80vh] px-1">
                     <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-4 py-4 pr-3">
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 pr-3">
                             <FormField
-                                control={form.control as any}
+                                control={form.control}
                                 name="kdJab"
                                 render={({ field }) => (
                                     <FormItem>
@@ -132,7 +136,7 @@ export function PositionDialog({ open, onOpenChange, position, onSuccess }: Posi
                                 )}
                             />
                             <FormField
-                                control={form.control as any}
+                                control={form.control}
                                 name="nmJab"
                                 render={({ field }) => (
                                     <FormItem>
@@ -146,7 +150,7 @@ export function PositionDialog({ open, onOpenChange, position, onSuccess }: Posi
                             />
                             <div className="grid grid-cols-2 gap-4">
                                 <FormField
-                                    control={form.control as any}
+                                    control={form.control}
                                     name="nTjabatan"
                                     render={({ field }) => (
                                         <FormItem>
@@ -159,7 +163,7 @@ export function PositionDialog({ open, onOpenChange, position, onSuccess }: Posi
                                     )}
                                 />
                                 <FormField
-                                    control={form.control as any}
+                                    control={form.control}
                                     name="nTransport"
                                     render={({ field }) => (
                                         <FormItem>
@@ -174,7 +178,7 @@ export function PositionDialog({ open, onOpenChange, position, onSuccess }: Posi
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <FormField
-                                    control={form.control as any}
+                                    control={form.control}
                                     name="nShiftAll"
                                     render={({ field }) => (
                                         <FormItem>
@@ -187,7 +191,7 @@ export function PositionDialog({ open, onOpenChange, position, onSuccess }: Posi
                                     )}
                                 />
                                 <FormField
-                                    control={form.control as any}
+                                    control={form.control}
                                     name="nPremiHdr"
                                     render={({ field }) => (
                                         <FormItem>
@@ -202,7 +206,7 @@ export function PositionDialog({ open, onOpenChange, position, onSuccess }: Posi
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <FormField
-                                    control={form.control as any}
+                                    control={form.control}
                                     name="persenRmh"
                                     render={({ field }) => (
                                         <FormItem>
@@ -215,7 +219,7 @@ export function PositionDialog({ open, onOpenChange, position, onSuccess }: Posi
                                     )}
                                 />
                                 <FormField
-                                    control={form.control as any}
+                                    control={form.control}
                                     name="persenPph"
                                     render={({ field }) => (
                                         <FormItem>
@@ -229,7 +233,7 @@ export function PositionDialog({ open, onOpenChange, position, onSuccess }: Posi
                                 />
                             </div>
                             <FormField
-                                control={form.control as any}
+                                control={form.control}
                                 name="keterangan"
                                 render={({ field }) => (
                                     <FormItem>
