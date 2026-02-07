@@ -1,9 +1,101 @@
-// src/routes/mysql.routes.js
 import express from 'express';
 import { getMysqlPool, testMysqlConnection } from '../config/mysqlClient.js';
 import { prisma } from '../config/prisma.js';
+import { calculateLate, calculateEarly, sanitizeAttendanceStatus } from '../utils/attendanceUtils.js';
 
 const router = express.Router();
+
+// Helper to parse MySQL dates safely in local timezone
+const parseDate = (mysqlDate) => {
+    if (!mysqlDate || mysqlDate === '0000-00-00' || mysqlDate === '0000-00-00 00:00:00') {
+        return null;
+    }
+    try {
+        if (typeof mysqlDate === 'string') {
+            // Handle both YYYY-MM-DD and YYYY-MM-DD HH:mm:ss
+            const [datePart, timePart] = mysqlDate.split(' ');
+            const [year, month, day] = datePart.split('-').map(Number);
+            
+            if (timePart) {
+                const [hour, minute, second] = timePart.split(':').map(Number);
+                return new Date(year, month - 1, day, hour || 0, minute || 0, second || 0);
+            }
+            return new Date(Date.UTC(year, month - 1, day));
+        }
+        const d = new Date(mysqlDate);
+        return isNaN(d.getTime()) ? null : d;
+    } catch {
+        return null;
+    }
+};
+
+// --- INTERNAL HELPERS ---
+const syncAttLogsInternal = async (pool, startDate) => {
+    const stats = { total: 0, imported: 0, errors: 0 };
+    const [mysqlLogs] = await pool.query(
+        'SELECT * FROM att_log WHERE tanggal >= ?',
+        [startDate]
+    );
+    stats.total = mysqlLogs.length;
+
+    for (const row of mysqlLogs) {
+        try {
+            const cleanNik = row.nik.trim();
+            const karyawan = await prisma.karyawan.findUnique({ where: { nik: cleanNik } });
+            if (!karyawan) continue;
+
+            await prisma.attLog.upsert({
+                where: {
+                    att_log_unique: {
+                        nik: cleanNik,
+                        tanggal: parseDate(row.tanggal),
+                        jam: row.jam || '',
+                        cflag: row.cflag || ''
+                    }
+                },
+                update: { idAbsen: row.id_absen || '' },
+                create: {
+                    nik: cleanNik,
+                    idAbsen: row.id_absen || '',
+                    tanggal: parseDate(row.tanggal),
+                    jam: row.jam || '',
+                    cflag: row.cflag || ''
+                }
+            });
+            stats.imported++;
+        } catch (err) {
+            stats.errors++;
+        }
+    }
+    return stats;
+};
+
+const findRealInOutFromLogs = async (pool, nik, dateStr) => {
+    try {
+        // Query logs directly for this specific person and date
+        const [logs] = await pool.query(
+            'SELECT jam FROM att_log WHERE nik = ? AND tanggal = ? ORDER BY jam ASC', 
+            [nik, dateStr]
+        );
+        
+        if (logs.length === 0) return { realMasuk: null, realKeluar: null };
+
+        const firstTap = logs[0].jam; 
+        const lastTap = logs.length > 1 ? logs[logs.length - 1].jam : null;
+
+        // Convert HH.mm to HH:mm for standard format if needed, 
+        // but our DB seems to store CHAR(5) like "0800" or "08:00".
+        // Based on previous logs, it's "HH.mm". We should standardize to HH:mm for PostgreSQL Time string.
+        const fmt = (t) => t ? t.replace('.', ':') : null;
+
+        return { 
+            realMasuk: fmt(firstTap), 
+            realKeluar: fmt(lastTap) 
+        };
+    } catch (e) {
+        return { realMasuk: null, realKeluar: null };
+    }
+};
 
 // Get Current Config
 router.get('/config', async (req, res) => {
@@ -307,15 +399,6 @@ router.post('/import/payroll', async (req, res) => {
         
         for (const row of mysqlGaji) {
             try {
-                // Helper to parse dates safely
-                const parseDate = (dateVal) => {
-                    if (!dateVal || dateVal === '0000-00-00' || dateVal === '0000-00-00 00:00:00') return null;
-                    try {
-                        const d = new Date(dateVal);
-                        return isNaN(d.getTime()) ? null : d;
-                    } catch { return null; }
-                };
-
                 // Comprehensive field mapping (CORRECTED to match schema)
                 const gajiData = {
                     // Basic Info
@@ -505,6 +588,295 @@ router.post('/import/payroll', async (req, res) => {
         res.status(200).json({ success: true, stats, message: 'Import payroll selesai' });
     } catch (error) {
         console.error('🔥 Import Error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+
+// Import Attendance Data (Limit to last 6 months)
+router.post('/import/attendance', async (req, res) => {
+    const pool = await getMysqlPool();
+    if (!pool) return res.status(500).json({ success: false, message: 'MySQL not configured' });
+
+    const stats = { 
+        total: 0, 
+        imported: 0, 
+        updated: 0, 
+        errors: 0, 
+        errorDetails: [],
+        dependencies: {
+            periods: { total: 0, imported: 0 },
+            descriptions: { total: 0, imported: 0 },
+            workHours: { total: 0, imported: 0 }
+        }
+    };
+
+    try {
+        console.log('🏁 Starting Attendance Import with dependencies...');
+
+        // 1. IMPORT PERIODS
+        console.log('⏳ Importing Periods...');
+        const [mysqlPeriods] = await pool.query('SELECT * FROM periode');
+        stats.dependencies.periods.total = mysqlPeriods.length;
+        for (const row of mysqlPeriods) {
+            try {
+                const awal = new Date(row.AWAL);
+                const akhir = new Date(row.AKHIR);
+                await prisma.periode.upsert({
+                    where: { periodeId: row.PERIODE_ID },
+                    update: {
+                        awal: !isNaN(awal.getTime()) ? awal : new Date(),
+                        akhir: !isNaN(akhir.getTime()) ? akhir : new Date(),
+                        dataDefa: row.DATA_DEFA === 1,
+                        tutup: row.TUTUP === 1,
+                        tahun: parseInt(row.TAHUN) || 2024,
+                        bulan: parseInt(row.BULAN) || 1,
+                        nama: row.NAMA,
+                        kdCmpy: row.KD_CMPY
+                    },
+                    create: {
+                        periodeId: row.PERIODE_ID,
+                        awal: !isNaN(awal.getTime()) ? awal : new Date(),
+                        akhir: !isNaN(akhir.getTime()) ? akhir : new Date(),
+                        dataDefa: row.DATA_DEFA === 1,
+                        tutup: row.TUTUP === 1,
+                        tahun: parseInt(row.TAHUN) || 2024,
+                        bulan: parseInt(row.BULAN) || 1,
+                        nama: row.NAMA,
+                        kdCmpy: row.KD_CMPY
+                    }
+                });
+                stats.dependencies.periods.imported++;
+            } catch (err) { /* silent fail for deps */ }
+        }
+
+        // 2. IMPORT ATTENDANCE DESCRIPTIONS (DescAbsen)
+        console.log('⏳ Importing Attendance Descriptions...');
+        const [mysqlDesc] = await pool.query('SELECT * FROM desc_absen');
+        stats.dependencies.descriptions.total = mysqlDesc.length;
+        for (const row of mysqlDesc) {
+            try {
+                await prisma.descAbsen.upsert({
+                    where: { kodeDesc: row.KODE_DESC },
+                    update: { keterangan: row.KETERANGAN },
+                    create: { kodeDesc: row.KODE_DESC, keterangan: row.KETERANGAN }
+                });
+                stats.dependencies.descriptions.imported++;
+            } catch (err) { /* silent fail for deps */ }
+        }
+
+        // 3. IMPORT WORK HOURS TYPES (JnsJam)
+        console.log('⏳ Importing Work Hour Types...');
+        const [mysqlJnsJam] = await pool.query('SELECT * FROM jnsjam');
+        stats.dependencies.workHours.total = mysqlJnsJam.length;
+        for (const row of mysqlJnsJam) {
+            try {
+                await prisma.jnsJam.upsert({
+                    where: { kdJam: row.KD_JAM },
+                    update: { nmJam: row.NM_JAM, jamMsk: row.JAM_MSK, jamKlr: row.JAM_KLR },
+                    create: { kdJam: row.KD_JAM, nmJam: row.NM_JAM, jamMsk: row.JAM_MSK, jamKlr: row.JAM_KLR }
+                });
+                stats.dependencies.workHours.imported++;
+            } catch (err) { /* silent fail for deps */ }
+        }
+
+        // 4. IMPORT ATTENDANCE RECORDS (Last 6 Months)
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+        sixMonthsAgo.setDate(1);
+        sixMonthsAgo.setHours(0, 0, 0, 0);
+
+        console.log(`📅 Importing attendance since ${sixMonthsAgo.toISOString()}...`);
+
+        const [mysqlAbsent] = await pool.query(
+            'SELECT * FROM absent WHERE TGL_ABSEN >= ?',
+            [sixMonthsAgo]
+        );
+
+        stats.total = mysqlAbsent.length;
+        console.log(`📊 Found ${stats.total} attendance records to process.`);
+
+        // Cache for validation to speed up
+        const employeeCache = new Set();
+        const periodCache = new Set();
+        const descCache = new Set();
+        const jamCache = new Set();
+
+        for (const row of mysqlAbsent) {
+            try {
+                const tglAbsen = parseDate(row.TGL_ABSEN);
+                if (!tglAbsen) continue;
+
+                // --- VALIDATIONS ---
+                // 1. Employee Check
+                if (!employeeCache.has(row.EMPL_ID)) {
+                    const exists = await prisma.karyawan.findUnique({ where: { emplId: row.EMPL_ID } });
+                    if (!exists) {
+                        throw new Error(`Employee ${row.EMPL_ID} not found in PostgreSQL. Run Employee Import first.`);
+                    }
+                    employeeCache.add(row.EMPL_ID);
+                }
+
+                // 2. Period Check
+                let periode = row.PERIODE?.trim() || null;
+                if (periode && !periodCache.has(periode)) {
+                    const exists = await prisma.periode.findUnique({ where: { periodeId: periode } });
+                    if (!exists) {
+                        console.warn(`⚠️  Period [${periode}] not found, using generic or erroring...`);
+                        throw new Error(`Period ${periode} not found. Fix: Dependency import failed.`);
+                    }
+                    periodCache.add(periode);
+                } else if (!periode) {
+                    throw new Error(`Attendance record for ${row.EMPL_ID} missing Period ID.`);
+                }
+
+                // 3. Desc Check
+                let kodeDesc = row.KODE_DESC?.trim() || null;
+                if (kodeDesc && !descCache.has(kodeDesc)) {
+                    const exists = await prisma.descAbsen.findUnique({ where: { kodeDesc } });
+                    if (!exists) {
+                        console.warn(`⚠️  Desc [${kodeDesc}] not found, setting to null for ${row.EMPL_ID}`);
+                        kodeDesc = null;
+                    } else {
+                        descCache.add(kodeDesc);
+                    }
+                }
+
+                // 4. Jam Check
+                let kdJam = row.KD_JAM?.trim() || null;
+
+                // --- HOTFIX: OVERRIDE SUNDAY 'JK1' ---
+                // MySQL Source has 'JK1' (Normal) for Sundays, which is incorrect.
+                // We force it to null (Off/Libur) relative to the specific date.
+                if (tglAbsen && kdJam === 'JK1') {
+                    const dayOfWeek = tglAbsen.getDay(); // 0 = Sunday
+                    if (dayOfWeek === 0) {
+                        console.log(`⚠️  Overriding Sunday 'JK1' for ${row.EMPL_ID} on ${row.TGL_ABSEN} -> Set to NULL (Off)`);
+                        kdJam = null; 
+                    }
+                }
+
+                if (kdJam && !jamCache.has(kdJam)) {
+                    const exists = await prisma.jnsJam.findUnique({ where: { kdJam } });
+                    if (!exists) {
+                        console.warn(`⚠️  Jam [${kdJam}] not found, setting to null for ${row.EMPL_ID}`);
+                        kdJam = null;
+                    } else {
+                        jamCache.add(kdJam);
+                    }
+                }
+
+                // --- 5. ATT_LOG PRIORITY OVERRIDE ---
+                // Override MySQL 'absent' data with RAW 'att_log' data to fix date shifting
+                // Use original row.TGL_ABSEN string (YYYY-MM-DD) for lookup
+                const rawLogs = await findRealInOutFromLogs(pool, row.EMPL_ID, row.TGL_ABSEN);
+                
+                // If we found raw logs, USE THEM as the truth
+                let finalRealMasuk = rawLogs.realMasuk || row.REALMASUK;
+                let finalRealKeluar = rawLogs.realKeluar || row.REALKELUAR;
+
+                // --- HOTFIX: SUNDAY STRICT LOG VALIDATION ---
+                // On Sundays, we don't trust the MySQL 'absent' table's clock times 
+                // if there are no raw entries in 'att_log'. This prevents phantom "Hadir" data.
+                if (tglAbsen && tglAbsen.getDay() === 0) {
+                    if (!rawLogs.realMasuk && !rawLogs.realKeluar) {
+                        finalRealMasuk = null;
+                        finalRealKeluar = null;
+                    }
+                }
+
+                // Recalculate lambat/cepat based on FINAL times
+                const lambatRecalc = calculateLate(row.STDMASUK, finalRealMasuk);
+                const cepatRecalc = calculateEarly(row.STDKELUAR, finalRealKeluar);
+
+                const absentData = {
+                    periode: periode,
+                    nik: row.NIK || null,
+                    idAbsen: row.ID_ABSEN || null,
+                    nama: row.NAMA || null,
+                    kdCmpy: row.KD_CMPY || null,
+                    kdFact: row.KD_FACT || null,
+                    kdBag: row.KD_BAG || null,
+                    kdDept: row.KD_DEPT || null,
+                    kdSeksie: row.KD_SEKSIE || null,
+                    kdJam: kdJam,
+                    groupShift: row.GROUP_SHIFT || '',
+                    stdMasuk: row.STDMASUK || null,
+                    stdKeluar: row.STDKELUAR || null,
+                    realMasuk: finalRealMasuk,    // Use Overridden/Original
+                    realKeluar: finalRealKeluar,  // Use Overridden/Original
+                    jMasuk: row.JMASUK || null,   // Keep original or recalc? Keep for now
+                    jKeluar: row.JKELUAR || null, // Keep original or recalc? Keep for now
+                    kdLmb: row.KD_LMB === 1,
+                    kdSpl: row.KD_SPL === 1,
+                    lembur1: parseFloat(row.LEMBUR1) || 0,
+                    lembur2: parseFloat(row.LEMBUR2) || 0,
+                    lembur3: parseFloat(row.LEMBUR3) || 0,
+                    lembur4: parseFloat(row.LEMBUR4) || 0,
+                    totKerja: parseFloat(row.TOTKERJA) || 0,
+                    lambat: lambatRecalc,
+                    cepat: cepatRecalc,
+                    kdHari: parseInt(row.KD_HARI) || 1,
+                    kdAbsen: sanitizeAttendanceStatus({
+                        kdAbsen: row.KD_ABSEN || 'H',
+                        realMasuk: finalRealMasuk,
+                        realKeluar: finalRealKeluar
+                    }),
+                    kdShif: parseInt(row.KD_SHIF) || 1,
+                    mskLmb: row.MSK_LMB || null,
+                    klrLmb: row.KLR_LMB || null,
+                    totLmb: parseFloat(row.TOT_LMB) || 0,
+                    ketLmb: row.KET_LMB || null,
+                    flagShift: row.FLAG_SHIFT === 1,
+                    flagMeal: row.FLAG_MEAL === 1,
+                    flagSusu: row.FLAG_SUSU === 1,
+                    kodeDesc: kodeDesc
+                };
+
+                const result = await prisma.absent.upsert({
+                    where: { 
+                        absent_unique: { 
+                            emplId: row.EMPL_ID, 
+                            tglAbsen: tglAbsen 
+                        } 
+                    },
+                    update: absentData,
+                    create: {
+                        emplId: row.EMPL_ID,
+                        tglAbsen: tglAbsen,
+                        ...absentData
+                    }
+                });
+
+                if (result.createdAt.getTime() === result.updatedAt.getTime()) {
+                    stats.imported++;
+                } else {
+                    stats.updated++;
+                }
+            } catch (err) {
+                stats.errors++;
+                stats.errorDetails.push({
+                    emplId: row.EMPL_ID,
+                    tglAbsen: row.TGL_ABSEN,
+                    error: err.message
+                });
+            }
+        }
+
+        // 5. AUTO-SYNC RAW LOGS (att_log) for the same period
+        console.log('🔄 Syncing raw tap logs (att_log)...');
+        const logStats = await syncAttLogsInternal(pool, sixMonthsAgo);
+
+        res.status(200).json({ 
+            success: true, 
+            stats: {
+                ...stats,
+                attLog: logStats
+            }, 
+            message: `Import absensi selesai: ${stats.imported} baru, ${stats.updated} diupdate. Raw logs: ${logStats.imported} synced.` 
+        });
+    } catch (error) {
+        console.error('🔥 Attendance Import Error:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 });
@@ -735,8 +1107,147 @@ router.post('/import/employees', async (req, res) => {
     const stats = { total: 0, imported: 0, updated: 0, errors: 0, errorDetails: [] };
 
     try {
-        console.log('🏁 Starting Employee Import...');
+        console.log('🏁 Starting Employee Import (with Master Data dependencies)...');
         
+        // --- 1. SEQUENTIAL MASTER DATA IMPORT ---
+        console.log('📚 Importing Religions...');
+        const [mysqlAgm] = await pool.query('SELECT * FROM mstagm');
+        for (const row of mysqlAgm) {
+            try {
+                await prisma.mstAgm.upsert({
+                    where: { kdAgm: row.CKD_AGM },
+                    update: { nmAgm: row.CNM_AGM, keterangan: row.KETERANGAN },
+                    create: { kdAgm: row.CKD_AGM, nmAgm: row.CNM_AGM, keterangan: row.KETERANGAN }
+                });
+            } catch (err) { console.error(`Failed to import Religion ${row.CKD_AGM}:`, err.message); }
+        }
+
+        console.log('🎓 Importing Education Levels...');
+        const [mysqlSkl] = await pool.query('SELECT * FROM mstskl');
+        for (const row of mysqlSkl) {
+            try {
+                await prisma.mstSkl.upsert({
+                    where: { kdSkl: row.CKD_SKL },
+                    update: { nmSkl: row.CNM_SKL, keterangan: row.KETERANGAN },
+                    create: { kdSkl: row.CKD_SKL, nmSkl: row.CNM_SKL, keterangan: row.KETERANGAN }
+                });
+            } catch (err) { console.error(`Failed to import Education ${row.CKD_SKL}:`, err.message); }
+        }
+
+        console.log('🏦 Importing Banks...');
+        const [mysqlBanks] = await pool.query('SELECT * FROM bank');
+        for (const row of mysqlBanks) {
+            try {
+                await prisma.bank.upsert({
+                    where: { bankCode: row.BANK_CODE },
+                    update: { bankNama: row.BANK_NAMA },
+                    create: { bankCode: row.BANK_CODE, bankNama: row.BANK_NAMA }
+                });
+            } catch (err) { console.error(`Failed to import Bank ${row.BANK_CODE}:`, err.message); }
+        }
+
+        console.log('🏭 Importing Factories...');
+        const [mysqlFact] = await pool.query('SELECT * FROM mstfact');
+        for (const row of mysqlFact) {
+            try {
+                await prisma.mstFact.upsert({
+                    where: { kdFact: row.CKD_FACT },
+                    update: { nmFact: row.CNM_FACT, keterangan: row.KETERANGAN },
+                    create: { kdFact: row.CKD_FACT, nmFact: row.CNM_FACT, keterangan: row.KETERANGAN }
+                });
+            } catch (err) { console.error(`Failed to import Factory ${row.CKD_FACT}:`, err.message); }
+        }
+
+        console.log('🏢 Importing Divisions...');
+        const [mysqlBag] = await pool.query('SELECT * FROM mstbag');
+        for (const row of mysqlBag) {
+            try {
+                await prisma.mstBag.upsert({
+                    where: { kdBag: row.CKD_BAG },
+                    update: { nmBag: row.CNM_BAG, keterangan: row.KETERANGAN },
+                    create: { kdBag: row.CKD_BAG, nmBag: row.CNM_BAG, keterangan: row.KETERANGAN }
+                });
+            } catch (err) { console.error(`Failed to import Division ${row.CKD_BAG}:`, err.message); }
+        }
+
+        console.log('📂 Importing Departments...');
+        const [mysqlDept] = await pool.query('SELECT * FROM mstdept');
+        for (const row of mysqlDept) {
+            try {
+                await prisma.mstDept.upsert({
+                    where: { kdDept: row.CKD_DEPT },
+                    update: { nmDept: row.CNM_DEPT, kdBag: row.CKD_BAG, keterangan: row.KETERANGAN },
+                    create: { kdDept: row.CKD_DEPT, nmDept: row.CNM_DEPT, kdBag: row.CKD_BAG, keterangan: row.KETERANGAN }
+                });
+            } catch (err) { console.error(`Failed to import Department ${row.CKD_DEPT}:`, err.message); }
+        }
+
+        console.log('📑 Importing Sections...');
+        const [mysqlSie] = await pool.query('SELECT * FROM mstsie');
+        for (const row of mysqlSie) {
+            try {
+                await prisma.mstSie.upsert({
+                    where: { kdSeksie: row.CKD_SIE },
+                    update: { nmSeksie: row.CNM_SIE, kdBag: row.CKD_BAG, kdDept: row.CKD_DEPT, keterangan: row.KETERANGAN },
+                    create: { kdSeksie: row.CKD_SIE, nmSeksie: row.CNM_SIE, kdBag: row.CKD_BAG, kdDept: row.CKD_DEPT, keterangan: row.KETERANGAN }
+                });
+            } catch (err) { console.error(`Failed to import Section ${row.CKD_SIE}:`, err.message); }
+        }
+
+        console.log('💼 Importing Positions...');
+        const [mysqlJab] = await pool.query('SELECT * FROM mstjab');
+        for (const row of mysqlJab) {
+            try {
+                await prisma.mstJab.upsert({
+                    where: { kdJab: row.CKD_JAB },
+                    update: { 
+                        nmJab: row.CNM_JAB,
+                        nTjabatan: row.NTJABATAN,
+                        nTransport: row.NTRANSPORT,
+                        keterangan: row.KETERANGAN
+                    },
+                    create: {
+                        kdJab: row.CKD_JAB,
+                        nmJab: row.CNM_JAB,
+                        nTjabatan: row.NTJABATAN,
+                        nTransport: row.NTRANSPORT,
+                        nShiftAll: row.NSHIFT_ALL,
+                        nPremiHdr: row.NPREMI_HDR,
+                        persenRmh: row.PERSEN_RMH,
+                        persenPph: row.PERSEN_PPH,
+                        keterangan: row.KETERANGAN
+                    }
+                });
+            } catch (err) { console.error(`Failed to import Position ${row.CKD_JAB}:`, err.message); }
+        }
+
+        console.log('📊 Importing Employee Levels...');
+        const [mysqlPkt] = await pool.query('SELECT * FROM mstpkt');
+        for (const row of mysqlPkt) {
+            try {
+                await prisma.mstPkt.upsert({
+                    where: { kdPkt: row.CKD_PKT },
+                    update: { nmPkt: row.CNM_PKT, keterangan: row.KETERANGAN },
+                    create: { kdPkt: row.CKD_PKT, nmPkt: row.CNM_PKT, keterangan: row.KETERANGAN }
+                });
+            } catch (err) { console.error(`Failed to import Level ${row.CKD_PKT}:`, err.message); }
+        }
+
+        console.log('🔄 Importing Shift Groups...');
+        const [mysqlShifts] = await pool.query('SELECT * FROM groupshift');
+        for (const row of mysqlShifts) {
+            try {
+                await prisma.groupShift.upsert({
+                    where: { groupShift: row.GROUP_SHIFT },
+                    update: { groupName: row.GROUP_NAME || '', isActive: true },
+                    create: { groupShift: row.GROUP_SHIFT, groupName: row.GROUP_NAME || '', isActive: true }
+                });
+            } catch (err) { console.error(`Failed to import Shift Group ${row.GROUP_SHIFT}:`, err.message); }
+        }
+
+        console.log('✅ Master Data dependencies imported. Proceeding to employees...');
+
+        // --- 2. EMPLOYEE IMPORT ---
         const [mysqlEmployees] = await pool.query('SELECT * FROM karyawan');
         stats.total = mysqlEmployees.length;
 
@@ -745,29 +1256,43 @@ router.post('/import/employees', async (req, res) => {
         const kdJnsMap = { 1: 'KONTRAK', 2: 'TETAP', 3: 'HARIAN' };
         const kdStsMap = { 1: 'TIDAK_AKTIF', 2: 'AKTIF' };
 
-        // Date parser - handle MySQL '0000-00-00' dates
-        const parseDate = (mysqlDate) => {
-            if (!mysqlDate || mysqlDate === '0000-00-00' || mysqlDate === '0000-00-00 00:00:00') {
-                return null;
-            }
-            try {
-                const date = new Date(mysqlDate);
-                return isNaN(date.getTime()) ? null : date;
-            } catch {
-                return null;
-            }
-        };
-
         for (const row of mysqlEmployees) {
             try {
                 // 1. Validate foreign keys exist
                 let kdSeksie = row.KD_SEKSIE || null;
                 if (kdSeksie) {
-                    const seksieExists = await prisma.mstSie.findUnique({ where: { kdSeksie } });
-                    if (!seksieExists) {
-                        // console.warn(`⚠️  Employee ${row.EMPL_ID}: Section ${kdSeksie} not found, setting to null`);
-                        kdSeksie = null;
-                    }
+                    const exists = await prisma.mstSie.findUnique({ where: { kdSeksie } });
+                    if (!exists) kdSeksie = null;
+                }
+
+                let kdAgm = row.KD_AGM || null;
+                if (kdAgm) {
+                    const exists = await prisma.mstAgm.findUnique({ where: { kdAgm } });
+                    if (!exists) kdAgm = null;
+                }
+
+                let kdPkt = row.KD_PKT || null;
+                if (kdPkt) {
+                    const exists = await prisma.mstPkt.findUnique({ where: { kdPkt } });
+                    if (!exists) kdPkt = null;
+                }
+
+                let kdJab = row.KD_JAB || null;
+                if (kdJab) {
+                    const exists = await prisma.mstJab.findUnique({ where: { kdJab } });
+                    if (!exists) kdJab = null;
+                }
+
+                let kdSkl = row.KD_SKL || null;
+                if (kdSkl) {
+                    const exists = await prisma.mstSkl.findUnique({ where: { kdSkl } });
+                    if (!exists) kdSkl = null;
+                }
+
+                let bankCode = row.BANK_CODE || null;
+                if (bankCode) {
+                    const exists = await prisma.bank.findUnique({ where: { bankCode } });
+                    if (!exists) bankCode = null;
                 }
 
                 // 2. Handle NIK Uniqueness
@@ -799,11 +1324,11 @@ router.post('/import/employees', async (req, res) => {
                     kdBag: row.KD_BAG || null,
                     kdDept: row.KD_DEPT || null,
                     kdSeksie: kdSeksie,
-                    kdPkt: row.KD_PKT || null,
-                    kdJab: row.KD_JAB || null,
-                    kdAgm: row.KD_AGM || null,
-                    kdSkl: row.KD_SKL || null,
-                    bankCode: row.BANK_CODE || null,
+                    kdPkt: kdPkt,
+                    kdJab: kdJab,
+                    kdAgm: kdAgm,
+                    kdSkl: kdSkl,
+                    bankCode: bankCode,
                     
                     // Personal Data with Enum Conversion
                     kdSex: kdSexMap[row.KD_SEX] || 'LAKILAKI',
@@ -1112,6 +1637,37 @@ router.post('/import/factories', async (req, res) => {
             }
         }
         res.status(200).json({ success: true, stats, message: 'Import factory selesai' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// Check Machine (MySQL) Connection Status
+router.get('/status/machine', async (req, res) => {
+    try {
+        const pool = await getMysqlPool();
+        if (!pool) return res.status(200).json({ success: false, message: 'MySQL not configured' });
+        
+        // Simple query to verify connection
+        await pool.query('SELECT 1');
+        res.status(200).json({ success: true, message: 'Online' });
+    } catch (error) {
+        res.status(200).json({ success: false, message: 'Offline', error: error.message });
+    }
+});
+
+// Import Raw Attendance Logs (att_log)
+router.post('/import/att-log', async (req, res) => {
+    const pool = await getMysqlPool();
+    if (!pool) return res.status(500).json({ success: false, message: 'MySQL not configured' });
+
+    try {
+        // Only import last 7 days to keep it fast for background sync
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        
+        const stats = await syncAttLogsInternal(pool, sevenDaysAgo);
+        res.status(200).json({ success: true, stats, message: 'AttLog sync complete' });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import {
     TableCell,
@@ -12,13 +13,15 @@ import {
     Calendar,
     ArrowRight,
     ChevronDown,
-    ChevronUp
+    ChevronUp,
+    FileText
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { PayrollPeriod, PayrollDetail } from '@/types/payroll';
+import { PayrollPasswordDialog } from './PayrollPasswordDialog';
 import { PayrollSlipDetail } from './PayrollSlipDetail';
 
 interface PayrollHistoryRowProps {
@@ -30,6 +33,20 @@ interface PayrollHistoryRowProps {
 export function PayrollHistoryRow({ period, showAmount, isEmployee }: PayrollHistoryRowProps) {
     const router = useRouter();
     const [isExpanded, setIsExpanded] = useState(false);
+    const [isPasswordOpen, setIsPasswordOpen] = useState(false);
+
+    const handleDetailClick = () => {
+        if (isEmployee) {
+            setIsPasswordOpen(true);
+        } else {
+            router.push(`/dashboard/payroll/${period.id}`);
+        }
+    };
+
+    const handlePasswordSuccess = () => {
+        setIsPasswordOpen(false);
+        router.push(`/dashboard/payroll/${period.id}`);
+    };
 
     // Only fetch details if we are expanded AND we are an employee (for slip view)
     // If not employee, expansion might check generic details or we just don't support it inline yet?
@@ -86,7 +103,7 @@ export function PayrollHistoryRow({ period, showAmount, isEmployee }: PayrollHis
     return (
         <>
             <TableRow className="hover:bg-slate-50/50 transition-colors group">
-                <TableCell className="font-medium">
+                <TableCell className="py-2.5">
                     <div className="flex items-center gap-3">
                         {isEmployee && (
                             <Button
@@ -96,75 +113,93 @@ export function PayrollHistoryRow({ period, showAmount, isEmployee }: PayrollHis
                                     e.stopPropagation();
                                     handleExpandToggle();
                                 }}
-                                className="h-7 w-7 p-0 -ml-1 mr-1 hover:bg-slate-200 rounded-full"
+                                className="h-6 w-6 p-0 -ml-1 mr-0.5 hover:bg-slate-200 rounded-full shrink-0"
                             >
                                 {isExpanded ? (
-                                    <ChevronUp className="h-4 w-4 text-slate-500" />
+                                    <ChevronUp className="h-3.5 w-3.5 text-slate-500" />
                                 ) : (
-                                    <ChevronDown className="h-4 w-4 text-slate-500" />
+                                    <ChevronDown className="h-3.5 w-3.5 text-slate-500" />
                                 )}
                             </Button>
                         )}
-                        <div className="h-9 w-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-                            <Calendar className="h-4.5 w-4.5" />
+                        <div className={cn(
+                            "rounded-lg flex items-center justify-center shrink-0 shadow-sm",
+                            isEmployee
+                                ? "h-9 w-9 bg-gradient-to-br from-indigo-500 to-purple-600 text-white border border-indigo-400/20"
+                                : "h-9 w-9 bg-blue-50 text-blue-600 border border-blue-100"
+                        )}>
+                            <Calendar className={cn(isEmployee ? "h-5 w-5" : "h-4.5 w-4.5")} />
                         </div>
-                        <div>
-                            <div className="text-sm font-bold text-slate-900 dark:text-slate-100">{period.name}</div>
-                            <div className="text-[10px] text-muted-foreground dark:text-slate-400 uppercase">ID: #{period.id}</div>
+                        <div className="flex flex-col min-w-0">
+                            <div className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate uppercase">
+                                {(() => {
+                                    const match = period.name?.match(/(\d{4})(\d{2})/);
+                                    if (match) {
+                                        const year = parseInt(match[1]);
+                                        const month = parseInt(match[2]);
+                                        return format(new Date(year, month - 1), 'MMMM yyyy', { locale: localeId });
+                                    }
+                                    return period.name || '-';
+                                })()}
+                            </div>
+                            {!isEmployee && <div className="text-[10px] text-muted-foreground dark:text-slate-400 uppercase">ID: #{period.id}</div>}
                         </div>
                     </div>
                 </TableCell>
-                <TableCell>
-                    <div className="flex flex-col text-xs">
-                        <span className="text-slate-600 dark:text-slate-300">
-                            {format(new Date(period.startDate), 'dd MMM yyyy', { locale: localeId })}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground dark:text-slate-400 uppercase font-medium">sampai {format(new Date(period.endDate), 'dd MMM yyyy', { locale: localeId })}</span>
-                    </div>
-                </TableCell>
-                <TableCell className="text-center">
-                    <Badge variant="outline" className="text-[10px] font-semibold border-slate-200 px-2 py-0 h-5">
-                        {period.totalEmployees} Karyawan
-                    </Badge>
-                </TableCell>
-                <TableCell className="text-right font-black text-slate-800 dark:text-white text-sm">
-                    {showAmount ? formatCurrency(period.totalAmount) : 'Rp XX.XXX.XXX'}
-                </TableCell>
-                <TableCell className="text-center">
-                    <Badge variant="secondary" className={`text-[10px] font-bold px-2 py-0 h-5 ${getStatusColor(period.status)}`}>
+                {!isEmployee && (
+                    <TableCell className="py-2.5 text-center">
+                        <Badge variant="outline" className="text-[10px] font-semibold border-slate-200 px-2 py-0 h-5">
+                            {period.totalEmployees} Karyawan
+                        </Badge>
+                    </TableCell>
+                )}
+                {!isEmployee && (
+                    <TableCell className="py-2.5 text-right font-black text-slate-800 dark:text-white text-sm">
+                        {showAmount ? formatCurrency(period.totalAmount) : 'Rp XX.XXX.XXX'}
+                    </TableCell>
+                )}
+                <TableCell className="py-2.5 text-center">
+                    <Badge variant="secondary" className={cn(
+                        `text-[10px] font-bold px-2 py-0 h-5`,
+                        isEmployee ? "bg-slate-50 border-slate-200" : getStatusColor(period.status)
+                    )}>
                         {getStatusText(period.status)}
                     </Badge>
                 </TableCell>
-                <TableCell>
-                    {!isEmployee ? (
-                        <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 p-2 h-8 group-hover:translate-x-1 transition-transform"
-                            onClick={() => router.push(`/dashboard/payroll/${period.id}`)}
-                        >
+                <TableCell className="py-2.5">
+                    <Button
+                        size="sm"
+                        variant={isEmployee ? "default" : "ghost"}
+                        className={cn(
+                            "h-8 transition-all",
+                            !isEmployee
+                                ? "text-blue-600 hover:text-blue-700 hover:bg-blue-50 p-2 group-hover:translate-x-1"
+                                : "bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-3 gap-1.5 shadow-sm rounded-lg"
+                        )}
+                        onClick={handleDetailClick}
+                    >
+                        {isEmployee ? (
+                            <>
+                                <FileText className="h-3.5 w-3.5" />
+                                <span className="text-xs">Detail</span>
+                            </>
+                        ) : (
                             <ArrowRight className="h-4 w-4" />
-                        </Button>
-                    ) : (
-                        // For employee, maybe an explicit "Detail" button if they prefer that over clicking expand?
-                        // Let's keep the arrow but link it to the full page view just in case they want to print, etc.
-                        // Or maybe make the arrow toggle expand? 
-                        // Let's stick to arrow -> full page, caret -> inline expand.
-                        <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 p-2 h-8"
-                            onClick={() => router.push(`/dashboard/payroll/${period.id}`)}
-                        >
-                            <ArrowRight className="h-4 w-4" />
-                        </Button>
-                    )}
+                        )}
+                    </Button>
                 </TableCell>
             </TableRow>
+            {isEmployee && (
+                <PayrollPasswordDialog
+                    isOpen={isPasswordOpen}
+                    onClose={() => setIsPasswordOpen(false)}
+                    onSuccess={handlePasswordSuccess}
+                />
+            )}
             {isExpanded && isEmployee && (
                 isLoading ? (
                     <TableRow>
-                        <TableCell colSpan={6} className="p-0 border-0">
+                        <TableCell colSpan={isEmployee ? 3 : 6} className="p-0 border-0">
                             <div className="p-8 text-center text-slate-500 animate-pulse bg-slate-50">
                                 <div className="flex flex-col items-center gap-2">
                                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600"></div>
@@ -174,10 +209,10 @@ export function PayrollHistoryRow({ period, showAmount, isEmployee }: PayrollHis
                         </TableCell>
                     </TableRow>
                 ) : myDetail ? (
-                    <PayrollSlipDetail detail={myDetail} colSpan={6} />
+                    <PayrollSlipDetail detail={myDetail} colSpan={isEmployee ? 3 : 6} />
                 ) : (
                     <TableRow>
-                        <TableCell colSpan={6} className="p-0 border-0">
+                        <TableCell colSpan={isEmployee ? 3 : 6} className="p-0 border-0">
                             <div className="p-8 text-center text-red-500 bg-red-50 text-xs">
                                 Gagal memuat detail data. Silakan coba lagi.
                             </div>

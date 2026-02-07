@@ -1,5 +1,6 @@
 // src/controllers/master/employeeController.js
 import { prisma } from '../../config/prisma.js';
+import { format } from 'date-fns';
 
 // Get all employees with pagination, search, and filters
 export const getEmployees = async (req, res) => {
@@ -506,6 +507,62 @@ export const deleteEmployee = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Failed to delete employee',
+            error: error.message
+        });
+    }
+};
+
+// Verify employee DOB for password protection
+export const verifyDob = async (req, res) => {
+    try {
+        const { dob } = req.body; // Expected format: DDMMYYYY
+        const emplId = req.user.emplId;
+
+        if (!emplId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Account not linked to an employee'
+            });
+        }
+
+        const employee = await prisma.karyawan.findUnique({
+            where: { emplId },
+            select: { tglLhr: true }
+        });
+
+        if (!employee || !employee.tglLhr) {
+            console.log('VERIFY_DOB: Employee or tglLhr not found for emplId:', emplId);
+            return res.status(404).json({
+                success: false,
+                message: 'Birth date not found in records'
+            });
+        }
+
+        // Use UTC-safe formatting to avoid timezone shifts
+        const rawDate = new Date(employee.tglLhr);
+        const day = String(rawDate.getUTCDate()).padStart(2, '0');
+        const month = String(rawDate.getUTCMonth() + 1).padStart(2, '0');
+        const year = rawDate.getUTCFullYear();
+        const storedDob = `${day}${month}${year}`;
+
+        const inputDob = dob ? dob.trim() : '';
+
+        if (inputDob === storedDob) {
+            return res.status(200).json({
+                success: true,
+                message: 'Verification successful'
+            });
+        } else {
+            return res.status(401).json({
+                success: false,
+                message: 'Password salah'
+            });
+        }
+    } catch (error) {
+        console.error('Error verifying DOB:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Verification failed',
             error: error.message
         });
     }

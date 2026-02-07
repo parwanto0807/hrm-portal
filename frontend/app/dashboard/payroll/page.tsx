@@ -4,10 +4,12 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { Banknote, Plus, Download } from 'lucide-react';
+import { Banknote, Plus, Download, AlertTriangle, ShieldCheck, CalendarClock } from 'lucide-react';
 import HeaderCard from '@/components/ui/header-card';
 import { PayrollHistoryTable } from '@/components/payroll/PayrollHistoryTable';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { id as localeId } from 'date-fns/locale';
 
 import { useRouter } from 'next/navigation';
 import { useAuth } from "@/app/hooks/useAuth";
@@ -82,7 +84,7 @@ export default function PayrollPage() {
                 icon={<Banknote className="h-5 w-5 md:h-6 md:w-6 text-white" />}
                 gradientFrom="from-emerald-600"
                 gradientTo="to-teal-600"
-                patternText="PT. Grafindo Mitrasemesta"
+                patternText="Sistem Penggajian"
                 showActionArea={!isEmployee}
                 actionArea={
                     <div className="flex gap-2 w-full md:w-auto mt-2 md:mt-0">
@@ -105,8 +107,9 @@ export default function PayrollPage() {
                 }
             />
 
-            {/* Total Salary Summary Card (Latest Period) */}
-            {latestPeriod && (
+            {/* Header / Summary Card Section */}
+            {!isEmployee && latestPeriod && (
+                /* Admin Summary Card */
                 <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white shadow-xl shadow-blue-500/20 relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-4 opacity-10">
                         <Banknote className="h-32 w-32 rotate-12" />
@@ -118,7 +121,17 @@ export default function PayrollPage() {
                                 <Badge variant="outline" className="text-blue-100 border-blue-400/30 bg-blue-500/20 text-[10px] uppercase tracking-wider">
                                     Periode Terkini
                                 </Badge>
-                                <span className="text-sm font-medium text-blue-100">{latestPeriod.name}</span>
+                                <span className="text-sm font-medium text-blue-100 uppercase">
+                                    {(() => {
+                                        const match = latestPeriod.name?.match(/(\d{4})(\d{2})/);
+                                        if (match) {
+                                            const year = parseInt(match[1]);
+                                            const month = parseInt(match[2]);
+                                            return format(new Date(year, month - 1), 'MMMM yyyy', { locale: localeId });
+                                        }
+                                        return latestPeriod.name || '-';
+                                    })()}
+                                </span>
                             </div>
 
                             <div className="flex items-baseline gap-1 mt-1">
@@ -146,6 +159,30 @@ export default function PayrollPage() {
                     </div>
                 </div>
             )}
+
+            {/* Refined Warning Notice */}
+            <div className="bg-amber-50/50 dark:bg-amber-950/10 backdrop-blur-sm border border-amber-200/50 dark:border-amber-900/30 rounded-lg p-2 flex items-center gap-2.5 shadow-xs">
+                <div className="bg-amber-100 dark:bg-amber-900/40 p-1.5 rounded-md text-amber-600 dark:text-amber-400">
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                </div>
+                <div className="flex flex-col gap-0.5">
+                    <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black text-amber-700 dark:text-amber-500 uppercase tracking-widest">PEMBERITAHUAN KEAMANAN</span>
+                        <div className="h-1 w-1 rounded-full bg-amber-300 dark:bg-amber-700"></div>
+                        <span className="text-[8px] font-medium text-amber-600/80 dark:text-amber-400/80 uppercase">Internal Personnel Only</span>
+                    </div>
+                    <ul className="text-[8px] leading-relaxed text-slate-600 dark:text-slate-400 font-medium max-w-2xl font-inter list-none space-y-0.5">
+                        <li className="flex items-start gap-1.5">
+                            <span className="shrink-0 mt-1 h-1 w-1 rounded-full bg-slate-400 dark:bg-slate-600"></span>
+                            <span>Data hanya menampilkan record gaji 12 bulan terakhir untuk performa optimal.</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                            <span className="shrink-0 mt-1 h-1 w-1 rounded-full bg-slate-400 dark:bg-slate-600"></span>
+                            <span>Seluruh dokumen Slip Gaji dilindungi sistem enkripsi password untuk menjaga kerahasiaan privasi data Anda sesuai kebijakan HRD. Silakan hubungi Admin HRD untuk akses.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
 
             <div className="px-1">
                 <PayrollHistoryTable

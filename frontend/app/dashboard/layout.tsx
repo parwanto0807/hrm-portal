@@ -75,8 +75,7 @@ export default function DashboardLayout({
                     <main className="flex-1">
                         <div className="w-full h-full overflow-y-auto">
                             <div className={cn(
-                                "min-h-full py-2",
-                                (user?.role?.toLowerCase() === 'employee') ? "px-1 md:p-6 lg:p-8" : "px-4 sm:px-6 md:p-6 lg:p-8"
+                                "min-h-full py-2 px-[2px] md:p-6 lg:p-8"
                             )}>
                                 {children}
                             </div>

@@ -2,6 +2,7 @@
 import app from './app.js';
 import config from './config/env.js';
 import { prisma } from './config/prisma.js';
+import { initCronTasks } from './tasks/cronTasks.js';
 
 // Routes are already setup in app.js
 
@@ -40,6 +41,9 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = config.port || 5002;
+
+// Initialize Scheduled Tasks
+initCronTasks();
 
 const server = app.listen(PORT, () => {
   console.log(`

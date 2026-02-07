@@ -7,7 +7,8 @@ import {
     getPayrollHistory,
     createEmployee,
     updateEmployee,
-    deleteEmployee
+    deleteEmployee,
+    verifyDob
 } from '../../controllers/master/employeeController.js';
 import { protect } from '../../middleware/auth.middleware.js';
 
@@ -23,6 +24,7 @@ router.get('/:id/payroll', getEmployeePayroll);
 router.get('/:id/history', getPayrollHistory);
 router.post('/', createEmployee);
 router.put('/:id', updateEmployee);
+router.post('/verify-dob', verifyDob);
 router.delete('/:id', deleteEmployee);
 
 export default router;

@@ -7,10 +7,12 @@ import { PayrollDetail } from '@/types/payroll';
 interface PayrollSlipDetailProps {
     detail: PayrollDetail;
     colSpan?: number;
+    showAmount?: boolean;
 }
 
-export function PayrollSlipDetail({ detail, colSpan = 9 }: PayrollSlipDetailProps) {
+export function PayrollSlipDetail({ detail, colSpan = 9, showAmount = false }: PayrollSlipDetailProps) {
     const formatCurrency = (value: number) => {
+        if (!showAmount) return 'Rp XX.XXX.XXX';
         return new Intl.NumberFormat('id-ID', {
             style: 'currency',
             currency: 'IDR',

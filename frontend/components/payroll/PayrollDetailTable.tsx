@@ -38,7 +38,8 @@ interface PayrollDetailTableProps {
         setSelectedPosition: (val: string) => void;
     };
     showFilters?: boolean;
-    isEmployee?: boolean; // Add this to detect employee role
+    isEmployee?: boolean;
+    showAmount?: boolean;
 }
 
 export function PayrollDetailTable({
@@ -47,7 +48,8 @@ export function PayrollDetailTable({
     filterState,
     setFilterState,
     showFilters = true,
-    isEmployee = false
+    isEmployee = false,
+    showAmount = false
 }: PayrollDetailTableProps) {
     const { searchTerm, selectedDept, selectedSection, selectedPosition } = filterState;
     const { setSearchTerm, setSelectedDept, setSelectedSection, setSelectedPosition } = setFilterState;
@@ -245,19 +247,19 @@ export function PayrollDetailTable({
                                         <TableCell className="text-xs text-slate-700 dark:text-slate-300">{detail.section}</TableCell>
                                         <TableCell className="text-xs text-slate-700 dark:text-slate-300">{detail.position}</TableCell>
                                         <TableCell className="text-right font-medium text-slate-600 dark:text-slate-400 text-xs">
-                                            {formatCurrency(detail.baseSalary)}
+                                            {showAmount ? formatCurrency(detail.baseSalary) : 'Rp XX.XXX.XXX'}
                                         </TableCell>
                                         <TableCell className="text-right text-blue-600 dark:text-blue-300 text-xs font-semibold">
-                                            + {formatCurrency(detail.totalAllowances || 0)}
+                                            + {showAmount ? formatCurrency(detail.totalAllowances || 0) : 'Rp XX.XXX.XXX'}
                                         </TableCell>
                                         <TableCell className="text-right text-red-600 dark:text-rose-300 text-xs font-semibold">
-                                            - {formatCurrency(detail.totalDeductions)}
+                                            - {showAmount ? formatCurrency(detail.totalDeductions) : 'Rp XX.XXX.XXX'}
                                         </TableCell>
                                         <TableCell className="text-right font-black text-emerald-700 dark:text-emerald-300 text-sm">
-                                            {formatCurrency(detail.netSalary)}
+                                            {showAmount ? formatCurrency(detail.netSalary) : 'Rp XX.XXX.XXX'}
                                         </TableCell>
                                     </TableRow>
-                                    {expandedRows.has(detail.id) && <PayrollSlipDetail detail={detail} />}
+                                    {expandedRows.has(detail.id) && <PayrollSlipDetail detail={detail} showAmount={showAmount} />}
                                 </React.Fragment>
                             ))
                         )}
@@ -285,7 +287,7 @@ export function PayrollDetailTable({
                                         <div className="text-right">
                                             <div className="text-[10px] text-slate-400 dark:text-slate-300 uppercase font-bold">Gaji Bersih</div>
                                             <div className="text-sm font-black text-emerald-600 dark:text-emerald-300 leading-none mt-1">
-                                                {formatCurrency(detail.netSalary)}
+                                                {showAmount ? formatCurrency(detail.netSalary) : 'Rp XX.XXX.XXX'}
                                             </div>
                                         </div>
                                         <Button
@@ -314,7 +316,7 @@ export function PayrollDetailTable({
                                     </div>
                                     <div>
                                         <div className="text-[9px] text-slate-400 dark:text-slate-500 uppercase font-bold">Gaji Pokok</div>
-                                        <div className="text-xs text-slate-600 dark:text-slate-400">{formatCurrency(detail.baseSalary)}</div>
+                                        <div className="text-xs text-slate-600 dark:text-slate-400">{showAmount ? formatCurrency(detail.baseSalary) : 'Rp XX.XXX.XXX'}</div>
                                     </div>
                                     <div>
                                         <div className="text-[9px] text-slate-400 dark:text-slate-500 uppercase font-bold">Seksie</div>
@@ -326,13 +328,13 @@ export function PayrollDetailTable({
                                     <div className="flex flex-col">
                                         <span className="text-[9px] text-slate-400 dark:text-slate-400 font-bold uppercase">Tunjangan</span>
                                         <span className="text-[11px] font-bold text-blue-600 dark:text-blue-300">
-                                            + {formatCurrency(detail.totalAllowances || 0)}
+                                            + {showAmount ? formatCurrency(detail.totalAllowances || 0) : 'Rp XX.XXX.XXX'}
                                         </span>
                                     </div>
                                     <div className="flex flex-col text-right">
                                         <span className="text-[9px] text-slate-400 dark:text-slate-400 font-bold uppercase">Potongan</span>
                                         <span className="text-[11px] font-bold text-rose-500 dark:text-rose-300">
-                                            - {formatCurrency(detail.totalDeductions)}
+                                            - {showAmount ? formatCurrency(detail.totalDeductions) : 'Rp XX.XXX.XXX'}
                                         </span>
                                     </div>
                                 </div>

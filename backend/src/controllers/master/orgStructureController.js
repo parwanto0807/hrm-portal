@@ -101,7 +101,13 @@ export const deleteDepartment = async (req, res) => {
 // SECTIONS (SIE)
 export const getSections = async (req, res) => {
     try {
+        const { kdDept, kdBag } = req.query;
+        const where = {};
+        if (kdDept) where.kdDept = kdDept;
+        if (kdBag) where.kdBag = kdBag;
+
         const data = await prisma.mstSie.findMany({
+            where,
             include: { 
                 bag: true,
                 dept: true 

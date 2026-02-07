@@ -4,7 +4,7 @@ import React, { use, useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Home, Calendar } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from "@/app/hooks/useAuth";
 import { PayrollDetailHeader } from '@/components/payroll/PayrollDetailHeader';
@@ -21,7 +21,6 @@ import {
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Badge } from "@/components/ui/badge";
-import { Home } from "lucide-react";
 import { generatePayslipPDF } from '@/lib/generatePayslipPDF';
 
 export default function PayrollDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -38,6 +37,7 @@ export default function PayrollDetailPage({ params }: { params: Promise<{ id: st
     const [selectedDept, setSelectedDept] = useState('all');
     const [selectedSection, setSelectedSection] = useState('all');
     const [selectedPosition, setSelectedPosition] = useState('all');
+    const [showAmount, setShowAmount] = useState(false);
 
     const { data: detailData, isLoading, error } = useQuery({
         queryKey: ['payrollDetail', id, isEmployee ? 'my' : 'all'],
@@ -74,6 +74,41 @@ export default function PayrollDetailPage({ params }: { params: Promise<{ id: st
 
         return { employees, summary };
     }, [detailData, searchTerm, selectedDept, selectedSection, selectedPosition]);
+
+    const handleExport = async () => {
+        if (filteredData.employees.length === 0) {
+            toast.error('Tidak ada data karyawan untuk diekspor');
+            return;
+        }
+
+        if (isEmployee) {
+            const employeeId = filteredData.employees[0].employeeId;
+            const toastId = toast.loading('Memproses PDF terproteksi...');
+
+            try {
+                const response = await api.post('/payroll/generate-protected', {
+                    periodId: id,
+                    employeeId: employeeId
+                }, { responseType: 'blob' });
+
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `Slip_Gaji_${id}_${employeeId}.pdf`);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+
+                toast.success('Slip gaji terproteksi berhasil diunduh', { id: toastId });
+            } catch (error) {
+                console.error('Export error:', error);
+                toast.error('Gagal mengunduh slip gaji terproteksi', { id: toastId });
+            }
+        } else {
+            generatePayslipPDF(filteredData.employees, detailData.summary.period.name, detailData.summary.period.id);
+            toast.success('Laporan berhasil diunduh');
+        }
+    };
 
     if (isLoading) {
         return (
@@ -147,15 +182,10 @@ export default function PayrollDetailPage({ params }: { params: Promise<{ id: st
 
             <PayrollDetailHeader
                 summary={filteredData.summary}
-                onExport={() => {
-                    if (filteredData.employees.length === 0) {
-                        toast.error('Tidak ada data karyawan untuk diekspor');
-                        return;
-                    }
-                    generatePayslipPDF(filteredData.employees, detailData.summary.period.name, detailData.summary.period.id);
-                    toast.success('Laporan berhasil diunduh');
-                }}
+                onExport={handleExport}
                 exportLabel={isEmployee ? "Unduh Slip Gaji" : "Unduh Laporan"}
+                showAmount={showAmount}
+                onToggleShowAmount={setShowAmount}
             />
 
             <div className="space-y-2">
@@ -166,6 +196,7 @@ export default function PayrollDetailPage({ params }: { params: Promise<{ id: st
                     setFilterState={{ setSearchTerm, setSelectedDept, setSelectedSection, setSelectedPosition }}
                     showFilters={!isEmployee}
                     isEmployee={isEmployee}
+                    showAmount={showAmount}
                 />
             </div>
         </div>

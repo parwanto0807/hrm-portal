@@ -10,7 +10,7 @@ import {
     Globe, Bell, Key, Mail, Users2,
     Zap, HardDrive, RefreshCcw,
     BookOpen, Info,
-    AlertTriangle
+    AlertTriangle, Palmtree
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { MysqlOldDialog } from "@/components/settings/MysqlOldDialog";
 import { PayrollImportDialog } from "@/components/settings/PayrollImportDialog";
+import { AttendanceImportDialog } from "@/components/settings/AttendanceImportDialog";
 
 // Data shortcut untuk semua item dengan model yang sama
 const shortcutItems = [
@@ -83,6 +84,16 @@ const shortcutItems = [
         borderColor: 'border-amber-200 dark:border-amber-800',
         category: 'master',
         href: '/dashboard/settings/master/bank-payroll'
+    },
+    {
+        title: 'Hari Libur & Cuti',
+        description: 'Libur nasional & perusahaan',
+        icon: Palmtree,
+        color: 'bg-red-500 text-white',
+        bgColor: 'bg-red-50 dark:bg-red-900/20',
+        borderColor: 'border-red-200 dark:border-red-800',
+        category: 'master',
+        href: '/dashboard/settings/master/holiday'
     },
 
     // Parameter & Konfigurasi Items
@@ -219,6 +230,17 @@ const shortcutItems = [
         category: 'system',
         href: '#workflow',
         isModal: true
+    },
+    {
+        title: 'Import Absensi',
+        description: 'Migrasi log absensi legacy',
+        icon: CalendarDays,
+        color: 'bg-blue-600 text-white',
+        bgColor: 'bg-blue-50 dark:bg-blue-900/20',
+        borderColor: 'border-blue-200 dark:border-blue-800',
+        category: 'system',
+        href: '#attendance-import',
+        isModal: true
     }
 ];
 
@@ -244,11 +266,13 @@ const menuGroups = [
 export default function SettingsPage() {
     const [isMysqlOldOpen, setIsMysqlOldOpen] = React.useState(false);
     const [isWorkflowOpen, setIsWorkflowOpen] = React.useState(false);
+    const [isAttendanceImportOpen, setIsAttendanceImportOpen] = React.useState(false);
 
     return (
         <div className="min-h-screen w-full bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950">
             <MysqlOldDialog open={isMysqlOldOpen} onOpenChange={setIsMysqlOldOpen} />
             <PayrollImportDialog open={isWorkflowOpen} onOpenChange={setIsWorkflowOpen} />
+            <AttendanceImportDialog open={isAttendanceImportOpen} onOpenChange={setIsAttendanceImportOpen} />
             <div className="max-w-full mx-auto p-2 md:p-6 lg:p-6 space-y-8 w-full">
                 {/* Header */}
                 <div className="space-y-2">
@@ -328,6 +352,8 @@ export default function SettingsPage() {
                                                                 setIsMysqlOldOpen(true);
                                                             } else if (item.href === '#workflow') {
                                                                 setIsWorkflowOpen(true);
+                                                            } else if (item.href === '#attendance-import') {
+                                                                setIsAttendanceImportOpen(true);
                                                             } else {
                                                                 toast.info("Fitur Dalam Pengembangan", {
                                                                     description: "Modul ini sedang dalam tahap pengembangan.",

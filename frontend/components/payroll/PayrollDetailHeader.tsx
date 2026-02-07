@@ -20,9 +20,17 @@ interface PayrollDetailHeaderProps {
     summary: PayrollSummary;
     onExport: () => void;
     exportLabel?: string;
+    showAmount: boolean;
+    onToggleShowAmount: (show: boolean) => void;
 }
 
-export function PayrollDetailHeader({ summary, onExport, exportLabel = "Download Report" }: PayrollDetailHeaderProps) {
+export function PayrollDetailHeader({
+    summary,
+    onExport,
+    exportLabel = "Download Report",
+    showAmount,
+    onToggleShowAmount
+}: PayrollDetailHeaderProps) {
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('id-ID', {
             style: 'currency',
@@ -45,20 +53,39 @@ export function PayrollDetailHeader({ summary, onExport, exportLabel = "Download
                                     Period ID: #{summary.period.id}
                                 </span>
                             </div>
-                            <h1 className="text-xl md:text-3xl font-bold mb-1 truncate text-white">{summary.period.name}</h1>
-                            <div className="flex items-center gap-2 text-blue-100 dark:text-blue-200 text-[10px] md:text-sm">
-                                <Calendar className="h-3 w-3 md:h-4 md:w-4" />
-                                {format(new Date(summary.period.startDate), 'dd MMM yyyy', { locale: localeId })} -
-                                {format(new Date(summary.period.endDate), 'dd MMM yyyy', { locale: localeId })}
-                            </div>
+                            <h1 className="text-xl md:text-3xl font-bold mb-1 truncate text-white uppercase">
+                                {(() => {
+                                    const match = summary.period.name?.match(/(\d{4})(\d{2})/);
+                                    if (match) {
+                                        const year = parseInt(match[1]);
+                                        const month = parseInt(match[2]);
+                                        return format(new Date(year, month - 1), 'MMMM yyyy', { locale: localeId });
+                                    }
+                                    return summary.period.name || '-';
+                                })()}
+                            </h1>
                         </div>
-                        <Button
-                            className="w-full md:w-auto bg-white text-blue-600 hover:bg-blue-50 dark:bg-slate-100 dark:text-blue-800 dark:hover:bg-white shadow-lg text-xs md:text-sm h-9 md:h-10"
-                            onClick={onExport}
-                        >
-                            <Download className="mr-2 h-3.5 w-3.5 md:h-4 md:w-4" />
-                            {exportLabel}
-                        </Button>
+                        <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
+                            <div className="bg-white/10 backdrop-blur-md rounded-xl p-2 md:p-3 flex items-center gap-2 md:gap-3 border border-white/10 w-full md:w-auto justify-between md:justify-start">
+                                <span className="text-[10px] md:text-xs font-semibold uppercase tracking-wider text-blue-50">Tampilkan Gaji</span>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        className="sr-only peer"
+                                        checked={showAmount}
+                                        onChange={(e) => onToggleShowAmount(e.target.checked)}
+                                    />
+                                    <div className="w-9 h-5 md:w-11 md:h-6 bg-blue-900/50 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 md:after:h-5 md:after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                                </label>
+                            </div>
+                            <Button
+                                className="w-full md:w-auto bg-white text-blue-600 hover:bg-blue-50 dark:bg-slate-100 dark:text-blue-800 dark:hover:bg-white shadow-lg text-xs md:text-sm h-9 md:h-10"
+                                onClick={onExport}
+                            >
+                                <Download className="mr-2 h-3.5 w-3.5 md:h-4 md:w-4" />
+                                {exportLabel}
+                            </Button>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
@@ -81,7 +108,7 @@ export function PayrollDetailHeader({ summary, onExport, exportLabel = "Download
                         Total Gaji Bersih
                     </span>
                     <span className="text-lg md:text-2xl font-black text-emerald-600 dark:text-emerald-300">
-                        {formatCurrency(summary.totalNetSalary)}
+                        {showAmount ? formatCurrency(summary.totalNetSalary) : 'Rp XX.XXX.XXX'}
                     </span>
                     <span className="text-[10px] text-muted-foreground hidden md:inline">Gaji Bersih (THP)</span>
                 </CardContent>
@@ -94,7 +121,7 @@ export function PayrollDetailHeader({ summary, onExport, exportLabel = "Download
                         Total Potongan
                     </span>
                     <span className="text-lg md:text-2xl font-black text-rose-600 dark:text-rose-300">
-                        {formatCurrency(summary.totalDeductions)}
+                        {showAmount ? formatCurrency(summary.totalDeductions) : 'Rp XX.XXX.XXX'}
                     </span>
                     <span className="text-[10px] text-muted-foreground hidden md:inline">Pajak & BPJS</span>
                 </CardContent>
@@ -107,7 +134,7 @@ export function PayrollDetailHeader({ summary, onExport, exportLabel = "Download
                         Total Tunjangan
                     </span>
                     <span className="text-lg md:text-2xl font-black text-blue-600 dark:text-blue-300">
-                        {formatCurrency(summary.totalAllowances)}
+                        {showAmount ? formatCurrency(summary.totalAllowances) : 'Rp XX.XXX.XXX'}
                     </span>
                     <span className="text-[10px] text-muted-foreground hidden md:inline">Lembur & Benefit</span>
                 </CardContent>

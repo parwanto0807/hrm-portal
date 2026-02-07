@@ -21,7 +21,7 @@ export default function LogoutButton({
 }: LogoutButtonProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
-    const { getUser } = useAuth();
+    const { getUser, logout: authLogout } = useAuth();
     const user = getUser();
     const [mounted, setMounted] = useState(false);
 
@@ -33,30 +33,29 @@ export default function LogoutButton({
         setLoading(true);
 
         try {
-            const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002';
+            const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002/api';
+            // Ensure we use the correct API base path if not in the env
+            const logoutUrl = backendUrl.endsWith('/api') ? `${backendUrl}/auth/logout` : `${backendUrl}/auth/logout`;
 
-            // Call backend logout endpoint
-            await fetch(`${backendUrl}/auth/logout`, {
-                method: 'POST',
-                credentials: 'include'
-            });
+            // Call backend logout endpoint to clear cookies
+            try {
+                await fetch(logoutUrl, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+            } catch (apiError) {
+                console.warn('Backend logout call failed, but proceeding with local logout:', apiError);
+            }
 
-            // Clear local storage
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('refresh_token');
-            localStorage.removeItem('user');
-            localStorage.removeItem('isAuthenticated');
+            // Centralized logout logic (clears localStorage, resets state, redirects)
+            authLogout();
 
             // Call optional callback
             if (onLogout) onLogout();
 
-            // Redirect to login page
-            router.push('/auth/google');
-            router.refresh(); // Refresh untuk update auth state
-
         } catch (error) {
             console.error('Logout error:', error);
-            // Still clear local storage even if backend call fails
+            // Fallback clear if everything else fails
             localStorage.clear();
             router.push('/auth/google');
         } finally {

@@ -184,7 +184,7 @@ export default function DashboardCharts() {
                     bars: [
                         { key: 'sick', name: 'Sakit', color: '#3b82f6', gradient: 'url(#sickGradient)' },
                         { key: 'annual', name: 'Tahunan', color: '#10b981', gradient: 'url(#annualGradient)' },
-                        { key: 'other', name: 'Lainnya', color: '#8b5cf6', gradient: 'url(#otherGradient)' }
+                        { key: 'other', name: 'Libur', color: '#8b5cf6', gradient: 'url(#otherGradient)' }
                     ],
                     type: 'bar' as const,
                     unit: 'hari',

@@ -2,6 +2,7 @@ import { packages } from './utils/require.js';
 import config from './config/env.js';
 import cookieParser from 'cookie-parser';
 import path from 'path';
+import fs from 'fs';
 
 // Import Routes
 import userRoute from './routes/auth/userRoutes.js';
@@ -18,6 +19,8 @@ import employeeRoute from './routes/master/employeeRoutes.js';
 import payrollRoute from './routes/payrollRoutes.js';
 import requestRoute from './routes/requestRoutes.js';
 import menuRoute from './routes/menuRoutes.js';
+import absentRoute from './routes/absentRoutes.js';
+import holidayRoute from './routes/master/holidayRoutes.js';
 
 const express = packages.express();
 const cors = packages.cors();
@@ -129,6 +132,8 @@ app.use('/api/employees', employeeRoute);
 app.use('/api/payroll', payrollRoute);
 app.use('/api/requests', requestRoute);
 app.use('/api/menus', menuRoute);
+app.use('/api/absent', absentRoute);
+app.use('/api/holidays', holidayRoute);
 
 // Error Handler
 app.use((err, req, res, next) => {

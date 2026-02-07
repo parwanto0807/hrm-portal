@@ -32,7 +32,8 @@ export const getMysqlPool = async (forceRefresh = false) => {
                 database: dbConfig.database,
                 connectionLimit: 10,
                 waitForConnections: true,
-                queueLimit: 0
+                queueLimit: 0,
+                dateStrings: true // Prevent driver from shifting dates based on TZ
             };
             console.log(`📡 Using MySQL config from DB: ${dbConfig.host}:${dbConfig.port}`);
         } else if (process.env.MYSQL_URL) {
@@ -40,7 +41,8 @@ export const getMysqlPool = async (forceRefresh = false) => {
                 uri: process.env.MYSQL_URL,
                 connectionLimit: 10,
                 waitForConnections: true,
-                queueLimit: 0
+                queueLimit: 0,
+                dateStrings: true
             };
             console.log('📡 Using MySQL config from .env');
         } else {
