@@ -288,7 +288,7 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                             <Building2 className="h-4 w-4 text-blue-600 dark:text-blue-300" />
                                                         </div>
                                                         <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                                                            {isEditMode ? "Update" : "Register"}
+                                                            {isEditMode ? "Update" : "Sign Up"}
                                                         </span>
                                                     </div>
                                                     <span className="text-sm font-bold text-blue-600 dark:text-blue-400">{progress}%</span>
