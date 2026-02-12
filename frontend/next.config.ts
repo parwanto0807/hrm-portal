@@ -9,6 +9,8 @@ const withPWA = withPWAInit({
   disable: process.env.NODE_ENV === "development",
   workboxOptions: {
     disableDevLogs: true,
+    skipWaiting: true,
+    clientsClaim: true,
   },
 });
 
@@ -30,13 +32,22 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Cross-Origin-Opener-Policy",
-            value: "unsafe-none", // <--- GANTI JADI INI
+            value: "unsafe-none",
           },
           {
             key: "Cross-Origin-Embedder-Policy",
-            value: "unsafe-none", // Tambahan untuk memastikan tidak ada konflik
+            value: "unsafe-none",
           },
         ],
+      },
+    ];
+  },
+  async redirects() {
+    return [
+      {
+        source: '/register',
+        destination: '/signup',
+        permanent: true,
       },
     ];
   },
