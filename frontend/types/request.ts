@@ -33,5 +33,7 @@ export interface Pengajuan {
         nama: string;
         emplId: string;
         kdDept: string | null;
+        superior?: { nama: string; emplId: string };
+        superior2?: { nama: string; emplId: string };
     };
 }

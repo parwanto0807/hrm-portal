@@ -51,9 +51,9 @@ export default function CompanyPage() {
     if (isLoading) return <LoadingSpinner />;
 
     return (
-        <div className="w-full">
+        <div className="p-2 md:p-6 space-y-4">
             {/* Breadcrumb Section Wrapped with Badge Style */}
-            <nav aria-label="Breadcrumb" className="px-2 py-2 sm:px-4">
+            <nav aria-label="Breadcrumb" className="py-2">
                 <Breadcrumb>
                     <BreadcrumbList className="flex items-center gap-1 sm:gap-2">
                         <BreadcrumbItem>
@@ -97,7 +97,7 @@ export default function CompanyPage() {
 
             {/* Error Alert */}
             {error && (
-                <div className="px-2 sm:px-4 mb-4">
+                <div className="mb-4">
                     <Alert variant="destructive">
                         <AlertCircle className="h-4 w-4" />
                         <AlertDescription>{error}</AlertDescription>
@@ -106,7 +106,7 @@ export default function CompanyPage() {
             )}
 
             {/* Header Section */}
-            <div className="mb-2 px-2 sm:px-4 md:px-4">
+            <div className="mb-2">
                 <HeaderCard
                     title="Company Profile"
                     description="Manage company details and information"

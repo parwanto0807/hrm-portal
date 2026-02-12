@@ -40,6 +40,7 @@ const fetchEmployees = async (params: {
     kdDept: string;
     kdJab: string;
     kdSts: string;
+    kdSeksie: string;
 }): Promise<EmployeeListResponse> => {
     const { data } = await api.get('/employees', { params });
     return data;
@@ -50,6 +51,7 @@ export default function EmployeesPage() {
     const [limit] = useState(10);
     const [search, setSearch] = useState('');
     const [selectedDept, setSelectedDept] = useState<string>('all');
+    const [selectedSection, setSelectedSection] = useState<string>('all');
     const [selectedPosition, setSelectedPosition] = useState<string>('all');
     const [selectedStatus, setSelectedStatus] = useState<string>('all');
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -57,6 +59,11 @@ export default function EmployeesPage() {
     const [isDetailOpen, setIsDetailOpen] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+
+    // Reset page when filters change
+    React.useEffect(() => {
+        setPage(1);
+    }, [selectedDept, selectedSection, selectedPosition, selectedStatus, search]);
 
     // Debounce search
     React.useEffect(() => {
@@ -70,12 +77,13 @@ export default function EmployeesPage() {
 
     // Fetch employees
     const { data, isLoading, error, refetch } = useQuery({
-        queryKey: ['employees', page, limit, debouncedSearch, selectedDept, selectedPosition, selectedStatus],
+        queryKey: ['employees', page, limit, debouncedSearch, selectedDept, selectedSection, selectedPosition, selectedStatus],
         queryFn: () => fetchEmployees({
             page,
             limit,
             search: debouncedSearch,
             kdDept: selectedDept === 'all' ? '' : selectedDept,
+            kdSeksie: selectedSection === 'all' ? '' : selectedSection,
             kdJab: selectedPosition === 'all' ? '' : selectedPosition,
             kdSts: selectedStatus === 'all' ? '' : selectedStatus
         }),
@@ -87,7 +95,16 @@ export default function EmployeesPage() {
         queryKey: ['departments'],
         queryFn: async () => {
             const { data } = await api.get('/org/departments');
-            return data;
+            return data.data; // Return the array directly
+        }
+    });
+
+    // Fetch Sections for Filter
+    const { data: sections } = useQuery({
+        queryKey: ['sections'],
+        queryFn: async () => {
+            const { data } = await api.get('/org/sections');
+            return data.data; // Return the array directly
         }
     });
 
@@ -96,7 +113,7 @@ export default function EmployeesPage() {
         queryKey: ['positions'],
         queryFn: async () => {
             const { data } = await api.get('/positions');
-            return data;
+            return data.data; // Return the array directly
         }
     });
 
@@ -128,7 +145,7 @@ export default function EmployeesPage() {
     const activeCount = data?.data?.filter(e => e.kdSts === 'AKTIF').length || 0;
 
     return (
-        <div className="flex flex-col gap-4 md:gap-6 p-2 md:p-2 lg:p-2">
+        <div className="flex flex-col gap-4 md:gap-6 p-2 md:p-6">
             {/* Breadcrumb Section */}
             <Breadcrumb>
                 <BreadcrumbList>
@@ -185,7 +202,7 @@ export default function EmployeesPage() {
                             Import MySQL
                         </Button>
                         <Button
-                            className="bg-white text-blue-600 hover:bg-blue-50"
+                            className="bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800 border dark:border-slate-700"
                             onClick={() => {
                                 setEditingEmployee(null);
                                 setIsDialogOpen(true);
@@ -199,12 +216,12 @@ export default function EmployeesPage() {
             />
 
             {/* Filters & Search - Modern Design */}
-            <div className="flex flex-col md:flex-row gap-4 p-4 bg-white rounded-xl border shadow-sm">
+            <div className="flex flex-col md:flex-row gap-4 p-4 bg-white dark:bg-slate-900 rounded-xl border dark:border-slate-800 shadow-sm">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder="Search by ID, NIK, or Name..."
-                        className="pl-9 bg-slate-50 border-slate-200 focus:bg-white transition-all"
+                        className="pl-9 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:bg-white dark:focus:bg-slate-750 transition-all"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
@@ -216,9 +233,23 @@ export default function EmployeesPage() {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Departments</SelectItem>
-                        {departments?.data?.map((dept: { kdDept: string; nmDept: string }) => (
+                        {departments?.map((dept: { kdDept: string; nmDept: string }) => (
                             <SelectItem key={dept.kdDept} value={dept.kdDept}>
                                 {dept.nmDept}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+
+                <Select value={selectedSection} onValueChange={setSelectedSection}>
+                    <SelectTrigger className="w-full md:w-[180px] bg-slate-50 border-slate-200">
+                        <SelectValue placeholder="Section" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Sections</SelectItem>
+                        {sections?.map((sec: { kdSeksie: string; nmSeksie: string }) => (
+                            <SelectItem key={sec.kdSeksie} value={sec.kdSeksie}>
+                                {sec.nmSeksie}
                             </SelectItem>
                         ))}
                     </SelectContent>
@@ -230,7 +261,7 @@ export default function EmployeesPage() {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Positions</SelectItem>
-                        {positions?.data?.map((pos: { kdJab: string; nmJab: string }) => (
+                        {positions?.map((pos: { kdJab: string; nmJab: string }) => (
                             <SelectItem key={pos.kdJab} value={pos.kdJab}>
                                 {pos.nmJab}
                             </SelectItem>
@@ -256,6 +287,7 @@ export default function EmployeesPage() {
                     onClick={() => {
                         setSearch('');
                         setSelectedDept('all');
+                        setSelectedSection('all');
                         setSelectedPosition('all');
                         setSelectedStatus('all');
                     }}

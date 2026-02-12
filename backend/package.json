@@ -10,7 +10,8 @@
     "prisma:push": "prisma db push",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "prisma:seed": "node src/prisma/seed.js",
+    "prisma:seed": "node prisma/seed.js",
+    "db:setup": "prisma db push --force-reset && npm run prisma:seed",
     "db:reset": "prisma migrate reset --force",
     "lint": "eslint src/**/*.js",
     "format": "prettier --write src/**/*.js"
@@ -29,6 +30,7 @@
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "express-session": "^1.18.2",
+    "firebase-admin": "^13.6.1",
     "google-auth-library": "^10.5.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
@@ -42,6 +44,7 @@
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.16.3",
+    "sharp": "^0.34.5",
     "zod": "^4.1.13"
   },
   "devDependencies": {
@@ -53,5 +56,8 @@
     "nodemon": "^3.1.11",
     "prettier": "^3.7.4",
     "prisma": "^6.19.1"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   }
 }

@@ -14,9 +14,9 @@ export const getFactories = async (req, res) => {
 
 export const createFactory = async (req, res) => {
     try {
-        const { kdFact, nmFact, keterangan } = req.body;
+        const { kdFact, nmFact, keterangan, lat, long, radius } = req.body;
         const newFactory = await prisma.mstFact.create({
-            data: { kdFact, nmFact, keterangan }
+            data: { kdFact, nmFact, keterangan, lat, long, radius: radius ? parseInt(radius) : 50 }
         });
         res.status(201).json({ success: true, data: newFactory });
     } catch (error) {
@@ -27,10 +27,10 @@ export const createFactory = async (req, res) => {
 export const updateFactory = async (req, res) => {
     try {
         const { code } = req.params;
-        const { nmFact, keterangan } = req.body;
+        const { nmFact, keterangan, lat, long, radius } = req.body;
         const updatedFactory = await prisma.mstFact.update({
             where: { kdFact: code },
-            data: { nmFact, keterangan }
+            data: { nmFact, keterangan, lat, long, radius: radius ? parseInt(radius) : 50 }
         });
         res.json({ success: true, data: updatedFactory });
     } catch (error) {

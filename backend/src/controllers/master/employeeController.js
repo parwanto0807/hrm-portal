@@ -22,6 +22,8 @@ export const getEmployees = async (req, res) => {
         const skip = (parseInt(page) - 1) * parseInt(limit);
         const take = parseInt(limit);
 
+        console.log('GET EMPLOYEES QUERY:', req.query);
+
         // Build where clause
         const where = {
             AND: [
@@ -39,10 +41,11 @@ export const getEmployees = async (req, res) => {
                 kdSeksie ? { kdSeksie } : {},
                 kdJab ? { kdJab } : {},
                 kdSts ? { kdSts } : {},
-                kdSts ? { kdSts } : {},
                 kdOut !== '' ? { kdOut: kdOut === 'true' } : {}
             ]
         };
+
+        console.log('GET EMPLOYEES WHERE:', JSON.stringify(where, null, 2));
 
         // Get total count
         const total = await prisma.karyawan.count({ where });
@@ -53,40 +56,42 @@ export const getEmployees = async (req, res) => {
             skip,
             take,
             include: {
-                company: {
-                    select: { kodeCmpy: true, company: true }
-                },
-                fact: {
-                    select: { kdFact: true, nmFact: true }
-                },
-                bag: {
-                    select: { kdBag: true, nmBag: true }
-                },
-                dept: {
-                    select: { kdDept: true, nmDept: true }
-                },
-                sie: {
-                    select: { kdSeksie: true, nmSeksie: true }
-                },
-                jabatan: {
-                    select: { kdJab: true, nmJab: true }
-                },
-                bank: {
-                    select: { bankCode: true, bankNama: true }
-                },
-                superior: {
-                    select: { nama: true, emplId: true }
-                },
-                superior2: {
-                    select: { nama: true, emplId: true }
-                }
+                company: { select: { kodeCmpy: true, company: true } },
+                fact: { select: { kdFact: true, nmFact: true } },
+                bag: { select: { kdBag: true, nmBag: true } },
+                dept: { select: { kdDept: true, nmDept: true } },
+                sie: { select: { kdSeksie: true, nmSeksie: true } },
+                jabatan: { select: { kdJab: true, nmJab: true } },
+                bank: { select: { bankCode: true, bankNama: true } },
+                agama: { select: { kdAgm: true, nmAgm: true } }, // Added
+                pkt: { select: { kdPkt: true, nmPkt: true } },   // Added
+                superior: { select: { nama: true, emplId: true } },
+                superior2: { select: { nama: true, emplId: true } },
+                jnsJamRef: { select: { id: true, kdJam: true, jnsJam: true } },
+                groupShiftRef: { select: { id: true, groupShift: true, groupName: true } }
             },
-            orderBy: { emplId: 'asc' }
+            orderBy: [
+                { dept: { nmDept: 'asc' } },
+                { nama: 'asc' }
+            ]
         });
+
+        if (employees.length > 0) {
+            console.log('FIRST EMPLOYEE DATA:', JSON.stringify(employees[0], null, 2));
+        }
+
+        // Map relations for frontend compatibility
+        const mappedEmployees = employees.map(emp => ({
+            ...emp,
+            jnsJam: emp.jnsJamRef,
+            groupShift: emp.groupShiftRef,
+            jnsJamRef: undefined,
+            groupShiftRef: undefined
+        }));
 
         res.status(200).json({
             success: true,
-            data: employees,
+            data: mappedEmployees,
             pagination: {
                 page: parseInt(page),
                 limit: parseInt(limit),
@@ -125,8 +130,9 @@ export const getEmployeeById = async (req, res) => {
                 keluarga: true,
                 sekolahHist: true,
                 kontrak: true,
-                superior: true,
-                superior2: true
+                superior2: true,
+                jnsJamRef: true,
+                groupShiftRef: true
             }
         });
 
@@ -137,9 +143,18 @@ export const getEmployeeById = async (req, res) => {
             });
         }
 
+        // Map relations for frontend compatibility
+        const mappedEmployee = {
+            ...employee,
+            jnsJam: employee.jnsJamRef,
+            groupShift: employee.groupShiftRef,
+            jnsJamRef: undefined,
+            groupShiftRef: undefined
+        };
+
         res.status(200).json({
             success: true,
-            data: employee
+            data: mappedEmployee
         });
     } catch (error) {
         console.error('Error fetching employee:', error);
@@ -322,8 +337,12 @@ export const createEmployee = async (req, res) => {
             // Dates
             tglLhr: data.tglLhr ? new Date(data.tglLhr) : null,
             tglMsk: data.tglMsk ? new Date(data.tglMsk) : null,
+            tglAngkat: data.tglAngkat ? new Date(data.tglAngkat) : null,
             tglOut: data.tglOut ? new Date(data.tglOut) : null,
-            // Numbers (Already handled by frontend but double-check)
+            tglNpwp: data.tglNpwp ? new Date(data.tglNpwp) : null,
+            tglNikah: data.tglNikah ? new Date(data.tglNikah) : null,
+            // Numbers
+            jmlAnak: Number(data.jmlAnak) || 0,
             pokokBln: Number(data.pokokBln) || 0,
             tTransport: Number(data.tTransport) || 0,
             tMakan: Number(data.tMakan) || 0,
@@ -333,20 +352,52 @@ export const createEmployee = async (req, res) => {
             tKhusus: Number(data.tKhusus) || 0,
             tLmbtetap: Number(data.tLmbtetap) || 0,
             fixOther: Number(data.fixOther) || 0,
-            // Enums/Strings handled by spread, but ensure nulls for empties
+            kdPtkp: Number(data.kdPtkp) || 1,
+            potRumah: Number(data.potRumah) || 0,
+            // Enums/Strings
             email: data.email || null,
             nik: data.nik || null,
             idAbsen: data.idAbsen || null,
+            ktpNo: data.ktpNo || null,
+            npwp: data.npwp || null,
+            kdSex: data.kdSex || 'LAKILAKI',
+            kdAgm: data.kdAgm || null,
+            kdSkl: data.kdSkl || null,
+            alamat1: data.alamat1 || null,
+            alamat2: data.alamat2 || null,
+            kota: data.kota || null,
+            kdPos: data.kdPos || null,
+            kdSts: data.kdSts || 'AKTIF',
+            kdJns: data.kdJns || 'KONTRAK',
             kdDept: data.kdDept || null,
             kdJab: data.kdJab || null,
+            kdPkt: data.kdPkt || null,
             kdCmpy: data.kdCmpy || null,
             kdFact: data.kdFact || null,
             bankCode: data.bankCode || null,
             bankUnit: data.bankUnit || null,
             bankRekNo: data.bankRekNo || null,
             bankRekName: data.bankRekName || null,
+            noBpjsTk: data.noBpjsTk || null,
+            noBpjsKes: data.noBpjsKes || null,
+            noAnggota: data.noAnggota || null,
             superiorId: (data.superiorId === 'none' || !data.superiorId) ? null : data.superiorId,
             superior2Id: (data.superior2Id === 'none' || !data.superior2Id) ? null : data.superior2Id,
+            jnsJamId: (data.jnsJamId === 'none' || !data.jnsJamId) ? null : data.jnsJamId,
+            groupShiftId: (data.groupShiftId === 'none' || !data.groupShiftId) ? null : data.groupShiftId,
+            // Booleans
+            kdBpjsTk: data.kdBpjsTk ?? true,
+            kdBpjsKes: data.kdBpjsKes ?? true,
+            kdTransp: data.kdTransp ?? true,
+            kdMakan: data.kdMakan ?? true,
+            kdOut: data.kdOut ?? false,
+            kdLmb: data.kdLmb ?? true,
+            kdSpl: data.kdSpl ?? true,
+            kdPjk: data.kdPjk ?? true,
+            kdKoperasi: data.kdKoperasi ?? false,
+            kdptRumah: data.kdptRumah ?? false,
+            kdSpsi: data.kdSpsi ?? false,
+            // Metadata
             createdBy: req.user?.email || 'system',
             updatedBy: req.user?.email || 'system'
         };
@@ -401,14 +452,38 @@ export const updateEmployee = async (req, res) => {
         const { id } = req.params;
         const data = req.body;
 
-        // Sanitize data for Prisma
-        const sanitizedData = {
-            ...data,
+        // Explicitly map only valid scalar fields for Karyawan model
+        const updatePayload = {
+            emplId: data.emplId,
+            nik: data.nik || null,
+            idAbsen: data.idAbsen || null,
+            nama: data.nama,
+            email: data.email || null,
+            handphone: data.handphone || null,
+            telpon: data.telpon || null,
             // Dates
             tglLhr: data.tglLhr ? new Date(data.tglLhr) : null,
             tglMsk: data.tglMsk ? new Date(data.tglMsk) : null,
+            tglAngkat: data.tglAngkat ? new Date(data.tglAngkat) : null,
             tglOut: data.tglOut ? new Date(data.tglOut) : null,
-            // Numbers
+            tglNpwp: data.tglNpwp ? new Date(data.tglNpwp) : null,
+            tglNikah: data.tglNikah ? new Date(data.tglNikah) : null,
+            // Religion/Education (Foreign Keys - Scalar)
+            kdAgm: data.kdAgm || null,
+            kdSkl: data.kdSkl || null,
+            // Org
+            kdCmpy: data.kdCmpy || null,
+            kdFact: data.kdFact || null,
+            kdBag: data.kdBag || null,
+            kdDept: data.kdDept || null,
+            kdSeksie: data.kdSeksie || null,
+            kdJab: data.kdJab || null,
+            kdPkt: data.kdPkt || null,
+            // Shift - Correct mapping to schema fields
+            groupShift: (data.groupShiftId === 'none' || !data.groupShiftId) ? null : data.groupShiftId,
+            kdJam: (data.jnsJamId === 'none' || !data.jnsJamId) ? null : data.jnsJamId,
+            jnsJamKdJam: (data.jnsJamId === 'none' || !data.jnsJamId) ? null : data.jnsJamId,
+            // Payroll
             pokokBln: Number(data.pokokBln) || 0,
             tTransport: Number(data.tTransport) || 0,
             tMakan: Number(data.tMakan) || 0,
@@ -418,20 +493,37 @@ export const updateEmployee = async (req, res) => {
             tKhusus: Number(data.tKhusus) || 0,
             tLmbtetap: Number(data.tLmbtetap) || 0,
             fixOther: Number(data.fixOther) || 0,
-            // Enums/Strings
-            email: data.email || null,
-            nik: data.nik || null,
-            idAbsen: data.idAbsen || null,
-            kdDept: data.kdDept || null,
-            kdJab: data.kdJab || null,
-            kdCmpy: data.kdCmpy || null,
-            kdFact: data.kdFact || null,
+            potRumah: Number(data.potRumah) || 0,
+            kdPtkp: Number(data.kdPtkp) || 1,
+            // IDs/Bank
+            ktpNo: data.ktpNo || null,
+            npwp: data.npwp || null,
             bankCode: data.bankCode || null,
             bankUnit: data.bankUnit || null,
             bankRekNo: data.bankRekNo || null,
             bankRekName: data.bankRekName || null,
+            noBpjsTk: data.noBpjsTk || null,
+            noBpjsKes: data.noBpjsKes || null,
+            noAnggota: data.noAnggota || null,
+            // Flags
+            kdSex: data.kdSex || 'LAKILAKI',
+            kdSts: data.kdSts || 'AKTIF',
+            kdJns: data.kdJns || 'TETAP',
+            kdBpjsTk: data.kdBpjsTk ?? true,
+            kdBpjsKes: data.kdBpjsKes ?? true,
+            kdTransp: data.kdTransp ?? true,
+            kdMakan: data.kdMakan ?? true,
+            kdLmb: data.kdLmb ?? true,
+            kdSpl: data.kdSpl ?? true,
+            kdPjk: data.kdPjk ?? true,
+            kdKoperasi: data.kdKoperasi ?? false,
+            kdptRumah: data.kdptRumah ?? false,
+            kdSpsi: data.kdSpsi ?? false,
+            kdOut: data.kdOut ?? false,
+            // Superior
             superiorId: (data.superiorId === 'none' || !data.superiorId) ? null : data.superiorId,
             superior2Id: (data.superior2Id === 'none' || !data.superior2Id) ? null : data.superior2Id,
+            // Metadata
             updatedBy: req.user?.email || 'system'
         };
 
@@ -439,22 +531,21 @@ export const updateEmployee = async (req, res) => {
             // ==========================================
             // 🔗 AUTOMATED LINKAGE: KARYAWAN TO USER
             // ==========================================
-            if (sanitizedData.email) {
+            let finalUserId = null;
+            if (updatePayload.email) {
                 const linkedUser = await tx.user.findFirst({
-                    where: { email: { equals: sanitizedData.email, mode: 'insensitive' } }
+                    where: { email: { equals: updatePayload.email, mode: 'insensitive' } }
                 });
                 if (linkedUser) {
-                    sanitizedData.userId = linkedUser.id;
-                } else {
-                    sanitizedData.userId = null;
+                    finalUserId = linkedUser.id;
                 }
-            } else {
-                sanitizedData.userId = null;
             }
+            
+            updatePayload.userId = finalUserId;
 
             const updated = await tx.karyawan.update({
                 where: { id },
-                data: sanitizedData,
+                data: updatePayload,
                 include: {
                     company: true,
                     fact: true,

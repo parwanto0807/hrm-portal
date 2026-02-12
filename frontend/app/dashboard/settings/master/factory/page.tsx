@@ -8,7 +8,10 @@ import {
     Search,
     Edit,
     Trash2,
-    Database
+    Database,
+    MapPin,
+    Activity,
+    ExternalLink
 } from "lucide-react";
 import {
     Table,
@@ -87,7 +90,7 @@ export default function FactoryPage() {
     );
 
     return (
-        <div className="p-4 md:p-6 md:px-2 space-y-6 w-full max-w-full">
+        <div className="p-2 md:p-6 space-y-6 w-full max-w-full">
             <HeaderCard
                 title="Data Factory (Pabrik)"
                 description="Kelola master data factory/lokasi pabrik"
@@ -144,6 +147,8 @@ export default function FactoryPage() {
                                 <TableRow>
                                     <TableHead className="w-[100px]">Kode</TableHead>
                                     <TableHead>Nama Factory</TableHead>
+                                    <TableHead>Lokasi</TableHead>
+                                    <TableHead>Radius</TableHead>
                                     <TableHead>Keterangan</TableHead>
                                     <TableHead className="text-right">Aksi</TableHead>
                                 </TableRow>
@@ -151,24 +156,58 @@ export default function FactoryPage() {
                             <TableBody>
                                 {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                                             Memuat data...
                                         </TableCell>
                                     </TableRow>
                                 ) : filteredFactories.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                                             Tidak ada data ditemukan
                                         </TableCell>
                                     </TableRow>
                                 ) : (
                                     filteredFactories.map((f) => (
-                                        <TableRow key={f.kdFact}>
+                                        <TableRow key={f.kdFact} className="hover:bg-muted/50 transition-colors">
                                             <TableCell className="font-medium">
-                                                <Badge variant="outline">{f.kdFact}</Badge>
+                                                <Badge variant="outline" className="bg-slate-50">{f.kdFact}</Badge>
                                             </TableCell>
-                                            <TableCell>{f.nmFact}</TableCell>
-                                            <TableCell>{f.keterangan || "-"}</TableCell>
+                                            <TableCell>
+                                                <div className="font-medium text-slate-800">{f.nmFact}</div>
+                                            </TableCell>
+                                            <TableCell>
+                                                {f.lat && f.long ? (
+                                                    <div className="flex flex-col gap-1">
+                                                        <Badge variant="secondary" className="w-fit font-normal text-xs gap-1 bg-sky-50 text-sky-700 hover:bg-sky-100 border-sky-200">
+                                                            <MapPin className="w-3 h-3" />
+                                                            {f.lat}, {f.long}
+                                                        </Badge>
+                                                        <a
+                                                            href={`https://www.google.com/maps/search/?api=1&query=${f.lat},${f.long}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-[10px] text-muted-foreground hover:text-sky-600 hover:underline inline-flex items-center gap-1 w-fit mt-0.5"
+                                                        >
+                                                            Lihat di Peta <ExternalLink className="w-2 h-2" />
+                                                        </a>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-muted-foreground text-xs italic">- Belum diatur -</span>
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                {f.radius ? (
+                                                    <Badge variant="outline" className="gap-1.5 bg-emerald-50 text-emerald-700 border-emerald-200">
+                                                        <Activity className="w-3 h-3" />
+                                                        {f.radius} Meter
+                                                    </Badge>
+                                                ) : (
+                                                    <span className="text-muted-foreground text-xs text-center block">-</span>
+                                                )}
+                                            </TableCell>
+                                            <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">
+                                                {f.keterangan || "-"}
+                                            </TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-2">
                                                     <Button

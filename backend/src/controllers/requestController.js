@@ -1,5 +1,9 @@
 // src/controllers/requestController.js
 import { prisma } from '../config/prisma.js';
+import firebaseAdmin from '../config/firebaseAdmin.js';
+import { createNotification } from '../utils/notification.js';
+import { format } from 'date-fns';
+import { id as idLocale } from 'date-fns/locale';
 
 /**
  * Submit a new request (Cuti, Ijin, Pulang Cepat, Dinas Luar)
@@ -38,6 +42,85 @@ export const createRequest = async (req, res) => {
             }
         });
 
+        // 4. Send Notifications (Push & DB)
+        try {
+            const requesterName = req.user.namaKaryawan || req.user.name || 'Seseorang';
+            const requesterId = req.user.id;
+            
+            // A. Notify Admins & HR Manager
+            const admins = await prisma.user.findMany({
+                where: {
+                    role: { in: ['SUPER_ADMIN', 'ADMIN', 'HR_MANAGER'] }
+                },
+                select: { id: true, email: true, fcmToken: true, employee: { select: { emplId: true } } }
+            });
+
+            // 1. Send Push to Admins (if Firebase is ready)
+            if (firebaseAdmin) {
+                const adminTokens = admins.map(admin => admin.fcmToken).filter(token => !!token);
+                if (adminTokens.length > 0) {
+                     const message = {
+                        notification: {
+                            title: 'Pengajuan Baru',
+                            body: `${requesterName} telah membuat pengajuan ${type}`
+                        },
+                        tokens: adminTokens
+                    };
+                    firebaseAdmin.messaging().sendEachForMulticast(message).catch(e => console.error(e));
+                }
+            }
+
+            // 2. Save DB Notification for Admins (ALWAYS)
+            for (const admin of admins) {
+                await createNotification({
+                    userId: admin.id,
+                    emplId: admin.employee?.emplId,
+                    subject: 'Pengajuan Baru',
+                    note: `${requesterName} telah membuat pengajuan ${type}`,
+                    type: 2,
+                    creatorUuid: requesterId,
+                    url: '/dashboard/leaves' // Admins review leaves here
+                });
+            }
+
+            // B. Notify Requester
+            // 1. Send Push to Requester (if Firebase is ready)
+            if (firebaseAdmin) {
+                let requesterToken = req.user.fcmToken;
+                if (!requesterToken) {
+                     const requesterUser = await prisma.user.findUnique({
+                        where: { id: requesterId },
+                        select: { fcmToken: true }
+                    });
+                    requesterToken = requesterUser?.fcmToken;
+                }
+                
+                if (requesterToken) {
+                    const message = {
+                        notification: {
+                            title: 'Pengajuan Berhasil Dibuat',
+                            body: `Pengajuan ${type} Anda sedang diproses.`
+                        },
+                        token: requesterToken
+                    };
+                    firebaseAdmin.messaging().send(message).catch(e => console.error(e));
+                }
+            }
+
+            // 2. Save DB Notification for Requester (ALWAYS)
+             await createNotification({
+                emplId: emplId,
+                subject: 'Pengajuan Berhasil Dibuat',
+                note: `Pengajuan ${type} Anda sedang diproses.`,
+                type: 2,
+                creatorUuid: requesterId, // Self-created notification
+                url: '/dashboard/leaves' // Users track their requests here
+            });
+
+        } catch (err) {
+            console.error('⚠️ Failed to send notifications:', err);
+        }
+
         res.status(201).json({
             success: true,
             data: request
@@ -59,9 +142,26 @@ export const getMyRequests = async (req, res) => {
     try {
         const emplId = req.user.emplId;
 
+        // CRITICAL: Ensure emplId exists
+        if (!emplId) {
+             return res.status(400).json({
+                success: false,
+                message: 'User account is not linked to any Employee data.'
+            });
+        }
+
         const requests = await prisma.pengajuan.findMany({
             where: { emplId },
             include: {
+                karyawan: {
+                    select: {
+                        nama: true,
+                        emplId: true,
+                        kdDept: true,
+                        superior: { select: { nama: true, emplId: true } },
+                        superior2: { select: { nama: true, emplId: true } }
+                    }
+                },
                 approvals: {
                     include: {
                         approver: {
@@ -93,6 +193,14 @@ export const getPendingApprovals = async (req, res) => {
     try {
         const approverId = req.user.emplId;
         const isHR = req.user.role === 'HR_MANAGER';
+
+        // CRITICAL: Ensure approver has emplId (unless purely role-based like HR, but even then commonly linked)
+        if (!approverId && !isHR) {
+             return res.status(200).json({
+                success: true,
+                data: []
+            });
+        }
 
         // Find requests where the current user is the valid approver for the current step
         const requests = await prisma.pengajuan.findMany({
@@ -215,11 +323,16 @@ export const getApprovalHistory = async (req, res) => {
 export const handleApproval = async (req, res) => {
     try {
         const { id } = req.params;
-        const { status, remarks } = req.body;
+        const { status, remarks, startDate, endDate } = req.body;
         const approverId = req.user.emplId;
-        const isHR = req.user.role === 'HR_MANAGER';
+        const userRole = req.user.role;
+        const isManagement = ['SUPER_ADMIN', 'ADMIN', 'HR_MANAGER'].includes(userRole);
+        const isHR = userRole === 'HR_MANAGER';
 
-        const request = await prisma.pengajuan.findUnique({
+        // Log context for debugging
+        console.log(`[Approval] User: ${req.user.email}, Role: ${userRole}, emplId: ${approverId}, Action: ${status}`);
+
+        let request = await prisma.pengajuan.findUnique({
             where: { id },
             include: { 
                 karyawan: {
@@ -235,13 +348,41 @@ export const handleApproval = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Request not found' });
         }
 
+        // Feature: Allow HR_MANAGER to modify dates during approval
+        if (isHR && (startDate || endDate)) {
+            console.log(`[Approval] HR Manager ${req.user.email} is modifying dates for request ${id}`);
+            request = await prisma.pengajuan.update({
+                where: { id },
+                data: {
+                    startDate: startDate ? new Date(startDate) : undefined,
+                    endDate: endDate ? new Date(endDate) : undefined
+                },
+                include: { 
+                    karyawan: {
+                        include: {
+                            superior: true,
+                            superior2: true
+                        }
+                    } 
+                }
+            });
+        }
+
         // Validate Authorization for the specific step
         let authorized = false;
-        if (request.currentStep === 1 && request.karyawan.superiorId === approverId) {
+        
+        // 1. Management override (SUPER_ADMIN, ADMIN, HR_MANAGER can approve any step via Management Dashboard)
+        if (isManagement) {
+            authorized = true;
+        } 
+        // 2. Step-based hierarchy check for standard managers
+        else if (request.currentStep === 1 && request.karyawan.superiorId === approverId) {
             authorized = true;
         } else if (request.currentStep === 2 && request.karyawan.superior2Id === approverId) {
             authorized = true;
-        } else if (request.currentStep === 3 && isHR) {
+        }
+        // HR check is already covered by isManagement, but kept for clarity in logic flow
+        else if (request.currentStep === 3 && isHR) {
             authorized = true;
         }
 
@@ -249,6 +390,14 @@ export const handleApproval = async (req, res) => {
             return res.status(403).json({ 
                 success: false, 
                 message: 'Anda tidak memiliki wewenang untuk menyetujui tahap ini.' 
+            });
+        }
+
+        // CRITICAL: Ensure approver has emplId for database relation
+        if (!approverId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Akun Anda tidak terhubung dengan data Karyawan. Persetujuan tidak dapat dicatat.'
             });
         }
 
@@ -301,6 +450,55 @@ export const handleApproval = async (req, res) => {
         // Sync to Absent only on final approval
         if (newStatus === 'APPROVED') {
             await syncToAbsent(request);
+        }
+
+        // Notification to Requester (Push & DB)
+        try {
+            // Get Requester FCM Token
+            const requester = await prisma.user.findFirst({
+                where: { employee: { emplId: request.emplId } },
+                select: { fcmToken: true }
+            });
+
+            const requesterToken = requester?.fcmToken;
+            const actionText = status === 'APPROVED' ? 'disetujui' : 'ditolak';
+            const title = `Pengajuan ${actionText}`;
+            
+            // Handle date modification notice
+            const isDateModified = startDate || endDate;
+            const modifiedNotice = isDateModified ? ' dengan penyesuaian tanggal' : '';
+            
+            // Custom Format: DD-MMM-YYYY (e.g., 12-Feb-2026)
+            const formattedDate = format(new Date(request.startDate), 'dd-MMM-yyyy', { locale: idLocale });
+            const requesterName = request.karyawan.nama;
+            const approverName = req.user.namaKaryawan || req.user.name || 'Admin';
+            
+            const body = `Pengajuan Tanggal ${formattedDate} (${requesterName}) Anda telah ${actionText}${modifiedNotice} oleh ${approverName}.`;
+
+            // 1. Send Push Notification
+            if (firebaseAdmin && requesterToken) {
+                const message = {
+                    notification: {
+                        title: title,
+                        body: body
+                    },
+                    token: requesterToken
+                };
+                firebaseAdmin.messaging().send(message).catch(e => console.error('Push Error:', e));
+            }
+
+            // 2. Save DB Notification
+            await createNotification({
+                emplId: request.emplId,
+                subject: title,
+                note: body,
+                type: 2, // Type 2 for Request
+                creatorUuid: approverId, // The approver is the creator of this notification
+                url: '/dashboard/leaves' // Requester sees the result in their list
+            });
+
+        } catch (error) {
+            console.error('Failed to send approval notification:', error);
         }
 
         res.status(200).json({
@@ -371,6 +569,65 @@ export const cancelRequest = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Gagal membatalkan pengajuan'
+        });
+    }
+};
+
+/**
+ * Get all requests (for SUPER_ADMIN, ADMIN, HR_MANAGER)
+ */
+export const getAllRequests = async (req, res) => {
+    try {
+        const { status, type, search } = req.query;
+
+        const where = {
+            AND: [
+                status ? { status } : {},
+                type ? { type } : {},
+                search ? {
+                    OR: [
+                        { karyawan: { nama: { contains: search, mode: 'insensitive' } } },
+                        { karyawan: { emplId: { contains: search, mode: 'insensitive' } } },
+                        { karyawan: { nik: { contains: search, mode: 'insensitive' } } }
+                    ]
+                } : {}
+            ]
+        };
+
+        const requests = await prisma.pengajuan.findMany({
+            where,
+            include: {
+                karyawan: {
+                    select: { 
+                        nama: true, 
+                        emplId: true, 
+                        nik: true,
+                        kdDept: true,
+                        dept: { select: { nmDept: true } },
+                        superior: { select: { nama: true, emplId: true } },
+                        superior2: { select: { nama: true, emplId: true } }
+                    }
+                },
+                approvals: {
+                    include: {
+                        approver: {
+                            select: { nama: true }
+                        }
+                    }
+                }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        res.status(200).json({
+            success: true,
+            data: requests
+        });
+    } catch (error) {
+        console.error('Error fetching all requests:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch all requests'
         });
     }
 };

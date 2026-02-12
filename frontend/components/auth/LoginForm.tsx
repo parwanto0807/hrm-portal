@@ -50,11 +50,21 @@ export default function LoginForm({
     useEffect(() => {
         const checkAuth = () => {
             const accessToken = localStorage.getItem('hrm_access_token');
-            // Cek token keberadaan token saja biasanya cukup
-            if (accessToken) {
-                console.log('✅ User already authenticated, redirecting...');
-                if (onSuccess) onSuccess();
-                router.push(redirectPath);
+            const userStr = localStorage.getItem('hrm_user');
+
+            // Cek token DAN user untuk mencegah loop jika state tidak sinkron
+            if (accessToken && userStr) {
+                try {
+                    // Validasi userStr adalah JSON yang valid
+                    JSON.parse(userStr);
+                    console.log('✅ User already authenticated, redirecting...');
+                    if (onSuccess) onSuccess();
+                    router.push(redirectPath);
+                } catch (e) {
+                    console.warn('❌ Corrupt user data found in login check, staying on login page.');
+                    // Optional: Clean up corrupt data
+                    localStorage.removeItem('hrm_user');
+                }
             }
         };
         checkAuth();
@@ -345,14 +355,6 @@ export default function LoginForm({
                         >
                             Password
                         </label>
-                        {!compact && (
-                            <Link
-                                href="/forgot-password"
-                                className={`text-sky-600 hover:text-sky-700 hover:underline ${compact ? 'text-xs' : 'text-sm'}`}
-                            >
-                                Forgot password?
-                            </Link>
-                        )}
                     </div>
                     <div className="relative">
                         <input
@@ -373,16 +375,6 @@ export default function LoginForm({
                             </svg>
                         </div>
                     </div>
-                    {compact && (
-                        <div className="text-right mt-1">
-                            <Link
-                                href="/forgot-password"
-                                className="text-xs text-sky-600 hover:text-sky-700 hover:underline"
-                            >
-                                Forgot password?
-                            </Link>
-                        </div>
-                    )}
                 </div>
 
                 {/* Remember Me */}

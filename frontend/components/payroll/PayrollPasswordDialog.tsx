@@ -67,10 +67,10 @@ export const PayrollPasswordDialog: React.FC<PasswordDialogProps> = ({
                     </DialogHeader>
                 </div>
 
-                <div className="p-6 pt-5 bg-white space-y-5">
+                <div className="p-6 pt-5 bg-white dark:bg-slate-900 space-y-5">
                     <div className="space-y-2">
                         <div className="flex justify-between items-center mb-1">
-                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Password</label>
+                            <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest pl-1">Password</label>
                         </div>
                         <Input
                             type="password"
@@ -78,14 +78,17 @@ export const PayrollPasswordDialog: React.FC<PasswordDialogProps> = ({
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
-                            className="h-12 border-slate-200 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl text-lg tracking-[0.3em] font-mono text-center placeholder:tracking-normal placeholder:font-sans placeholder:text-sm"
+                            className="h-12 border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-50 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl text-lg tracking-[0.15em] font-mono text-center placeholder:tracking-normal placeholder:font-sans placeholder:text-sm dark:placeholder:text-slate-500"
                             autoFocus
                         />
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 text-center">
+                            Password yang diberikan oleh Admin HRD
+                        </p>
                     </div>
 
                 </div>
 
-                <DialogFooter className="p-6 pt-0 bg-white grid grid-cols-2 gap-3">
+                <DialogFooter className="p-6 pt-0 bg-white dark:bg-slate-900 grid grid-cols-2 gap-3">
                     <Button
                         variant="ghost"
                         onClick={onClose}

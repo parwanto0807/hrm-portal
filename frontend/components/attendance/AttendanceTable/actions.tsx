@@ -26,7 +26,7 @@ export const AttendanceActions = ({ record, onEdit, onView }: AttendanceActionsP
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-full transition-all"
+                            className="h-8 w-8 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 rounded-full transition-all"
                             onClick={() => onView?.(record)}
                         >
                             <Eye className="h-4 w-4" />
@@ -44,7 +44,7 @@ export const AttendanceActions = ({ record, onEdit, onView }: AttendanceActionsP
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-all"
+                            className="h-8 w-8 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded-full transition-all"
                             onClick={() => onEdit(record)}
                         >
                             <Edit2 className="h-4 w-4" />

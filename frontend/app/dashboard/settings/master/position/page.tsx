@@ -105,7 +105,7 @@ export default function PositionPage() {
     );
 
     return (
-        <div className="p-4 md:p-6 md:px-2 space-y-6 w-full max-w-full">
+        <div className="p-2 md:p-6 space-y-6 w-full max-w-full">
             <HeaderCard
                 title="Data Jabatan (Position)"
                 description="Kelola master data jabatan dan tunjangan standar jabatan"

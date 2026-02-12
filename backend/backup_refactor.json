@@ -1,0 +1,176 @@
+{
+  "jnsJam": [
+    {
+      "KD_JAM": "A",
+      "JNS_JAM": "Normal / Office",
+      "JMSHIF": 1,
+      "is_active": true,
+      "created_at": "2026-02-06T11:16:47.387Z",
+      "updated_at": "2026-02-08T06:43:50.505Z",
+      "JAM_KELUAR": "17:00",
+      "JAM_MASUK": "08:00"
+    },
+    {
+      "KD_JAM": "B",
+      "JNS_JAM": "Shift 1 (Pagi)",
+      "JMSHIF": 1,
+      "is_active": true,
+      "created_at": "2026-02-06T11:16:47.396Z",
+      "updated_at": "2026-02-08T06:43:50.509Z",
+      "JAM_KELUAR": "16:30",
+      "JAM_MASUK": "07:30"
+    },
+    {
+      "KD_JAM": "C",
+      "JNS_JAM": "Shift 2 (Sore)",
+      "JMSHIF": 1,
+      "is_active": true,
+      "created_at": "2026-02-06T11:16:47.400Z",
+      "updated_at": "2026-02-08T06:43:50.511Z",
+      "JAM_KELUAR": "00:00",
+      "JAM_MASUK": "16:00"
+    },
+    {
+      "KD_JAM": "D",
+      "JNS_JAM": "Shift 3 (Malam)",
+      "JMSHIF": 1,
+      "is_active": true,
+      "created_at": "2026-02-06T11:16:47.402Z",
+      "updated_at": "2026-02-08T06:43:50.512Z",
+      "JAM_KELUAR": "07:30",
+      "JAM_MASUK": "23:30"
+    },
+    {
+      "KD_JAM": "S1",
+      "JNS_JAM": "Shift 1 (Pagi)",
+      "JMSHIF": 1,
+      "is_active": true,
+      "created_at": "2026-02-08T09:45:10.453Z",
+      "updated_at": "2026-02-08T09:45:10.453Z",
+      "JAM_KELUAR": "15:00",
+      "JAM_MASUK": "07:00"
+    },
+    {
+      "KD_JAM": "S2",
+      "JNS_JAM": "Shift 2 (Sore)",
+      "JMSHIF": 1,
+      "is_active": true,
+      "created_at": "2026-02-08T09:45:10.456Z",
+      "updated_at": "2026-02-08T09:45:10.456Z",
+      "JAM_KELUAR": "23:00",
+      "JAM_MASUK": "15:00"
+    },
+    {
+      "KD_JAM": "S3",
+      "JNS_JAM": "Shift 3 (Malam)",
+      "JMSHIF": 1,
+      "is_active": true,
+      "created_at": "2026-02-08T09:45:10.458Z",
+      "updated_at": "2026-02-08T09:45:10.458Z",
+      "JAM_KELUAR": "07:00",
+      "JAM_MASUK": "23:00"
+    },
+    {
+      "KD_JAM": "LS1",
+      "JNS_JAM": "Longshift 1",
+      "JMSHIF": 1,
+      "is_active": true,
+      "created_at": "2026-02-08T09:45:10.459Z",
+      "updated_at": "2026-02-08T09:45:10.459Z",
+      "JAM_KELUAR": "19:00",
+      "JAM_MASUK": "07:00"
+    },
+    {
+      "KD_JAM": "LS2",
+      "JNS_JAM": "Longshift 2",
+      "JMSHIF": 1,
+      "is_active": true,
+      "created_at": "2026-02-08T09:45:10.460Z",
+      "updated_at": "2026-02-08T09:45:10.460Z",
+      "JAM_KELUAR": "07:00",
+      "JAM_MASUK": "19:00"
+    },
+    {
+      "KD_JAM": "OFF",
+      "JNS_JAM": "OFF / Libur",
+      "JMSHIF": 1,
+      "is_active": true,
+      "created_at": "2026-02-08T09:45:10.462Z",
+      "updated_at": "2026-02-08T09:47:27.337Z",
+      "JAM_KELUAR": "00:00",
+      "JAM_MASUK": "00:00"
+    },
+    {
+      "KD_JAM": "0",
+      "JNS_JAM": "0 / Libur (Default)",
+      "JMSHIF": 1,
+      "is_active": true,
+      "created_at": "2026-02-08T09:47:09.343Z",
+      "updated_at": "2026-02-08T09:47:27.342Z",
+      "JAM_KELUAR": "00:00",
+      "JAM_MASUK": "00:00"
+    }
+  ],
+  "groupShift": [
+    {
+      "GROUP_SHIFT": "00",
+      "GROUP_NAME": "Non Group",
+      "is_active": true,
+      "created_at": "2026-02-03T07:30:52.770Z",
+      "updated_at": "2026-02-03T07:30:52.770Z",
+      "MAX_STAFF": 999,
+      "MIN_STAFF": 0,
+      "SUPERVISOR_ID": null,
+      "PATTERN_ID": null,
+      "PATTERN_REF_DATE": null
+    },
+    {
+      "GROUP_SHIFT": "02",
+      "GROUP_NAME": "GROUP KARMAN                  ",
+      "is_active": true,
+      "created_at": "2026-02-03T07:30:52.775Z",
+      "updated_at": "2026-02-03T07:30:52.775Z",
+      "MAX_STAFF": 999,
+      "MIN_STAFF": 0,
+      "SUPERVISOR_ID": null,
+      "PATTERN_ID": null,
+      "PATTERN_REF_DATE": null
+    },
+    {
+      "GROUP_SHIFT": "03",
+      "GROUP_NAME": "GROUP SUYATNO                 ",
+      "is_active": true,
+      "created_at": "2026-02-03T07:30:52.776Z",
+      "updated_at": "2026-02-03T07:30:52.776Z",
+      "MAX_STAFF": 999,
+      "MIN_STAFF": 0,
+      "SUPERVISOR_ID": null,
+      "PATTERN_ID": null,
+      "PATTERN_REF_DATE": null
+    },
+    {
+      "GROUP_SHIFT": "04",
+      "GROUP_NAME": "GROUP KARSINAH                ",
+      "is_active": true,
+      "created_at": "2026-02-03T07:30:52.778Z",
+      "updated_at": "2026-02-03T07:30:52.778Z",
+      "MAX_STAFF": 999,
+      "MIN_STAFF": 0,
+      "SUPERVISOR_ID": null,
+      "PATTERN_ID": null,
+      "PATTERN_REF_DATE": null
+    },
+    {
+      "GROUP_SHIFT": "01",
+      "GROUP_NAME": "GROUP MUSLIKIN",
+      "is_active": true,
+      "created_at": "2026-02-03T07:30:52.774Z",
+      "updated_at": "2026-02-08T06:22:14.842Z",
+      "MAX_STAFF": 999,
+      "MIN_STAFF": 0,
+      "SUPERVISOR_ID": null,
+      "PATTERN_ID": null,
+      "PATTERN_REF_DATE": null
+    }
+  ]
+}

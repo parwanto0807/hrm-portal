@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { format, subDays } from 'date-fns';
 import { api } from '@/lib/api';
 import {
     Search,
@@ -23,6 +24,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/accordion";
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
@@ -41,13 +48,18 @@ export default function AttendanceDashboardPage() {
     const user = getUser();
     const isEmployee = user?.role?.toLowerCase() === 'employee';
 
+    // --- DEFAULT DATES (Last 7 Days) ---
+    const today = new Date();
+    const defaultStart = format(subDays(today, 7), 'yyyy-MM-dd');
+    const defaultEnd = format(today, 'yyyy-MM-dd');
+
     // --- STATE ---
     const [department, setDepartment] = useState('all');
     const [section, setSection] = useState('all');
     const [position, setPosition] = useState('all');
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
-    const [dateRangeKey, setDateRangeKey] = useState('custom');
+    const [startDate, setStartDate] = useState(defaultStart);
+    const [endDate, setEndDate] = useState(defaultEnd);
+    const [dateRangeKey, setDateRangeKey] = useState('7-days');
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [page, setPage] = useState(1);
@@ -141,9 +153,9 @@ export default function AttendanceDashboardPage() {
         setDepartment('all');
         setSection('all');
         setPosition('all');
-        setStartDate('');
-        setEndDate('');
-        setDateRangeKey('custom');
+        setStartDate(defaultStart);
+        setEndDate(defaultEnd);
+        setDateRangeKey('7-days');
         setSearch('');
         setPage(1);
     };
@@ -168,7 +180,7 @@ export default function AttendanceDashboardPage() {
     return (
         <div className={cn(
             "flex flex-col gap-3 md:gap-6 pb-24",
-            "px-[2px] py-1 md:p-6"
+            "p-2 md:p-6"
         )}>
             {/* Breadcrumb Section */}
             <div className="px-2 md:px-0">
@@ -204,7 +216,7 @@ export default function AttendanceDashboardPage() {
                 gradientFrom="from-blue-600"
                 gradientTo="to-indigo-600"
                 patternText="PT. Grafindo Mitrasemesta"
-                className="rounded-xl md:rounded-2xl mx-[2px] md:mx-0"
+                className="rounded-xl md:rounded-2xl"
             />
 
             {/* Stats Cards Section */}
@@ -219,109 +231,124 @@ export default function AttendanceDashboardPage() {
             {/* Filters Section */}
             <Card className="border-slate-200 shadow-sm overflow-visible rounded-xl md:rounded-xl">
                 <CardContent className="p-4">
-                    <div className="flex flex-col gap-4">
-                        {/* ROW 1: Filters, Dates, Reset */}
-                        <div className={cn(
-                            "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 items-end",
-                            isEmployee ? "lg:grid-cols-4" : ""
-                        )}>
-                            {/* Org Filters - Hidden for Employees */}
-                            {!isEmployee && (
-                                <>
-                                    <div className="space-y-1.5 container-filter">
-                                        <label className="text-[10px] uppercase font-bold text-slate-500 flex items-center gap-1 px-1">
-                                            Dept
-                                            {department !== 'all' && <Badge className="h-4 px-1 bg-emerald-500 text-[8px]">Aktif</Badge>}
-                                        </label>
-                                        <DepartmentFilter value={department} onValueChange={handleDeptChange} />
-                                    </div>
-                                    <div className="space-y-1.5 container-filter">
-                                        <label className="text-[10px] uppercase font-bold text-slate-500 flex items-center gap-1 px-1">
-                                            Bagian
-                                            {section !== 'all' && <Badge className="h-4 px-1 bg-emerald-500 text-[8px]">Aktif</Badge>}
-                                        </label>
-                                        <SectionFilter kdDept={department} value={section} onValueChange={handleSectionChange} />
-                                    </div>
-                                    <div className="space-y-1.5 container-filter">
-                                        <label className="text-[10px] uppercase font-bold text-slate-500 flex items-center gap-1 px-1">
-                                            Jabatan
-                                            {position !== 'all' && <Badge className="h-4 px-1 bg-emerald-500 text-[8px]">Aktif</Badge>}
-                                        </label>
-                                        <PositionFilter kdSeksie={section} value={position} onValueChange={setPosition} />
-                                    </div>
-                                </>
-                            )}
-
-                            {/* Date Range Predefined */}
-                            <div className="space-y-1.5 container-filter">
-                                <label className="text-[10px] uppercase font-bold text-slate-500 px-1">Rentang Waktu</label>
-                                <DateRangeSelect
-                                    value={dateRangeKey}
-                                    onRangeChange={handleDateRangeChange}
-                                />
-                            </div>
-
-                            {/* Date Filters */}
-                            <div className="space-y-1.5 container-filter">
-                                <label className="text-[10px] uppercase font-bold text-slate-500 flex items-center gap-1 px-1">
-                                    Dari
-                                    {startDate && <Badge className="h-4 px-1 bg-emerald-500 text-[8px]">ON</Badge>}
-                                </label>
-                                <Input
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) => {
-                                        setStartDate(e.target.value);
-                                        setDateRangeKey('custom');
-                                    }}
-                                    className="bg-slate-50 border-slate-200 focus:bg-white transition-all h-10 font-medium px-2 text-xs w-full"
-                                />
-                            </div>
-                            <div className="space-y-1.5 container-filter">
-                                <label className="text-[10px] uppercase font-bold text-slate-500 flex items-center gap-1 px-1">
-                                    Sampai
-                                    {endDate && <Badge className="h-4 px-1 bg-emerald-500 text-[8px]">ON</Badge>}
-                                </label>
-                                <Input
-                                    type="date"
-                                    value={endDate}
-                                    onChange={(e) => {
-                                        setEndDate(e.target.value);
-                                        setDateRangeKey('custom');
-                                    }}
-                                    className="bg-slate-50 border-slate-200 focus:bg-white transition-all h-10 font-medium px-2 text-xs w-full"
-                                />
-                            </div>
-
-                            {/* Reset */}
-                            <div className="w-full">
-                                <Button
-                                    variant="outline"
-                                    onClick={handleReset}
-                                    className="w-full border-slate-200 text-slate-600 hover:bg-slate-50 px-4 h-10 font-bold"
-                                >
-                                    <RotateCcw className="h-4 w-4 mr-2" />
-                                    Atur Ulang
-                                </Button>
-                            </div>
-                        </div>
-
-                        {/* ROW 2: Search (50% Width) */}
-                        <div className="w-full md:w-1/2">
-                            <div className="space-y-1.5 container-filter">
-                                <label className="text-[10px] uppercase font-bold text-slate-500 px-1">Cari</label>
-                                <div className="relative">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                    <Input
-                                        placeholder="Nama atau ID..."
-                                        className="pl-9 bg-slate-50 border-slate-200 focus:bg-white transition-all text-xs w-full"
-                                        value={search}
-                                        onChange={(e) => setSearch(e.target.value)}
-                                    />
+                    <Accordion type="single" collapsible defaultValue="" className="w-full">
+                        <AccordionItem value="filters" className="border-none">
+                            <AccordionTrigger className="hover:no-underline py-2 md:py-3">
+                                <div className="flex items-center gap-2">
+                                    <Search className="h-4 w-4 text-slate-600" />
+                                    <span className="text-sm font-semibold text-slate-700">Filter Kehadiran</span>
+                                    <Badge variant="outline" className="ml-2 text-[10px] px-1.5 py-0">
+                                        {[department !== 'all', section !== 'all', position !== 'all', startDate, endDate, search].filter(Boolean).length} aktif
+                                    </Badge>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="pt-4">
+                                <div className="flex flex-col gap-4">
+                                    {/* ROW 1: Filters, Dates, Reset */}
+                                    <div className={cn(
+                                        "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 items-end",
+                                        isEmployee ? "lg:grid-cols-4" : ""
+                                    )}>
+                                        {/* Org Filters - Hidden for Employees */}
+                                        {!isEmployee && (
+                                            <>
+                                                <div className="space-y-1.5 container-filter">
+                                                    <label className="text-[10px] uppercase font-bold text-slate-500 flex items-center gap-1 px-1">
+                                                        Dept
+                                                        {department !== 'all' && <Badge className="h-4 px-1 bg-emerald-500 text-[8px]">Aktif</Badge>}
+                                                    </label>
+                                                    <DepartmentFilter value={department} onValueChange={handleDeptChange} />
+                                                </div>
+                                                <div className="space-y-1.5 container-filter">
+                                                    <label className="text-[10px] uppercase font-bold text-slate-500 flex items-center gap-1 px-1">
+                                                        Bagian
+                                                        {section !== 'all' && <Badge className="h-4 px-1 bg-emerald-500 text-[8px]">Aktif</Badge>}
+                                                    </label>
+                                                    <SectionFilter kdDept={department} value={section} onValueChange={handleSectionChange} />
+                                                </div>
+                                                <div className="space-y-1.5 container-filter">
+                                                    <label className="text-[10px] uppercase font-bold text-slate-500 flex items-center gap-1 px-1">
+                                                        Jabatan
+                                                        {position !== 'all' && <Badge className="h-4 px-1 bg-emerald-500 text-[8px]">Aktif</Badge>}
+                                                    </label>
+                                                    <PositionFilter kdSeksie={section} value={position} onValueChange={setPosition} />
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {/* Date Range Predefined */}
+                                        <div className="space-y-1.5 container-filter">
+                                            <label className="text-[10px] uppercase font-bold text-slate-500 px-1">Rentang Waktu</label>
+                                            <DateRangeSelect
+                                                value={dateRangeKey}
+                                                onRangeChange={handleDateRangeChange}
+                                            />
+                                        </div>
+
+                                        {/* Date Filters */}
+                                        <div className="space-y-1.5 container-filter">
+                                            <label className="text-[10px] uppercase font-bold text-slate-500 flex items-center gap-1 px-1">
+                                                Dari
+                                                {startDate && <Badge className="h-4 px-1 bg-emerald-500 text-[8px]">ON</Badge>}
+                                            </label>
+                                            <Input
+                                                type="date"
+                                                value={startDate}
+                                                onChange={(e) => {
+                                                    setStartDate(e.target.value);
+                                                    setDateRangeKey('custom');
+                                                }}
+                                                className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:bg-white dark:focus:bg-slate-750 transition-all h-10 font-medium px-2 text-xs w-full"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5 container-filter">
+                                            <label className="text-[10px] uppercase font-bold text-slate-500 flex items-center gap-1 px-1">
+                                                Sampai
+                                                {endDate && <Badge className="h-4 px-1 bg-emerald-500 text-[8px]">ON</Badge>}
+                                            </label>
+                                            <Input
+                                                type="date"
+                                                value={endDate}
+                                                onChange={(e) => {
+                                                    setEndDate(e.target.value);
+                                                    setDateRangeKey('custom');
+                                                }}
+                                                className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:bg-white dark:focus:bg-slate-750 transition-all h-10 font-medium px-2 text-xs w-full"
+                                            />
+                                        </div>
+
+                                        {/* Reset */}
+                                        <div className="w-full">
+                                            <Button
+                                                variant="outline"
+                                                onClick={handleReset}
+                                                className="w-full border-slate-200 text-slate-600 hover:bg-slate-50 px-4 h-10 font-bold"
+                                            >
+                                                <RotateCcw className="h-4 w-4 mr-2" />
+                                                Atur Ulang
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    {/* ROW 2: Search (50% Width) */}
+                                    <div className="w-full md:w-1/2">
+                                        <div className="space-y-1.5 container-filter">
+                                            <label className="text-[10px] uppercase font-bold text-slate-500 px-1">Cari</label>
+                                            <div className="relative">
+                                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                                <Input
+                                                    placeholder="Nama atau ID..."
+                                                    className="pl-9 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:bg-white dark:focus:bg-slate-750 transition-all text-xs w-full"
+                                                    value={search}
+                                                    onChange={(e) => setSearch(e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Accordion>
                 </CardContent>
             </Card>
 

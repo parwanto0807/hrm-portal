@@ -219,8 +219,12 @@ export const getPayrollDetail = async (req, res) => {
                 tTransport: Number(s.tTransport || 0),
                 tMakan: Number(s.tMakan || 0),
                 tKhusus: Number(s.tKhusus || 0),
+                totUShift: Number(s.totUShift || 0),
+                mealOt: Number(s.mealOt || 0),
+                tunjMedik: Number(s.tunjMedik || 0),
                 rapel: Number(s.rapel || 0) + Number(s.tunjRapel || 0),
                 lembur: Number(s.totULembur || 0),
+                thr: Number(s.thr || 0),
                 tLain: Number(s.tunjLain || 0) + Number(s.tLain || 0),
                 admBank: Number(s.admBank || 0)
             };
@@ -229,22 +233,44 @@ export const getPayrollDetail = async (req, res) => {
                 jht: Number(s.jhtEmpl || 0),
                 jpn: Number(s.jpnEmpl || 0),
                 bpjs: Number(s.jknEmpl || 0),
+                jkk: Number(s.jkk || 0),
+                jkm: Number(s.jkm || 0),
+                jpk: Number(s.jpk || 0),
                 pph21: Number(s.tPph21 || 0),
-                potPinjaman: Number(s.potRumah || 0),
-                iuranKoperasi: 0, // Placeholder
-                lain: 0
+                pphEmpl: Number(s.pphEmpl || 0),
+                pphThr: Number(s.pphThr || 0),
+                potPinjaman: Number(s.potRumah || 0) + Number(s.pinjam || 0),
+                iuranKoperasi: Number(s.koperasi || 0),
+                potAbsen: Number(s.ptAbsen || 0),
+                lain: Number(s.ptLain || 0)
             };
             
-            // JUMLAH A = Upah Dibayarkan + Tunjangan Jabatan + Tunjangan Khusus + Lembur + Rapel + Lain-lain + Adm Bank
+            // JUMLAH A = Semua Tunjangan + Lembur + THR + Upah Dibayarkan
             const totalAllowances = pokokTrm + 
                                    allowances.tJabatan + 
+                                   allowances.tTransport + 
+                                   allowances.tMakan + 
                                    allowances.tKhusus + 
+                                   allowances.totUShift + 
+                                   allowances.mealOt + 
+                                   allowances.tunjMedik + 
                                    allowances.lembur + 
                                    allowances.rapel + 
+                                   allowances.thr + 
                                    allowances.tLain + 
                                    allowances.admBank;
             
-            const totalDeductions = Object.values(deductions).reduce((acc, val) => acc + val, 0);
+            // JUMLAH B = Semua Potongan kecuali yang dibayar perusahaan (JKK, JKM, JPK)
+            const totalDeductions = deductions.jht + 
+                                   deductions.jpn + 
+                                   deductions.bpjs + 
+                                   deductions.pph21 + 
+                                   deductions.pphEmpl + 
+                                   deductions.pphThr + 
+                                   deductions.potPinjaman + 
+                                   deductions.iuranKoperasi + 
+                                   deductions.potAbsen + 
+                                   deductions.lain;
 
             return {
                 id: s.id,
@@ -468,8 +494,13 @@ export const generateProtectedPayslip = async (req, res, next) => {
             { label: 'JHT (Jaminan Hari Tua)', value: salary.jhtEmpl },
             { label: 'JPN (Jaminan Pensiun)', value: salary.jpnEmpl },
             { label: 'BPJS Kesehatan', value: salary.jknEmpl },
+            { label: 'JKK (Jaminan Kec. Kerja)', value: salary.jkk },
+            { label: 'JKM (Jaminan Kematian)', value: salary.jkm },
+            { label: 'JPK (Jaminan Pemeliharaan)', value: salary.jpk },
             { label: 'Pph 21', value: salary.tPph21 },
-            { label: 'Pot. Pinjaman', value: salary.potRumah }
+            { label: 'Pph Employee', value: salary.pphEmpl },
+            { label: 'Pot. Pinjaman', value: salary.potRumah },
+            { label: 'Pot. Absensi', value: salary.ptAbsen }
         ];
 
         for (let i = 0; i < Math.max(earnings.length, deductions.length); i++) {
@@ -484,9 +515,10 @@ export const generateProtectedPayslip = async (req, res, next) => {
             yPos += 5;
         }
         
-        yPos += 15; // Increased padding top for Totals section
+        yPos += 10; // Slightly less padding if many lines
         const totalA = Number(salary.pokokTrm || salary.pokokBln || 0) + Number(salary.tJabatan || 0) + Number(salary.tKhusus || 0) + Number(salary.totULembur || 0) + Number(salary.rapel || 0) + Number(salary.tunjRapel || 0) + Number(salary.tunjLain || 0) + Number(salary.tLain || 0);
-        const totalB = Number(salary.jhtEmpl || 0) + Number(salary.jpnEmpl || 0) + Number(salary.jknEmpl || 0) + Number(salary.tPph21 || 0) + Number(salary.potRumah || 0);
+        // Exclude employer-paid BPJS (jkk, jkm, jpk) from totalB
+        const totalB = Number(salary.jhtEmpl || 0) + Number(salary.jpnEmpl || 0) + Number(salary.jknEmpl || 0) + Number(salary.tPph21 || 0) + Number(salary.pphEmpl || 0) + Number(salary.potRumah || 0) + Number(salary.ptAbsen || 0);
 
         // Draw lines with more gap from text
         doc.line(60, yPos - 4, 100, yPos - 4);

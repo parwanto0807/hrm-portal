@@ -26,19 +26,8 @@ export const useAuth = () => {
         isLoading: true,
     });
 
-    // Track if component is mounted
-    const [isMounted, setIsMounted] = useState(false);
-    const initRef = useRef(false);
-
-    // Initialize auth HANYA setelah component mounted
     const initializeAuth = useCallback(() => {
-        // CRITICAL: Jangan akses localStorage sebelum mounted
-        if (!isMounted) return;
-
-        // Prevent multiple initialization
-        if (initRef.current) return;
-        initRef.current = true;
-
+        console.log('useAuth: Initializing...');
         try {
             // Coba format baru dulu, jika tidak ada coba format lama
             let token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
@@ -64,47 +53,69 @@ export const useAuth = () => {
 
             const user = userStr ? JSON.parse(userStr) : null;
 
-            // if (process.env.NODE_ENV === 'development') {
-            //     console.log('Auth initialized:', {
-            //         tokenExists: !!token,
-            //         userExists: !!user,
-            //         storageKeysCount: Object.keys(localStorage).length
-            //     });
-            // }
-
+            console.log('useAuth: Initialization complete. Token:', !!token, 'User:', !!user);
             setAuthState({
                 user,
                 token,
                 isLoading: false,
             });
+            if (token) {
+                // Background fetch to update user data from server
+                fetchProfile(token);
+            }
         } catch (error) {
             console.error('Error initializing auth:', error);
-            setAuthState({
-                user: null,
-                token: null,
-                isLoading: false,
-            });
+            // ... (rest of error handling)
         }
-    }, [isMounted]);
-
-    // Effect 1: Set mounted flag
-    useEffect(() => {
-        const timer = setTimeout(() => setIsMounted(true), 0);
-        return () => {
-            clearTimeout(timer);
-            setIsMounted(false);
-            initRef.current = false;
-        };
     }, []);
 
-    // Effect 2: Initialize auth setelah mounted
-    useEffect(() => {
-        if (!isMounted) return;
+    const fetchProfile = async (token: string) => {
+        try {
+            const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002/api';
+            const res = await fetch(`${backendUrl}/users/me`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (res.ok) {
+                const userData = await res.json();
 
-        const timer = setTimeout(() => initializeAuth(), 0);
+                // Exclude employee object from storage to keep it light, or keep it if needed
+                // For now, just ensuring the name is updated
+                const currentUserStr = localStorage.getItem(STORAGE_KEYS.USER);
+                const currentUser = currentUserStr ? JSON.parse(currentUserStr) : {};
+
+                const updatedUser = {
+                    ...currentUser,
+                    ...userData,
+                    name: userData.name // Explicitly ensure name is updated
+                };
+
+                localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedUser));
+
+                if (JSON.stringify(currentUser) !== JSON.stringify(updatedUser)) {
+                    console.log('🔄 useAuth: User profile updated from server');
+                    setAuthState(prev => ({
+                        ...prev,
+                        user: updatedUser
+                    }));
+                }
+            } else {
+                if (res.status === 401) {
+                    // Token expired or invalid
+                    logout();
+                }
+            }
+        } catch (e) {
+            console.error('Failed to fetch profile:', e);
+        }
+    };
+
+    useEffect(() => {
+        // Initialize immediately on mount
+        initializeAuth();
 
         const handleStorageChange = () => {
-            initRef.current = false;
             initializeAuth();
         };
 
@@ -112,11 +123,10 @@ export const useAuth = () => {
         window.addEventListener('auth-change', handleStorageChange);
 
         return () => {
-            clearTimeout(timer);
             window.removeEventListener('storage', handleStorageChange);
             window.removeEventListener('auth-change', handleStorageChange);
         };
-    }, [isMounted, initializeAuth]);
+    }, [initializeAuth]);
 
     const isAuthenticated = useCallback(() => {
         return !authState.isLoading && !!authState.token && !!authState.user;
@@ -131,13 +141,7 @@ export const useAuth = () => {
     }, [authState.isLoading]);
 
     const login = useCallback((user: User, accessToken: string) => {
-        if (!isMounted) return;
-
         try {
-            if (process.env.NODE_ENV === 'development') {
-                console.log('Logging in with keys:', STORAGE_KEYS);
-            }
-
             // Simpan dengan format baru
             localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
             localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
@@ -154,24 +158,18 @@ export const useAuth = () => {
 
             window.dispatchEvent(new Event('auth-change'));
 
-            // Use replace instead of push for better UX
             router.replace('/dashboard');
         } catch (error) {
             console.error('Login error:', error);
         }
-    }, [isMounted, router]);
+    }, [router]);
 
     const logout = useCallback(() => {
-        if (!isMounted) return;
-
         try {
-            // Hapus semua format localStorage yang mungkin ada
             localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
             localStorage.removeItem(STORAGE_KEYS.USER);
             localStorage.removeItem(STORAGE_KEYS.LEGACY_ACCESS_TOKEN);
             localStorage.removeItem(STORAGE_KEYS.LEGACY_USER);
-
-            // Hapus key tambahan yang mungkin digunakan di komponen lain
             localStorage.removeItem('accessToken');
             localStorage.removeItem('access_token');
             localStorage.removeItem('refreshToken');
@@ -179,43 +177,29 @@ export const useAuth = () => {
             localStorage.removeItem('user');
             localStorage.removeItem('isAuthenticated');
 
-            // Reset state
             setAuthState({
                 user: null,
                 token: null,
                 isLoading: false,
             });
 
-            // Beritahu tab/window lain tentang perubahan auth
             window.dispatchEvent(new Event('auth-change'));
-
-            // Redirect ke halaman login yang benar (Consistently use /auth/google if that's the main login)
-            // Namun agar fleksibel, kita biarkan komponen pemanggil menangani redirect jika perlu,
-            // atau kita tetapkan default ke /auth/google karena itu yang digunakan di LogoutButton sebelumnya.
-            router.replace('/auth/google');
+            router.replace('/auth/google'); // Or /login
         } catch (error) {
             console.error('Logout error in useAuth:', error);
         }
-    }, [isMounted, router]);
+    }, [router]);
 
     const debug = useCallback(() => {
-        if (!isMounted) {
-            return {
-                error: 'Not mounted yet',
-                authState
-            };
-        }
-
         return {
             currentToken: localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN),
             legacyToken: localStorage.getItem(STORAGE_KEYS.LEGACY_ACCESS_TOKEN),
             currentUser: localStorage.getItem(STORAGE_KEYS.USER),
             legacyUser: localStorage.getItem(STORAGE_KEYS.LEGACY_USER),
             allStorage: Object.keys(localStorage),
-            authState,
-            isMounted
+            authState
         };
-    }, [isMounted, authState]);
+    }, [authState]);
 
     return {
         isAuthenticated,
@@ -223,8 +207,6 @@ export const useAuth = () => {
         isLoading,
         login,
         logout,
-        debug,
-        // Export mounted state untuk debugging
-        isMounted,
+        debug
     };
 };

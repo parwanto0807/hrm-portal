@@ -20,7 +20,7 @@ const config = {
   
   // Session
   session: {
-    secret: process.env.SESSION_SECRET || 'your-development-session-secret-123',
+    secret: process.env.SESSION_SECRET || 'your-default-dev-secret',
     maxAge: 24 * 60 * 60 * 1000
   },
   

@@ -5,6 +5,7 @@ export const getAllPositions = async (req, res) => {
         const positions = await prisma.mstJab.findMany({
             orderBy: { kdJab: 'asc' }
         });
+        console.log('GET POSITIONS:', positions.length, 'records');
         res.status(200).json({ success: true, data: positions });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });

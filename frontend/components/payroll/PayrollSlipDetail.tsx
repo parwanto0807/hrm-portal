@@ -65,6 +65,18 @@ export function PayrollSlipDetail({ detail, colSpan = 9, showAmount = false }: P
                                     <span className="font-medium">{formatCurrency(detail.allowances?.tJabatan || 0)}</span>
                                 </div>
                                 <div className="flex justify-between py-1">
+                                    <span className="text-slate-300">Tunjangan Transport</span>
+                                    <span className="font-medium">{formatCurrency(detail.allowances?.tTransport || 0)}</span>
+                                </div>
+                                <div className="flex justify-between py-1">
+                                    <span className="text-slate-300">Tunjangan Makan</span>
+                                    <span className="font-medium">{formatCurrency(detail.allowances?.tMakan || 0)}</span>
+                                </div>
+                                <div className="flex justify-between py-1 text-slate-400 text-xs pl-2">
+                                    <span className="">Shift Allowance / Medik</span>
+                                    <span className="">{formatCurrency((detail.allowances?.totUShift || 0) + (detail.allowances?.tunjMedik || 0))}</span>
+                                </div>
+                                <div className="flex justify-between py-1">
                                     <span className="text-slate-300">Tunjangan Khusus</span>
                                     <span className="font-medium">{formatCurrency(detail.allowances?.tKhusus || 0)}</span>
                                 </div>
@@ -72,6 +84,12 @@ export function PayrollSlipDetail({ detail, colSpan = 9, showAmount = false }: P
                                     <span className="text-slate-300">Lembur ({formatHours(detail.lemburHours)})</span>
                                     <span className="font-medium">{formatCurrency(detail.allowances?.lembur || 0)}</span>
                                 </div>
+                                {detail.allowances?.mealOt ? (
+                                    <div className="flex justify-between py-0.5 text-xs text-slate-400 pl-2">
+                                        <span>Uang Makan Lembur</span>
+                                        <span>{formatCurrency(detail.allowances.mealOt)}</span>
+                                    </div>
+                                ) : null}
                                 <div className="flex justify-between py-1">
                                     <span className="text-slate-300">Rapel</span>
                                     <span className="font-medium">{formatCurrency(detail.allowances?.rapel || 0)}</span>
@@ -80,6 +98,12 @@ export function PayrollSlipDetail({ detail, colSpan = 9, showAmount = false }: P
                                     <span className="text-slate-300">Lain-lain</span>
                                     <span className="font-medium">{formatCurrency(detail.allowances?.tLain || 0)}</span>
                                 </div>
+                                {detail.allowances?.thr ? (
+                                    <div className="flex justify-between py-1 border-t border-slate-700/50 mt-1 pt-1 font-semibold text-emerald-300">
+                                        <span className="text-slate-200">Tunjangan Hari Raya (THR)</span>
+                                        <span>{formatCurrency(detail.allowances?.thr)}</span>
+                                    </div>
+                                ) : null}
                                 <div className="flex justify-between py-1">
                                     <span className="text-slate-300">Adm Bank</span>
                                     <span className="font-medium">{formatCurrency(detail.allowances?.admBank || 0)}</span>
@@ -103,14 +127,35 @@ export function PayrollSlipDetail({ detail, colSpan = 9, showAmount = false }: P
                                     <span className="text-slate-300">Jaminan Pensiun (JPN)</span>
                                     <span className="font-medium">{formatCurrency(detail.deductions?.jpn || 0)}</span>
                                 </div>
-                                <div className="flex justify-between py-1">
+                                <div className="flex justify-between py-1 border-b border-slate-700/50 pb-1 mb-1">
                                     <span className="text-slate-300">BPJS Kesehatan</span>
                                     <span className="font-medium">{formatCurrency(detail.deductions?.bpjs || 0)}</span>
                                 </div>
+
+                                {/* New BPJS/Jaminan components */}
+                                <div className="flex justify-between py-0.5 text-xs">
+                                    <span className="text-slate-400">Jaminan Kecelakaan Kerja (JKK)</span>
+                                    <span className="font-medium">{formatCurrency(detail.deductions?.jkk || 0)}</span>
+                                </div>
+                                <div className="flex justify-between py-0.5 text-xs">
+                                    <span className="text-slate-400">Jaminan Kematian (JKM)</span>
+                                    <span className="font-medium">{formatCurrency(detail.deductions?.jkm || 0)}</span>
+                                </div>
+                                <div className="flex justify-between py-0.5 text-xs border-b border-slate-700/50 pb-1 mb-1">
+                                    <span className="text-slate-400">Jaminan Pemeliharaan (JPK)</span>
+                                    <span className="font-medium">{formatCurrency(detail.deductions?.jpk || 0)}</span>
+                                </div>
+
                                 <div className="flex justify-between py-1">
                                     <span className="text-slate-300">PPh 21</span>
                                     <span className="font-medium">{formatCurrency(detail.deductions?.pph21 || 0)}</span>
                                 </div>
+                                {detail.deductions?.pphEmpl ? (
+                                    <div className="flex justify-between py-1">
+                                        <span className="text-slate-300">PPh Employee</span>
+                                        <span className="font-medium">{formatCurrency(detail.deductions?.pphEmpl || 0)}</span>
+                                    </div>
+                                ) : null}
                                 <div className="flex justify-between py-1">
                                     <span className="text-slate-300">Pot. Pinjaman</span>
                                     <span className="font-medium">{formatCurrency(detail.deductions?.potPinjaman || 0)}</span>
@@ -118,6 +163,16 @@ export function PayrollSlipDetail({ detail, colSpan = 9, showAmount = false }: P
                                 <div className="flex justify-between py-1">
                                     <span className="text-slate-300">Iuran Koperasi</span>
                                     <span className="font-medium">{formatCurrency(detail.deductions?.iuranKoperasi || 0)}</span>
+                                </div>
+                                {detail.deductions?.pphThr ? (
+                                    <div className="flex justify-between py-1 text-rose-300 italic">
+                                        <span className="text-slate-200">PPh Terkait THR</span>
+                                        <span>{formatCurrency(detail.deductions?.pphThr)}</span>
+                                    </div>
+                                ) : null}
+                                <div className="flex justify-between py-1">
+                                    <span className="text-slate-300">Potongan Absensi</span>
+                                    <span className="font-medium">{formatCurrency(detail.deductions?.potAbsen || 0)}</span>
                                 </div>
                                 <div className="flex justify-between py-1">
                                     <span className="text-slate-300">Lain-Lain</span>

@@ -11,7 +11,8 @@ import {
     ChevronRight,
     MapPin,
     Calendar,
-    X
+    X,
+    Eye
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,7 +21,11 @@ import { useAuth } from "@/app/hooks/useAuth";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { api } from "@/lib/api";
+import { Loader2 } from "lucide-react";
+import { format, isToday, isYesterday } from "date-fns";
+import { id } from "date-fns/locale";
 
 interface MockAnnouncement {
     id: number;
@@ -32,41 +37,159 @@ interface MockAnnouncement {
     color: string;
 }
 
+interface RecentActivity {
+    id: string;
+    type: string;
+    time: string;
+    location: string;
+    distance: number;
+}
+
+interface TodayShift {
+    name: string;
+    in: string;
+    out: string;
+}
+
 export default function EmployeeDashboard() {
     const { getUser } = useAuth();
     const user = getUser();
     const [selectedAnnouncement, setSelectedAnnouncement] = useState<MockAnnouncement | null>(null);
+    const [loadingStats, setLoadingStats] = useState(true);
+    const [currentTime, setCurrentTime] = useState(new Date());
+    const [dashboardStats, setDashboardStats] = useState({
+        sisaCuti: 0,
+        hadir: 0,
+        ijinSakit: 0,
+        employee: {
+            position: '',
+            department: ''
+        },
+        todayShift: null as TodayShift | null,
+        recentActivities: [] as RecentActivity[],
+        periodInfo: ''
+    });
+
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+        return () => clearInterval(timer);
+    }, []);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const response = await api.get('/dashboard/stats/employee');
+                if (response.data.success) {
+                    setDashboardStats(response.data.data);
+                }
+            } catch (error) {
+                console.error("Error fetching dashboard stats:", error);
+            } finally {
+                setLoadingStats(false);
+            }
+        };
+
+        fetchStats();
+    }, []);
+
+    const formatActivityTime = (dateStr: string) => {
+        const date = new Date(dateStr);
+        if (isToday(date)) return `Hari ini, ${format(date, "HH:mm")}`;
+        if (isYesterday(date)) return `Kemarin, ${format(date, "HH:mm")}`;
+        return format(date, "dd MMM, HH:mm", { locale: id });
+    };
 
     const quickActions = [
-        { label: "Check-In", icon: Clock, color: "bg-blue-500", href: "/dashboard/attendance" },
+        { label: "Absensi", icon: Clock, color: "bg-blue-500", href: "/dashboard/check-in" },
         { label: "Ajukan Cuti", icon: CalendarCheck, color: "bg-emerald-500", href: "/dashboard/leaves" },
         { label: "Slip Gaji", icon: FileText, color: "bg-amber-500", href: "/dashboard/payroll" },
         { label: "Profil", icon: User, color: "bg-purple-500", href: "/dashboard/profile" },
     ];
 
     const stats = [
-        { label: "Sisa Cuti", value: "12", unit: "Hari", color: "text-emerald-600" },
-        { label: "Hadir", value: "18", unit: "Hari", color: "text-blue-600" },
-        { label: "Ijin/Sakit", value: "1", unit: "Hari", color: "text-amber-600" },
+        { label: "Sisa Cuti", value: dashboardStats.sisaCuti, unit: "Hari", color: "text-emerald-600" },
+        { label: "Hadir", value: dashboardStats.hadir, unit: "Hari", color: "text-blue-600" },
+        { label: "Ijin/Sakit", value: dashboardStats.ijinSakit, unit: "Hari", color: "text-amber-600" },
     ];
 
+    // Attendance Logic
+    const todayLogIn = dashboardStats.recentActivities.find(log => log.type === 'Clock In' && isToday(new Date(log.time)));
+    const todayLogOut = dashboardStats.recentActivities.find(log => log.type === 'Clock Out' && isToday(new Date(log.time)));
+
+    let attendanceStatus = {
+        label: "Belum Absen",
+        message: "Jangan lupa untuk melakukan absen masuk hari ini!",
+        color: "bg-indigo-50 text-indigo-900 border-indigo-100",
+        badge: "bg-slate-200 text-slate-600",
+        badgeText: "Reminder",
+        actionRequired: true
+    };
+
+    if (todayLogIn) {
+        // Calculate Lateness if shift info exists
+        let isLate = false;
+        if (dashboardStats.todayShift) {
+            const [shiftH, shiftM] = dashboardStats.todayShift.in.split(':').map(Number);
+            const checkInDate = new Date(todayLogIn.time);
+            const shiftInDate = new Date(checkInDate);
+            shiftInDate.setHours(shiftH, shiftM, 0, 0);
+
+            if (checkInDate > shiftInDate) isLate = true;
+        }
+
+        attendanceStatus = {
+            label: `Sudah Absen Masuk (${format(new Date(todayLogIn.time), "HH:mm")})`,
+            message: isLate ? "Himbauan HRD: Mohon untuk lebih disiplin waktu ke depannya." : "Terima kasih telah datang tepat waktu. Semangat kerja!",
+            color: isLate ? "bg-amber-50 text-amber-900 border-amber-100" : "bg-emerald-50 text-emerald-900 border-emerald-100",
+            badge: isLate ? "bg-rose-500 text-white" : "bg-emerald-500 text-white",
+            badgeText: isLate ? "Terlambat" : "Tepat Waktu",
+            actionRequired: !todayLogOut
+        };
+
+        if (todayLogOut) {
+            attendanceStatus.label = `Sudah Absen Keluar (${format(new Date(todayLogOut.time), "HH:mm")})`;
+            attendanceStatus.message = "Tugas hari ini selesai. Selamat beristirahat!";
+            attendanceStatus.actionRequired = false;
+        }
+    } else if (dashboardStats.todayShift) {
+        // Check if current time is past shift start
+        const [shiftH, shiftM] = dashboardStats.todayShift.in.split(':').map(Number);
+        const shiftInDate = new Date();
+        shiftInDate.setHours(shiftH, shiftM, 0, 0);
+
+        if (currentTime > shiftInDate) {
+            attendanceStatus.message = "Peringatan: Jam masuk sudah lewat. Segera lakukan presensi!";
+            attendanceStatus.badge = "bg-rose-500 text-white";
+            attendanceStatus.badgeText = "Terlambat";
+            attendanceStatus.color = "bg-rose-50 text-rose-900 border-rose-100";
+        }
+    }
+
     return (
-        <div className="flex flex-col gap-4 pb-20 md:pb-8 px-1 animate-in fade-in duration-500 w-full">
+        <div className="flex flex-col gap-4 pb-20 md:pb-8 px-1 animate-in fade-in duration-500 w-full text-slate-900">
 
             {/* --- MOBILE HEADER / PROFILE --- */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-sky-600 to-emerald-600 p-5 text-white shadow-lg">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 p-5 text-white shadow-lg">
                 <div className="relative z-10 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="relative w-12 h-12 rounded-full border-2 border-white/30 overflow-hidden bg-white/10">
                             {user?.image ? (
-                                <Image src={user.image} alt={user.name} fill className="object-cover" />
+                                <Image
+                                    src={user.image}
+                                    alt={user.name || "User profile"}
+                                    fill
+                                    className="object-cover"
+                                    sizes="48px"
+                                />
                             ) : (
                                 <User className="w-full h-full p-2 opacity-50" />
                             )}
                         </div>
                         <div>
                             <h2 className="text-sm font-bold leading-tight">{user?.name || "Karyawan"}</h2>
-                            <p className="text-[10px] opacity-80 font-medium">Software Engineer • IT Dept</p>
+                            <p className="text-[10px] opacity-80 font-medium">
+                                {loadingStats ? "Loading..." : `${dashboardStats.employee.position} • ${dashboardStats.employee.department}`}
+                            </p>
                         </div>
                     </div>
                     <button className="relative p-2 bg-white/10 rounded-full">
@@ -75,15 +198,27 @@ export default function EmployeeDashboard() {
                     </button>
                 </div>
 
-                <div className="mt-6 grid grid-cols-3 gap-2 bg-white/10 backdrop-blur-md rounded-xl p-3">
-                    {stats.map((stat, i) => (
-                        <div key={i} className="text-center border-r last:border-0 border-white/10">
-                            <p className="text-[8px] uppercase tracking-wider opacity-70 mb-0.5">{stat.label}</p>
-                            <p className="text-sm font-bold">
-                                {stat.value} <span className="text-[10px] font-normal opacity-80">{stat.unit}</span>
-                            </p>
+                <div className="mt-6 grid grid-cols-3 gap-2 bg-white/10 backdrop-blur-md rounded-xl p-3 min-h-[50px] items-center">
+                    {loadingStats ? (
+                        <div className="col-span-3 flex justify-center py-1">
+                            <Loader2 className="w-4 h-4 animate-spin opacity-50" />
                         </div>
-                    ))}
+                    ) : (
+                        stats.map((stat, i) => (
+                            <div key={i} className="text-center border-r last:border-0 border-white/10">
+                                <p className="text-[8px] uppercase tracking-wider opacity-70 mb-0.5">{stat.label}</p>
+                                <p className="text-sm font-bold">
+                                    {stat.value} <span className="text-[10px] font-normal opacity-80">{stat.unit}</span>
+                                </p>
+                            </div>
+                        ))
+                    )}
+                </div>
+
+                <div className="mt-2 text-center">
+                    <p className="text-[9px] opacity-60 italic font-medium">
+                        Periode: {dashboardStats.periodInfo}
+                    </p>
                 </div>
 
                 {/* Decorative background element */}
@@ -91,26 +226,41 @@ export default function EmployeeDashboard() {
             </div>
 
             {/* --- TODAY STATUS CARD --- */}
-            <Card className="border-none shadow-sm bg-sky-50 dark:bg-sky-950/20">
-                <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center">
-                            <MapPin className="text-sky-600" size={18} />
+            <Card className={cn("border-2 shadow-sm", attendanceStatus.color)}>
+                <CardContent className="p-4 flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center">
+                                <MapPin className="text-indigo-600" size={18} />
+                            </div>
+                            <div>
+                                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-tight">Status Kehadiran Hari Ini</p>
+                                <p className="text-sm font-black tracking-tight">{attendanceStatus.label}</p>
+                            </div>
                         </div>
-                        <div>
-                            <p className="text-[10px] text-muted-foreground font-medium">Status Kehadiran Hari Ini</p>
-                            <p className="text-xs font-bold text-sky-900 dark:text-sky-100">Belum Melakukan Absen</p>
-                        </div>
+                        <span className={cn("px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider", attendanceStatus.badge)}>
+                            {attendanceStatus.badgeText}
+                        </span>
                     </div>
-                    <Button size="sm" className="h-8 rounded-full text-[10px] bg-sky-600 hover:bg-sky-700">
-                        Absen Sekarang
-                    </Button>
+
+                    <div className="flex items-center justify-between gap-4 mt-1 bg-white/40 p-2 rounded-xl border border-white/50">
+                        <p className="text-[10px] font-bold leading-snug italic opacity-80 pr-2">
+                            "{attendanceStatus.message}"
+                        </p>
+                        {attendanceStatus.actionRequired && (
+                            <Link href="/dashboard/check-in" className="shrink-0">
+                                <Button size="sm" className="h-7 rounded-lg text-[9px] font-black uppercase bg-indigo-600 hover:bg-indigo-700 px-3">
+                                    Absen
+                                </Button>
+                            </Link>
+                        )}
+                    </div>
                 </CardContent>
             </Card>
 
             {/* --- QUICK ACTIONS GRID --- */}
-            <div>
-                <h3 className="text-[11px] font-bold uppercase text-gray-400 tracking-wider mb-3 px-1">Layanan Mandiri</h3>
+            <div className="px-1">
+                <h3 className="text-[11px] font-bold uppercase text-gray-400 tracking-wider mb-3">Layanan Mandiri</h3>
                 <div className="grid grid-cols-4 gap-3">
                     {quickActions.map((action, i) => (
                         <Link key={i} href={action.href} passHref>
@@ -135,9 +285,8 @@ export default function EmployeeDashboard() {
 
             {/* --- ANNOUNCEMENTS SECTION --- */}
             <div className="mt-2 text-[10px]">
-                <div className="flex items-center justify-between mb-3 px-1">
+                <div className="flex items-center mb-3 px-1">
                     <h3 className="font-bold uppercase text-gray-400 tracking-wider">Pengumuman</h3>
-                    <button className="text-sky-600 font-bold flex items-center">Lihat Semua <ChevronRight size={12} /></button>
                 </div>
 
                 <div className="space-y-3">
@@ -173,14 +322,88 @@ export default function EmployeeDashboard() {
                                 <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
                                     <AlertCircle className="text-amber-600" size={18} />
                                 </div>
-                                <div className="space-y-1">
+                                <div className="flex-1 space-y-1">
                                     <h4 className="font-bold text-xs">Update Libur Cuti Bersama 2026</h4>
                                     <p className="text-muted-foreground leading-snug">Rincian perubahan jadwal operasional kantor selama bulan Februari...</p>
-                                    <p className="text-[9px] text-sky-600 font-medium pt-1">01 Feb 2026</p>
+                                    <div className="flex items-center justify-between pt-1">
+                                        <p className="text-[9px] text-sky-600 font-medium">01 Feb 2026</p>
+                                        <Button
+                                            size="sm"
+                                            className="h-6 px-2 text-[10px] font-bold bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedAnnouncement({
+                                                    id: 1,
+                                                    title: "Update Libur Cuti Bersama 2026",
+                                                    date: "01 Feb 2026",
+                                                    preview: "Rincian perubahan jadwal operasional kantor selama bulan Februari...",
+                                                    content: `
+                                                        <p>Yth. Seluruh Karyawan,</p>
+                                                        <br/>
+                                                        <p>Menindaklanjuti Surat Keputusan Bersama (SKB) 3 Menteri tentang Hari Libur Nasional dan Cuti Bersama Tahun 2026, manajemen ingin menginformasikan perubahan jadwal operasional kantor sebagai berikut:</p>
+                                                        <br/>
+                                                        <ul class="list-disc pl-4 space-y-1">
+                                                            <li><strong>Senin, 16 Feb 2026:</strong> Libur Nasional (Tahun Baru Imlek)</li>
+                                                            <li><strong>Selasa, 17 Feb 2026:</strong> Cuti Bersama</li>
+                                                        </ul>
+                                                        <br/>
+                                                        <p>Bagi karyawan yang memiliki tugas mendesak atau shift khusus, mohon berkoordinasi dengan atasan masing-masing. Absensi pada hari tersebut akan disesuaikan secara otomatis oleh sistem.</p>
+                                                        <br/>
+                                                        <p>Terima kasih atas perhatiannya.</p>
+                                                        <br/>
+                                                        <p class="font-bold">HRD Management</p>
+                                                    `,
+                                                    category: "Info HR",
+                                                    color: "amber"
+                                                });
+                                            }}
+                                        >
+                                            <Eye size={12} className="mr-1" />
+                                            Lihat Detail
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
+                </div>
+            </div>
+
+            {/* --- RECENT ACTIVITIES --- */}
+            <div className="mt-2 mb-4">
+                <h3 className="text-[11px] font-bold uppercase text-gray-400 tracking-wider mb-3 px-1">Aktivitas 3 Hari Terakhir</h3>
+                <div className="bg-white dark:bg-gray-900 rounded-3xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 space-y-4">
+                    {loadingStats ? (
+                        <div className="flex justify-center py-8">
+                            <Loader2 className="w-6 h-6 animate-spin text-indigo-500 opacity-50" />
+                        </div>
+                    ) : dashboardStats.recentActivities.length > 0 ? (
+                        dashboardStats.recentActivities.map((log) => (
+                            <div key={log.id} className="flex items-center justify-between border-b last:border-0 border-dashed border-gray-200 dark:border-gray-800 pb-3 last:pb-0">
+                                <div className="flex items-center gap-3">
+                                    <div className={cn(
+                                        "w-9 h-9 rounded-2xl flex items-center justify-center",
+                                        log.type === 'Clock In' ? "bg-indigo-50 text-indigo-600" : "bg-rose-50 text-rose-600",
+                                        "dark:bg-gray-800"
+                                    )}>
+                                        <Clock size={16} />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-tight">{log.type}</p>
+                                        <p className="text-[10px] text-muted-foreground font-medium">{log.distance}m dari lokasi</p>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-[10px] font-black text-slate-600 dark:text-slate-400">{formatActivityTime(log.time)}</p>
+                                    <span className="text-[8px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded uppercase font-black text-slate-500">Berhasil</span>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="text-center py-6">
+                            <p className="text-[10px] text-slate-400 italic">Belum ada aktivitas terekam.</p>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -189,7 +412,6 @@ export default function EmployeeDashboard() {
                 <DialogContent className="max-w-md w-[95%] rounded-2xl p-0 overflow-hidden border-none dialog-content">
                     {selectedAnnouncement && (
                         <div className="flex flex-col max-h-[85vh]">
-                            {/* Header Image/Banner Area */}
                             <div className={cn(
                                 "h-24 w-full relative flex items-center justify-center overflow-hidden",
                                 selectedAnnouncement.color === 'amber' ? "bg-amber-100 dark:bg-amber-900/40" : "bg-sky-100"
@@ -209,7 +431,6 @@ export default function EmployeeDashboard() {
                                 </DialogClose>
                             </div>
 
-                            {/* Content Area */}
                             <div className="p-5 overflow-y-auto custom-scrollbar">
                                 <div className="flex items-center gap-2 mb-3">
                                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase tracking-wide">
@@ -233,7 +454,6 @@ export default function EmployeeDashboard() {
                                 />
                             </div>
 
-                            {/* Footer Action */}
                             <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
                                 <Button
                                     className="w-full rounded-xl font-bold text-xs"
@@ -246,34 +466,6 @@ export default function EmployeeDashboard() {
                     )}
                 </DialogContent>
             </Dialog>
-
-            {/* --- RECENT ACTIVITIES --- */}
-            <div className="mt-2 mb-4">
-                <h3 className="text-[11px] font-bold uppercase text-gray-400 tracking-wider mb-3 px-1">Aktivitas Terakhir</h3>
-                <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 space-y-4">
-                    {[
-                        { icon: Clock, label: "Clock Out", desc: "Kantor Pusat - Tepat Waktu", time: "Kemarin, 17:05", color: "text-blue-500", bg: "bg-blue-50" },
-                        { icon: Clock, label: "Clock In", desc: "Kantor Pusat - Tepat Waktu", time: "Kemarin, 08:55", color: "text-emerald-500", bg: "bg-emerald-50" },
-                        { icon: Calendar, label: "Pengajuan Cuti", desc: "Cuti Tahunan (3 Hari)", time: "30 Jan 2026", color: "text-amber-500", bg: "bg-amber-50" }
-                    ].map((item, i) => (
-                        <div key={i} className="flex items-center justify-between border-b last:border-0 border-dashed border-gray-200 dark:border-gray-800 pb-3 last:pb-0">
-                            <div className="flex items-center gap-3">
-                                <div className={cn("w-9 h-9 rounded-full flex items-center justify-center", item.bg, "dark:bg-gray-800")}>
-                                    <item.icon className={item.color} size={16} />
-                                </div>
-                                <div>
-                                    <p className="text-xs font-bold">{item.label}</p>
-                                    <p className="text-[10px] text-muted-foreground">{item.desc}</p>
-                                </div>
-                            </div>
-                            <div className="text-right">
-                                <p className="text-[10px] font-bold">{item.time}</p>
-                                <span className="text-[8px] bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded uppercase font-bold text-gray-500">Berhasil</span>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
 
         </div>
     );

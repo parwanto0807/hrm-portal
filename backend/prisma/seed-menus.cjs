@@ -5,9 +5,9 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Start seeding menus...');
 
-  // 1. Clear existing menus to avoid duplicates (optional, for dev)
-  // await prisma.roleMenu.deleteMany({});
-  // await prisma.menu.deleteMany({});
+  // 1. Clear existing menus to avoid duplicates
+  await prisma.roleMenu.deleteMany({});
+  await prisma.menu.deleteMany({});
 
   // --- DEFINE MENUS ---
   const menus = [
@@ -86,6 +86,14 @@ async function main() {
       icon: 'BarChart3',
       order: 5,
       groupLabel: 'Analisis',
+      roles: ['SUPER_ADMIN', 'ADMIN', 'HR_MANAGER'],
+    },
+    {
+      label: 'Management Pengajuan',
+      href: '/dashboard/management-pengajuan',
+      icon: 'FileText',
+      order: 6,
+      groupLabel: 'HR Management',
       roles: ['SUPER_ADMIN', 'ADMIN', 'HR_MANAGER'],
     },
     {

@@ -270,12 +270,12 @@ export function PayrollDetailTable({
             {/* Mobile Card View */}
             <div className="md:hidden space-y-3">
                 {filteredDetails.length === 0 ? (
-                    <div className="bg-white p-8 rounded-xl border border-dashed text-center text-slate-400 text-sm">
+                    <div className="bg-white dark:bg-slate-900/50 p-8 rounded-xl border dark:border-slate-800 border-dashed text-center text-slate-400 dark:text-slate-500 text-sm">
                         Data karyawan tidak ditemukan.
                     </div>
                 ) : (
                     paginatedDetails.map((detail) => (
-                        <div key={detail.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div key={detail.id} className="bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
                             {/* Card Header */}
                             <div className="p-4 space-y-3">
                                 <div className="flex justify-between items-start">

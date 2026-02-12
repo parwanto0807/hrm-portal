@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import config from '../config/env.js';
 import { prisma } from '../config/prisma.js';
+import { ensureSysUser } from '../utils/userSync.js';
 
 // ============================================================================
 // 1. AUTH ERROR HANDLER
@@ -48,7 +49,7 @@ export const protect = async (req, res, next) => {
 
     const user = await prisma.user.findUnique({
       where: { id: userIdToCheck },
-      select: { id: true, role: true, email: true }
+      select: { id: true, role: true, email: true, name: true, fcmToken: true }
     });
 
     if (!user) {
@@ -73,11 +74,24 @@ export const protect = async (req, res, next) => {
           { email: { equals: user.email, mode: 'insensitive' } }
         ]
       },
-      select: { emplId: true }
+      select: { emplId: true, nama: true }
     });
     
     if (employee) {
       req.user.emplId = employee.emplId;
+      req.user.namaKaryawan = employee.nama;
+    }
+    
+    // Ensure legacy SysUser exists for notifications/logs for ALL users
+    // If no emplId, use email as the identifier
+    const sysUser = await ensureSysUser(req.user.emplId || user.email);
+    if (sysUser) {
+      req.user.username = sysUser.username;
+      req.user.legacyId = sysUser.legacyId;
+      // If we didn't have an emplId but sysUser does, use it
+      if (!req.user.emplId && sysUser.emplId) {
+        req.user.emplId = sysUser.emplId;
+      }
     }
 
     next();

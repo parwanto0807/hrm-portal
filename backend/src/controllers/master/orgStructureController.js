@@ -56,6 +56,7 @@ export const getDepartments = async (req, res) => {
             include: { bag: true },
             orderBy: { kdDept: "asc" },
         });
+        console.log('GET DEPARTMENTS:', data.length, 'records');
         res.status(200).json({ success: true, data });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -114,6 +115,7 @@ export const getSections = async (req, res) => {
             },
             orderBy: { kdSeksie: "asc" },
         });
+        console.log('GET SECTIONS:', data.length, 'records', 'WHERE:', where);
         res.status(200).json({ success: true, data });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });

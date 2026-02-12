@@ -24,6 +24,7 @@ import {
     X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
     Tooltip,
     TooltipContent,
@@ -34,13 +35,14 @@ import {
 interface RequestTableProps {
     requests: Pengajuan[];
     isLoading: boolean;
-    onAction?: (request: Pengajuan, action: 'APPROVE' | 'REJECT') => void;
+    onAction?: (request: Pengajuan, action: 'APPROVE' | 'REJECT', params?: { startDate?: Date, endDate?: Date, remarks?: string }) => void;
     onCancel?: (request: Pengajuan) => void;
     onView?: (request: Pengajuan) => void;
     isApprovalView?: boolean;
+    currentUser?: any;
 }
 
-export function RequestTable({ requests, isLoading, onAction, onCancel, onView, isApprovalView }: RequestTableProps) {
+export function RequestTable({ requests, isLoading, onAction, onCancel, onView, isApprovalView, currentUser }: RequestTableProps) {
     const getStatusBadge = (status: RequestStatus) => {
         switch (status) {
             case 'APPROVED':
@@ -78,17 +80,75 @@ export function RequestTable({ requests, isLoading, onAction, onCancel, onView, 
         }
     };
 
-    const getStepBadge = (step: number) => {
-        switch (step) {
-            case 1:
-                return <Badge variant="outline" className="text-[10px] font-black border-blue-200 text-blue-600 dark:border-blue-900/50 dark:text-blue-400 uppercase tracking-tighter">Atasan 1</Badge>;
-            case 2:
-                return <Badge variant="outline" className="text-[10px] font-black border-indigo-200 text-indigo-600 dark:border-indigo-900/50 dark:text-indigo-400 uppercase tracking-tighter">Atasan 2</Badge>;
-            case 3:
-                return <Badge variant="outline" className="text-[10px] font-black border-rose-200 text-rose-600 dark:border-rose-900/50 dark:text-rose-400 uppercase tracking-tighter">HRD Manager</Badge>;
-            default:
-                return null;
+    const getStepStatus = (request: Pengajuan, step: number) => {
+        const approval = request.approvals?.find(a => a.level === step);
+        if (approval) {
+            return {
+                done: approval.status === 'APPROVED' || approval.status === 'IN_PROGRESS',
+                rejected: approval.status === 'REJECTED',
+                name: approval.approver?.nama
+            };
         }
+        return { done: false, rejected: false, name: null };
+    };
+
+    const renderApprovalStages = (request: Pengajuan) => {
+        const stages = [
+            { id: 1, label: 'Atasan 1', defaultName: request.karyawan?.superior?.nama || 'Belum Ditentukan' },
+            { id: 2, label: 'Atasan 2', defaultName: request.karyawan?.superior2?.nama || 'Belum Ditentukan' },
+            { id: 3, label: 'HR Manager', defaultName: 'HRD' }
+        ];
+
+        return (
+            <div className="flex flex-col gap-1.5 py-1">
+                {stages.map((stage) => {
+                    const status = getStepStatus(request, stage.id);
+                    const isCurrent = request.status === 'PENDING' || request.status === 'IN_PROGRESS' ? request.currentStep === stage.id : false;
+                    const isRejected = status.rejected;
+                    const isDone = status.done || (request.status === 'APPROVED' && request.currentStep >= stage.id);
+
+                    return (
+                        <div key={stage.id} className="flex items-center gap-2 group">
+                            <div className={`flex-shrink-0 w-3.5 h-3.5 rounded-full flex items-center justify-center border ${isRejected ? 'bg-red-50 border-red-200 text-red-500' :
+                                isDone ? 'bg-emerald-50 border-emerald-200 text-emerald-500' :
+                                    isCurrent ? 'bg-amber-50 border-amber-300 text-amber-600 animate-pulse' :
+                                        'bg-slate-50 border-slate-200 text-slate-300'
+                                }`}>
+                                {isRejected ? <X className="h-2 w-2 stroke-[4px]" /> : <CheckCircle2 className={`h-2 w-2 ${isDone ? 'stroke-[3px]' : 'stroke-[2px]'}`} />}
+                            </div>
+                            <div className="flex flex-col leading-none">
+                                <span className={`text-[9px] font-black uppercase tracking-tighter ${isRejected ? 'text-red-600' :
+                                    isDone ? 'text-emerald-600' :
+                                        isCurrent ? 'text-amber-700 font-bold' :
+                                            'text-slate-400 font-medium'
+                                    }`}>
+                                    {stage.label}
+                                </span>
+                                <span className={`text-[10px] truncate max-w-[100px] leading-tight ${isDone || isCurrent || isRejected ? 'text-slate-700 dark:text-slate-300 font-bold' : 'text-slate-400 font-medium italic'
+                                    }`}>
+                                    {status.name || stage.defaultName}
+                                </span>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
+
+    const [modifiedDates, setModifiedDates] = React.useState<Record<string, { startDate: string, endDate: string }>>({});
+
+    const handleDateChange = (id: string, field: 'startDate' | 'endDate', value: string) => {
+        setModifiedDates(prev => ({
+            ...prev,
+            [id]: {
+                ...prev[id] || {
+                    startDate: requests.find(r => r.id === id)?.startDate || '',
+                    endDate: requests.find(r => r.id === id)?.endDate || ''
+                },
+                [field]: value
+            }
+        }));
     };
 
     if (isLoading) {
@@ -103,6 +163,8 @@ export function RequestTable({ requests, isLoading, onAction, onCancel, onView, 
             </div>
         );
     }
+
+    const isHR = currentUser?.role === 'HR_MANAGER';
 
     return (
         <div className="space-y-4">
@@ -121,44 +183,74 @@ export function RequestTable({ requests, isLoading, onAction, onCancel, onView, 
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {requests.map((request) => (
-                            <TableRow key={request.id} className="border-slate-100 dark:border-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
-                                {isApprovalView && (
-                                    <TableCell className="py-4">
-                                        <div className="font-bold text-slate-900 dark:text-white uppercase tracking-tight text-xs">{request.karyawan?.nama}</div>
-                                        <div className="text-[10px] font-medium text-slate-400">{request.emplId}</div>
+                        {requests.map((request) => {
+                            const isPending = request.status === 'PENDING' || request.status === 'IN_PROGRESS';
+                            const currentModified = modifiedDates[request.id];
+
+                            return (
+                                <TableRow key={request.id} className="border-slate-100 dark:border-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
+                                    {isApprovalView && (
+                                        <TableCell className="py-4">
+                                            <div className="font-bold text-slate-900 dark:text-white uppercase tracking-tight text-xs">{request.karyawan?.nama}</div>
+                                            <div className="text-[10px] font-medium text-slate-400">{request.emplId}</div>
+                                        </TableCell>
+                                    )}
+                                    <TableCell className="py-4 font-bold flex items-center gap-2">
+                                        {getTypeIcon(request.type)}
+                                        <span className="text-xs uppercase tracking-tight">{getTypeName(request.type)}</span>
                                     </TableCell>
-                                )}
-                                <TableCell className="py-4 font-bold flex items-center gap-2">
-                                    {getTypeIcon(request.type)}
-                                    <span className="text-xs uppercase tracking-tight">{getTypeName(request.type)}</span>
-                                </TableCell>
-                                <TableCell className="py-4">
-                                    <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                                        {format(new Date(request.startDate), 'dd MMM yyyy', { locale: id })}
-                                        {request.endDate && ` - ${format(new Date(request.endDate), 'dd MMM yyyy', { locale: id })}`}
-                                    </div>
-                                </TableCell>
-                                <TableCell className="py-4">
-                                    {getStepBadge(request.currentStep)}
-                                </TableCell>
-                                <TableCell className="py-4 max-w-[200px]">
-                                    <p className="text-xs text-slate-500 line-clamp-1 font-medium italic">{request.reason}</p>
-                                </TableCell>
-                                <TableCell className="py-4">
-                                    {getStatusBadge(request.status)}
-                                </TableCell>
-                                <TableCell className="py-4 text-right pr-6">
-                                    <ActionButtons
-                                        request={request}
-                                        isApprovalView={isApprovalView}
-                                        onAction={onAction}
-                                        onCancel={onCancel}
-                                        onView={onView}
-                                    />
-                                </TableCell>
-                            </TableRow>
-                        ))}
+                                    <TableCell className="py-4">
+                                        {isHR && isApprovalView && isPending ? (
+                                            <div className="flex flex-col gap-1">
+                                                <input
+                                                    type="date"
+                                                    className="text-[10px] bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-1 py-0.5 outline-none focus:border-indigo-500"
+                                                    value={currentModified?.startDate ? currentModified.startDate.split('T')[0] : (request.startDate ? new Date(request.startDate).toISOString().split('T')[0] : '')}
+                                                    onChange={(e) => handleDateChange(request.id, 'startDate', e.target.value)}
+                                                />
+                                                <input
+                                                    type="date"
+                                                    className="text-[10px] bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-1 py-0.5 outline-none focus:border-indigo-500"
+                                                    value={currentModified?.endDate ? currentModified.endDate.split('T')[0] : (request.endDate ? new Date(request.endDate).toISOString().split('T')[0] : '')}
+                                                    onChange={(e) => handleDateChange(request.id, 'endDate', e.target.value)}
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                                {format(new Date(request.startDate), 'dd MMM yyyy', { locale: id })}
+                                                {request.endDate && ` - ${format(new Date(request.endDate), 'dd MMM yyyy', { locale: id })}`}
+                                            </div>
+                                        )}
+                                    </TableCell>
+                                    <TableCell className="py-4">
+                                        {renderApprovalStages(request)}
+                                    </TableCell>
+                                    <TableCell className="py-4 min-w-[150px] max-w-[250px]">
+                                        <p className="text-xs text-slate-600 dark:text-slate-400 font-medium leading-relaxed">{request.reason}</p>
+                                    </TableCell>
+                                    <TableCell className="py-4">
+                                        {getStatusBadge(request.status)}
+                                    </TableCell>
+                                    <TableCell className="py-4 text-right pr-6">
+                                        <ActionButtons
+                                            request={request}
+                                            isApprovalView={isApprovalView}
+                                            onAction={(req, action, remarks) => {
+                                                const mod = modifiedDates[req.id];
+                                                const params = {
+                                                    startDate: mod ? new Date(mod.startDate) : undefined,
+                                                    endDate: mod ? new Date(mod.endDate) : undefined,
+                                                    remarks
+                                                };
+                                                onAction?.(req, action, params);
+                                            }}
+                                            onCancel={onCancel}
+                                            onView={onView}
+                                        />
+                                    </TableCell>
+                                </TableRow>
+                            );
+                        })}
                     </TableBody>
                 </Table>
             </div>
@@ -193,19 +285,48 @@ export function RequestTable({ requests, isLoading, onAction, onCancel, onView, 
                             <div className="text-xs text-slate-500 dark:text-slate-400 space-y-2">
                                 <div className="flex items-center gap-2">
                                     <CalendarDays className="h-3.5 w-3.5 text-slate-400" />
-                                    <span>
-                                        {format(new Date(request.startDate), 'dd MMM yyyy', { locale: id })}
-                                        {request.endDate && ` - ${format(new Date(request.endDate), 'dd MMM yyyy', { locale: id })}`}
-                                    </span>
+                                    {isHR && isApprovalView && (request.status === 'PENDING' || request.status === 'IN_PROGRESS') ? (
+                                        <div className="flex flex-col gap-1 w-full">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[9px] font-bold text-slate-400 uppercase w-8">Dari</span>
+                                                <input
+                                                    type="date"
+                                                    className="flex-1 text-[10px] bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-1 py-0.5 outline-none focus:border-indigo-500 font-bold"
+                                                    value={modifiedDates[request.id]?.startDate ? modifiedDates[request.id].startDate.split('T')[0] : (request.startDate ? new Date(request.startDate).toISOString().split('T')[0] : '')}
+                                                    onChange={(e) => handleDateChange(request.id, 'startDate', e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[9px] font-bold text-slate-400 uppercase w-8">Hingga</span>
+                                                <input
+                                                    type="date"
+                                                    className="flex-1 text-[10px] bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-1 py-0.5 outline-none focus:border-indigo-500 font-bold"
+                                                    value={modifiedDates[request.id]?.endDate ? modifiedDates[request.id].endDate.split('T')[0] : (request.endDate ? new Date(request.endDate).toISOString().split('T')[0] : '')}
+                                                    onChange={(e) => handleDateChange(request.id, 'endDate', e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <span>
+                                            {format(new Date(request.startDate), 'dd MMM yyyy', { locale: id })}
+                                            {request.endDate && ` - ${format(new Date(request.endDate), 'dd MMM yyyy', { locale: id })}`}
+                                        </span>
+                                    )}
                                 </div>
-                                <div className="space-y-1">
-                                    <div className="flex justify-between items-center text-[10px] uppercase font-bold tracking-widest text-slate-400">
-                                        <span>Tahap</span>
-                                        <span>Alasan</span>
-                                    </div>
-                                    <div className="flex justify-between items-start gap-4">
-                                        {getStepBadge(request.currentStep)}
-                                        <p className="flex-1 text-right italic line-clamp-2">{request.reason}</p>
+                                <div className="space-y-3 pt-1">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                            <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400">Tahap</span>
+                                            <div className="flex flex-col gap-1 items-start">
+                                                {renderApprovalStages(request)}
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block text-right">Alasan</span>
+                                            <p className="text-[11px] text-slate-600 dark:text-slate-400 text-right font-medium leading-relaxed">
+                                                {request.reason}
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -214,7 +335,15 @@ export function RequestTable({ requests, isLoading, onAction, onCancel, onView, 
                                 <ActionButtons
                                     request={request}
                                     isApprovalView={isApprovalView}
-                                    onAction={onAction}
+                                    onAction={(req, action, remarks) => {
+                                        const mod = modifiedDates[req.id];
+                                        const params = {
+                                            startDate: mod ? new Date(mod.startDate) : undefined,
+                                            endDate: mod ? new Date(mod.endDate) : undefined,
+                                            remarks
+                                        };
+                                        onAction?.(req, action, params);
+                                    }}
                                     onCancel={onCancel}
                                     onView={onView}
                                 />
@@ -230,42 +359,52 @@ export function RequestTable({ requests, isLoading, onAction, onCancel, onView, 
 interface ActionButtonsProps {
     request: Pengajuan;
     isApprovalView?: boolean;
-    onAction?: (request: Pengajuan, action: 'APPROVE' | 'REJECT') => void;
+    onAction?: (request: Pengajuan, action: 'APPROVE' | 'REJECT', remarks?: string) => void;
     onCancel?: (request: Pengajuan) => void;
     onView?: (request: Pengajuan) => void;
 }
 
 // Sub-component for Action Keys to reduce duplication
 function ActionButtons({ request, isApprovalView, onAction, onCancel, onView }: ActionButtonsProps) {
+    const [remarks, setRemarks] = React.useState('');
+
     return (
         <TooltipProvider>
             {isApprovalView && (request.status === 'PENDING' || request.status === 'IN_PROGRESS') ? (
-                <div className="flex justify-end gap-2">
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-8 text-[10px] font-black uppercase text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg px-3"
-                                onClick={() => onAction?.(request, 'REJECT')}
-                            >
-                                Tolak
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Tolak Pengajuan</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button
-                                size="sm"
-                                className="h-8 text-[10px] font-black uppercase bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/10 rounded-lg px-3"
-                                onClick={() => onAction?.(request, 'APPROVE')}
-                            >
-                                Setujui
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Setujui Pengajuan</TooltipContent>
-                    </Tooltip>
+                <div className="flex flex-col gap-2 w-full max-w-[200px] ml-auto">
+                    <Input
+                        placeholder="Tanggapan (opsional)..."
+                        value={remarks}
+                        onChange={(e) => setRemarks(e.target.value)}
+                        className="h-8 text-[11px] bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus:border-indigo-500 rounded-lg placeholder:italic"
+                    />
+                    <div className="flex justify-end gap-2">
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-8 text-[10px] font-black uppercase text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg px-3"
+                                    onClick={() => onAction?.(request, 'REJECT', remarks)}
+                                >
+                                    Tolak
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Tolak Pengajuan</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    size="sm"
+                                    className="h-8 text-[10px] font-black uppercase bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/10 rounded-lg px-3"
+                                    onClick={() => onAction?.(request, 'APPROVE', remarks)}
+                                >
+                                    Setujui
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Setujui Pengajuan</TooltipContent>
+                        </Tooltip>
+                    </div>
                 </div>
             ) : (
                 <div className="flex justify-end gap-2">

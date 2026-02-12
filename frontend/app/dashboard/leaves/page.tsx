@@ -62,11 +62,11 @@ export default function LeavesPage() {
         }
     });
 
-    const handleApproval = async (request: Pengajuan, action: 'APPROVE' | 'REJECT') => {
+    const handleApproval = async (request: Pengajuan, action: 'APPROVE' | 'REJECT', params?: { remarks?: string }) => {
         try {
             await api.post(`/requests/${request.id}/approve`, {
                 status: action === 'APPROVE' ? 'APPROVED' : 'REJECTED',
-                remarks: `Processed via dashboard`
+                remarks: params?.remarks || `Processed via dashboard`
             });
             toast.success(`Request ${action === 'APPROVE' ? 'approved' : 'rejected'} successfully`);
             refetchPending();
@@ -101,7 +101,7 @@ export default function LeavesPage() {
     const pendingApprovals = pendingApprovalsData || [];
 
     return (
-        <div className="p-2 md:p-2 space-y-4 md:space-y-4 pb-24 animate-in fade-in duration-500">
+        <div className="p-2 md:p-6 space-y-4 md:space-y-6 pb-24 animate-in fade-in duration-500">
             {/* Header Section */}
             {/* Breadcrumb Section */}
             <div className="mb-2 md:mb-6">

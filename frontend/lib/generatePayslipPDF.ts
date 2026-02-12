@@ -18,7 +18,12 @@ interface PayslipData {
 
     allowances: {
         tJabatan: number;
+        tTransport: number;
+        tMakan: number;
         tKhusus: number;
+        totUShift: number;
+        mealOt: number;
+        tunjMedik: number;
         lembur: number;
         rapel: number;
         tLain: number;
@@ -30,9 +35,15 @@ interface PayslipData {
         jht: number;
         jpn: number;
         bpjs: number;
+        jkk: number;
+        jkm: number;
+        jpk: number;
         pph21: number;
+        pphEmpl: number;
+        pphThr: number;
         potPinjaman: number;
         iuranKoperasi: number;
+        potAbsen: number;
         lain: number;
         [key: string]: number;
     };
@@ -191,25 +202,36 @@ export const generatePayslipPDF = (data: PayslipData[], periodName: string = '',
         // A. PENDAPATAN
         const earnings = [
             { label: 'Gaji Pokok', value: emp.baseSalary },
-            { label: 'Upah Dibayarkan', value: emp.pokokTrm || emp.baseSalary }, // Use pokokTrm (actual paid salary)
+            { label: 'Upah Dibayarkan', value: emp.pokokTrm || emp.baseSalary },
             { label: 'Tunjangan Jabatan', value: emp.allowances?.tJabatan },
+            { label: 'Tunjangan Transport', value: emp.allowances?.tTransport },
+            { label: 'Tunjangan Makan', value: emp.allowances?.tMakan },
+            { label: 'Shift/Medik', value: (emp.allowances?.totUShift || 0) + (emp.allowances?.tunjMedik || 0) },
             { label: 'Tunjangan Khusus', value: emp.allowances?.tKhusus },
             { label: `Lembur  ${(emp.lemburHours || 0).toFixed(2)} Jam`, value: emp.allowances?.lembur },
+            { label: 'Uang Makan Lembur', value: emp.allowances?.mealOt },
             { label: 'Rapel', value: emp.allowances?.rapel },
+            { label: 'Tunjangan Hari Raya', value: emp.allowances?.thr },
             { label: 'Lain-lain', value: emp.allowances?.tLain },
             { label: 'Adm Bank', value: emp.allowances?.admBank }
-        ];
+        ].filter(e => e.value !== 0 || e.label === 'Gaji Pokok');
 
         // B. POTONGAN
         const deductionsList = [
-            { label: 'Jaminan Hari Tua (JHT)', value: emp.deductions?.jht },
-            { label: 'Jaminan Pensiun (JPN)', value: emp.deductions?.jpn },
+            { label: 'JHT (Jaminan Hari Tua)', value: emp.deductions?.jht },
+            { label: 'JPN (Jaminan Pensiun)', value: emp.deductions?.jpn },
             { label: 'BPJS Kesehatan', value: emp.deductions?.bpjs },
-            { label: 'Pph 21', value: emp.deductions?.pph21 },
+            { label: 'JKK (Jaminan Kec. Kerja)', value: emp.deductions?.jkk },
+            { label: 'JKM (Jaminan Kematian)', value: emp.deductions?.jkm },
+            { label: 'JPK (Jaminan Pemeliharaan)', value: emp.deductions?.jpk },
+            { label: 'PPh 21', value: emp.deductions?.pph21 },
+            { label: 'PPh Employee', value: emp.deductions?.pphEmpl },
+            { label: 'PPh Terkait THR', value: emp.deductions?.pphThr },
             { label: 'Pot. Pinjaman', value: emp.deductions?.potPinjaman },
             { label: 'Iuran Koperasi', value: emp.deductions?.iuranKoperasi },
+            { label: 'Pot. Absensi', value: emp.deductions?.potAbsen },
             { label: 'Lain-Lain', value: emp.deductions?.lain }
-        ];
+        ].filter(d => d.value !== 0); // Avoid cluttering
 
         // Draw Rows
         const maxRows = Math.max(earnings.length, deductionsList.length);

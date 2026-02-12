@@ -33,10 +33,14 @@ export interface PayrollDetail {
         tTransport?: number;
         tMakan?: number;
         tKhusus?: number;
+        totUShift?: number;
+        mealOt?: number;
+        tunjMedik?: number;
         lembur?: number;
         rapel?: number;
+        thr?: number;
         tLain?: number;
-        admBank?: number; // Treated as income in specific layout if needed, or mapping?
+        admBank?: number;
 
         // Legacy/Generic map support
         transport?: number;
@@ -58,9 +62,15 @@ export interface PayrollDetail {
         jht?: number;
         jpn?: number;
         bpjs?: number;
+        jkk?: number;
+        jkm?: number;
+        jpk?: number;
         pph21?: number;
+        pphEmpl?: number;
+        pphThr?: number;
         potPinjaman?: number; // Loans
         iuranKoperasi?: number;
+        potAbsen?: number;
         lain?: number;
 
         // Legacy

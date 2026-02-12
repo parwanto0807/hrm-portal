@@ -35,6 +35,10 @@ export const DateRangeSelect = ({ onRangeChange, value }: DateRangeSelectProps) 
                 start = startOfToday();
                 end = today;
                 break;
+            case '7-days':
+                start = subDays(today, 7);
+                end = today;
+                break;
             case 'this-week':
                 start = startOfWeek(today, { weekStartsOn: 1 }); // Monday
                 end = endOfWeek(today, { weekStartsOn: 1 });
@@ -71,6 +75,7 @@ export const DateRangeSelect = ({ onRangeChange, value }: DateRangeSelectProps) 
             </SelectTrigger>
             <SelectContent>
                 <SelectItem value="today">Hari Ini</SelectItem>
+                <SelectItem value="7-days">7 Hari Terakhir</SelectItem>
                 <SelectItem value="this-week">Minggu Ini</SelectItem>
                 <SelectItem value="2-weeks">2 Minggu Terakhir</SelectItem>
                 <SelectItem value="3-weeks">3 Minggu Terakhir</SelectItem>

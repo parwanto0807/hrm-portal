@@ -6,14 +6,16 @@ import {
     getPendingApprovals,
     getApprovalHistory,
     handleApproval,
-    cancelRequest
+    cancelRequest,
+    getAllRequests
 } from '../controllers/requestController.js';
-import { protect } from '../middleware/auth.middleware.js';
+import { protect, authorize } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
 router.use(protect);
 
+router.get('/all', authorize('SUPER_ADMIN', 'ADMIN', 'HR_MANAGER'), getAllRequests);
 router.post('/', createRequest);
 router.get('/my', getMyRequests);
 router.get('/pending', getPendingApprovals);

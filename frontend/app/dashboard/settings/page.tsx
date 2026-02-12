@@ -3,15 +3,37 @@
 import React from "react";
 import Link from "next/link";
 import {
-    Building2, Factory,
-    Briefcase, GraduationCap, Landmark, Settings2,
-    CalendarDays, CalendarRange, UserCog,
-    ChevronRight, Cpu, Shield, Database,
-    Globe, Bell, Key, Mail, Users2,
-    Zap, HardDrive, RefreshCcw,
-    BookOpen, Info,
-    AlertTriangle, Palmtree
-} from "lucide-react";
+    LayoutDashboard,
+    UserCircle,
+    Building2,
+    Factory,
+    Briefcase,
+    GraduationCap,
+    Landmark,
+    Settings2,
+    CalendarDays,
+    CalendarRange,
+    UserCog,
+    ChevronRight,
+    Cpu,
+    Shield,
+    Globe,
+    Bell,
+    Key,
+    Mail,
+    Users2,
+    Zap,
+    HardDrive,
+    RefreshCcw,
+    BookOpen,
+    Info,
+    AlertTriangle,
+    Palmtree,
+    ArrowRightLeft,
+    Database,
+    Clock,
+    Repeat,
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -94,6 +116,46 @@ const shortcutItems = [
         borderColor: 'border-red-200 dark:border-red-800',
         category: 'master',
         href: '/dashboard/settings/master/holiday'
+    },
+    {
+        title: 'Penjadwalan Shift',
+        description: 'Matrix shift grup bulanan',
+        icon: CalendarDays,
+        color: 'bg-indigo-500 text-white',
+        bgColor: 'bg-indigo-50 dark:bg-indigo-900/20',
+        borderColor: 'border-indigo-200 dark:border-indigo-800',
+        category: 'master',
+        href: '/dashboard/settings/master/shifts'
+    },
+    {
+        title: 'Shift Kerja',
+        description: 'Master definisi jam kerja',
+        icon: Clock,
+        color: 'bg-indigo-600 text-white',
+        bgColor: 'bg-indigo-50 dark:bg-indigo-900/20',
+        borderColor: 'border-indigo-200 dark:border-indigo-800',
+        category: 'master',
+        href: '/dashboard/settings/master/shift-types'
+    },
+    {
+        title: 'Grup Shift',
+        description: 'Master pengelompokan shift',
+        icon: Users2,
+        color: 'bg-blue-600 text-white',
+        bgColor: 'bg-blue-50 dark:bg-blue-900/20',
+        borderColor: 'border-blue-200 dark:border-blue-800',
+        category: 'master',
+        href: '/dashboard/settings/master/group-shifts'
+    },
+    {
+        title: 'Pola Shift',
+        description: 'Master siklus perputaran shift',
+        icon: Repeat,
+        color: 'bg-indigo-500 text-white',
+        bgColor: 'bg-indigo-50 dark:bg-indigo-900/20',
+        borderColor: 'border-indigo-200 dark:border-indigo-800',
+        category: 'master',
+        href: '/dashboard/settings/master/patterns'
     },
 
     // Parameter & Konfigurasi Items

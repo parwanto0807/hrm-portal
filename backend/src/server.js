@@ -45,6 +45,70 @@ const PORT = config.port || 5002;
 // Initialize Scheduled Tasks
 initCronTasks();
 
+// Ensure system user exists for logging
+const ensureSystemUser = async () => {
+  try {
+    // Check if system position exists, if not create a dummy one
+    let systemPos = await prisma.sysUserPosition.findUnique({ where: { legacyId: 0 } });
+    if (!systemPos) {
+      systemPos = await prisma.sysUserPosition.create({
+        data: {
+          legacyId: 0,
+          positionCode: 'SYS',
+          positionName: 'System',
+          remark: 'System predefined position',
+          active: true
+        }
+      });
+    }
+
+    // Check if dummy karyawan exists for system user
+    let systemKaryawan = await prisma.karyawan.findUnique({ where: { emplId: 'SYSTEM' } });
+    if (!systemKaryawan) {
+      systemKaryawan = await prisma.karyawan.create({
+        data: {
+          emplId: 'SYSTEM',
+          nik: 'SYSTEM',
+          nama: 'System Process',
+          kdSts: 'AKTIF'
+        }
+      });
+    }
+
+    const systemUser = await prisma.sysUser.findUnique({
+      where: { username: 'system' }
+    });
+
+    if (!systemUser) {
+      await prisma.sysUser.create({
+        data: {
+          username: 'system',
+          email: 'system@local.host',
+          password: 'system_no_login',
+          name: 'System Agent',
+          nik: 'SYSTEM',
+          emplId: 'SYSTEM',
+          legacyId: 0,
+          positionId: 0,
+          active: true
+        }
+      });
+      console.log('✅ System user initialized');
+    } else if (systemUser.legacyId === null || systemUser.legacyId === undefined) {
+      // Ensure existing system user has legacyId: 0
+      await prisma.sysUser.update({
+        where: { id: systemUser.id },
+        data: { legacyId: 0 }
+      });
+      console.log('✅ System user legacyId updated');
+    }
+  } catch (error) {
+    console.warn('⚠️ Could not initialize system user:', error.message);
+  }
+};
+
+ensureSystemUser();
+
 const server = app.listen(PORT, () => {
   console.log(`
 🚀 Server running in ${config.env} mode

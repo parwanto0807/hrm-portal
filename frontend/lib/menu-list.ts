@@ -43,9 +43,9 @@ export function getMenuList(pathname: string, role: string): MenuGroup[] {
           roles: ["SUPER_ADMIN", "ADMIN", "HR_MANAGER"]
         },
         {
-          href: "/dashboard/attendance",
+          href: "/dashboard/check-in",
           label: "Absensi",
-          active: isActive("/dashboard/attendance"),
+          active: isActive("/dashboard/check-in"),
           icon: Calendar,
           submenus: [],
           roles: ["SUPER_ADMIN", "ADMIN", "HR_MANAGER", "DEPARTMENT_MANAGER", "EMPLOYEE"]
@@ -57,6 +57,14 @@ export function getMenuList(pathname: string, role: string): MenuGroup[] {
           icon: FileText,
           submenus: [],
           roles: ["SUPER_ADMIN", "ADMIN", "HR_MANAGER", "DEPARTMENT_MANAGER", "EMPLOYEE"]
+        },
+        {
+          href: "/dashboard/management-pengajuan",
+          label: "Management Pengajuan",
+          active: isActive("/dashboard/management-pengajuan"),
+          icon: FileText,
+          submenus: [],
+          roles: ["SUPER_ADMIN", "ADMIN", "HR_MANAGER"]
         },
         {
           href: "/dashboard/payroll",
@@ -78,7 +86,7 @@ export function getMenuList(pathname: string, role: string): MenuGroup[] {
     },
     {
       groupLabel: "Sistem",
-      allowedRoles: ["SUPER_ADMIN", "ADMIN", "HR_MANAGER", "DEPARTMENT_MANAGER", "EMPLOYEE", "GUEST"],
+      allowedRoles: ["SUPER_ADMIN"],
       menus: [
         {
           href: "/dashboard/notifications",

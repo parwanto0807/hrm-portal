@@ -21,6 +21,14 @@ import requestRoute from './routes/requestRoutes.js';
 import menuRoute from './routes/menuRoutes.js';
 import absentRoute from './routes/absentRoutes.js';
 import holidayRoute from './routes/master/holidayRoutes.js';
+import rbacRoute from './routes/rbacRoutes.js';
+import historyRoute from './routes/historyRoutes.js';
+import shiftRoute from './routes/shiftRoutes.js';
+import dashboardRoute from './routes/dashboardRoutes.js';
+import notificationRoute from './routes/notification.routes.js';
+
+
+import { auditLog } from './middleware/audit.middleware.js';
 
 const express = packages.express();
 const cors = packages.cors();
@@ -75,6 +83,7 @@ app.use(morgan(config.env === 'production' ? 'combined' : 'dev'));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(auditLog);
 app.use(express.static(path.join(process.cwd(), 'public'))); // Serve static files
 app.use('/api/public', express.static(path.join(process.cwd(), 'public'))); // Serve static files via API route (for Nginx proxy compatibility)
 app.use(cookieParser());
@@ -118,6 +127,7 @@ app.get('/', (req, res) => {
 });
 
 // Mount Routes
+app.use('/api/notifications', notificationRoute);
 app.use('/api/auth', authRoute); 
 app.use('/api/users', userRoute);
 app.use('/api/company', companyRouter);
@@ -132,8 +142,13 @@ app.use('/api/employees', employeeRoute);
 app.use('/api/payroll', payrollRoute);
 app.use('/api/requests', requestRoute);
 app.use('/api/menus', menuRoute);
+app.use('/api/rbac', rbacRoute);
+app.use('/api/history', historyRoute);
 app.use('/api/absent', absentRoute);
 app.use('/api/holidays', holidayRoute);
+app.use('/api/shifts', shiftRoute);
+app.use('/api/dashboard', dashboardRoute);
+
 
 // Error Handler
 app.use((err, req, res, next) => {

@@ -76,45 +76,45 @@ export const AttendanceTable = ({
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 px-1 py-2">
                 <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-widest w-full sm:w-auto mb-1 sm:mb-0">Legend:</span>
                 <div className="flex flex-wrap items-center gap-2">
-                    <div className="flex items-center gap-1.5 bg-white border border-slate-100 px-2 py-1 rounded shadow-sm">
-                        <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                        <span className="text-[10px] sm:text-xs font-bold text-slate-700">Hadir</span>
+                    <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 px-2 py-1 rounded shadow-sm transition-colors">
+                        <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]" />
+                        <span className="text-[10px] sm:text-xs font-bold text-slate-700 dark:text-slate-300">Hadir</span>
                     </div>
-                    <div className="flex items-center gap-1.5 bg-white border border-slate-100 px-2 py-1 rounded shadow-sm">
-                        <div className="h-2 w-2 rounded-full bg-amber-500" />
-                        <span className="text-[10px] sm:text-xs font-bold text-slate-700">Sakit</span>
+                    <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 px-2 py-1 rounded shadow-sm transition-colors">
+                        <div className="h-2 w-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.3)]" />
+                        <span className="text-[10px] sm:text-xs font-bold text-slate-700 dark:text-slate-300">Sakit</span>
                     </div>
-                    <div className="flex items-center gap-1.5 bg-white border border-slate-100 px-2 py-1 rounded shadow-sm">
+                    <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 px-2 py-1 rounded shadow-sm transition-colors">
+                        <div className="h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.3)]" />
+                        <span className="text-[10px] sm:text-xs font-bold text-slate-700 dark:text-slate-300">Izin</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 px-2 py-1 rounded shadow-sm transition-colors">
+                        <div className="h-2 w-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.3)]" />
+                        <span className="text-[10px] sm:text-xs font-bold text-slate-700 dark:text-slate-300">Alpha</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 px-2 py-1 rounded shadow-sm transition-colors">
+                        <div className="h-2 w-2 rounded-full bg-slate-400 dark:bg-slate-600" />
+                        <span className="text-[10px] sm:text-xs font-bold text-slate-700 dark:text-slate-300">Libur</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 px-2 py-1 rounded shadow-sm transition-colors">
+                        <div className="h-2 w-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.3)]" />
+                        <span className="text-[10px] sm:text-xs font-bold text-slate-700 dark:text-slate-300">Tugas Luar</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 px-2 py-1 rounded shadow-sm transition-colors">
+                        <div className="h-2 w-2 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.3)]" />
+                        <span className="text-[10px] sm:text-xs font-bold text-slate-700 dark:text-slate-300">Off Schedule</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 px-2 py-1 rounded shadow-sm transition-colors">
+                        <div className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.3)]" />
+                        <span className="text-[10px] sm:text-xs font-bold text-slate-700 dark:text-slate-300">Hari Libur Nasional</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 px-2 py-1 rounded shadow-sm transition-colors">
                         <div className="h-2 w-2 rounded-full bg-blue-500" />
-                        <span className="text-[10px] sm:text-xs font-bold text-slate-700">Izin</span>
+                        <span className="text-[10px] sm:text-xs font-bold text-slate-700 dark:text-slate-300">Lembur</span>
                     </div>
-                    <div className="flex items-center gap-1.5 bg-white border border-slate-100 px-2 py-1 rounded shadow-sm">
-                        <div className="h-2 w-2 rounded-full bg-rose-500" />
-                        <span className="text-[10px] sm:text-xs font-bold text-slate-700">Alpha</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 bg-white border border-slate-100 px-2 py-1 rounded shadow-sm">
-                        <div className="h-2 w-2 rounded-full bg-slate-400" />
-                        <span className="text-[10px] sm:text-xs font-bold text-slate-700">Libur</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 bg-white border border-slate-100 px-2 py-1 rounded shadow-sm">
-                        <div className="h-2 w-2 rounded-full bg-indigo-500" />
-                        <span className="text-[10px] sm:text-xs font-bold text-slate-700">Tugas Luar</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 bg-white border border-slate-100 px-2 py-1 rounded shadow-sm">
-                        <div className="h-2 w-2 rounded-full bg-purple-500" />
-                        <span className="text-[10px] sm:text-xs font-bold text-slate-700">Off Schedule</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 bg-white border border-slate-100 px-2 py-1 rounded shadow-sm">
-                        <div className="h-2 w-2 rounded-full bg-red-500" />
-                        <span className="text-[10px] sm:text-xs font-bold text-slate-700">Hari Libur Nasional</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 bg-white border border-slate-100 px-2 py-1 rounded shadow-sm">
-                        <div className="h-2 w-2 rounded-full bg-blue-500" />
-                        <span className="text-[10px] sm:text-xs font-bold text-slate-700">Lembur</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 bg-white border border-slate-100 px-2 py-1 rounded shadow-sm">
+                    <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 px-2 py-1 rounded shadow-sm transition-colors">
                         <div className="h-2 w-2 rounded-full bg-emerald-600" />
-                        <span className="text-[10px] sm:text-xs font-bold text-slate-700">Pengganti Hari Libur</span>
+                        <span className="text-[10px] sm:text-xs font-bold text-slate-700 dark:text-slate-300">Pengganti Hari Libur</span>
                     </div>
                 </div>
             </div>
@@ -122,16 +122,16 @@ export const AttendanceTable = ({
             {/* Desktop Table View */}
             <div className={cn(
                 "hidden md:block",
-                "border border-slate-200 bg-white overflow-hidden shadow-sm",
-                "rounded-xl md:rounded-xl"
+                "border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden shadow-sm",
+                "rounded-xl md:rounded-xl transition-all duration-300"
             )}>
                 <div className="relative overflow-x-auto">
                     <Table>
-                        <TableHeader className="bg-slate-50/50">
+                        <TableHeader className="bg-slate-50/50 dark:bg-slate-900/50">
                             {table.getHeaderGroups().map((headerGroup: any) => (
-                                <TableRow key={headerGroup.id} className="hover:bg-transparent">
+                                <TableRow key={headerGroup.id} className="hover:bg-transparent border-slate-200 dark:border-slate-800">
                                     {headerGroup.headers.map((header: any) => (
-                                        <TableHead key={header.id} className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-tighter sm:tracking-wider py-3 md:py-4 px-2">
+                                        <TableHead key={header.id} className="text-[10px] sm:text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest py-3 md:py-4 px-2">
                                             {header.isPlaceholder
                                                 ? null
                                                 : flexRender(
@@ -166,10 +166,10 @@ export const AttendanceTable = ({
                                         <TableRow
                                             key={row.id}
                                             className={cn(
-                                                "transition-colors border-slate-100 group",
+                                                "transition-colors border-slate-100 dark:border-slate-900 group",
                                                 isHoliday
-                                                    ? "bg-red-50/30 hover:bg-red-50/50 [background-image:radial-gradient(#fee2e2_1px,transparent_1px)] [background-size:16px_16px]"
-                                                    : "hover:bg-slate-50/50"
+                                                    ? "bg-red-50/30 dark:bg-red-950/20 hover:bg-red-50/50 dark:hover:bg-red-950/30 [background-image:radial-gradient(#fee2e2_1px,transparent_1px)] dark:[background-image:radial-gradient(#311111_1px,transparent_1px)] [background-size:16px_16px]"
+                                                    : "hover:bg-slate-50/50 dark:hover:bg-slate-900/50"
                                             )}
                                         >
                                             {row.getVisibleCells().map((cell: any) => (

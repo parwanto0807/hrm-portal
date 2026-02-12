@@ -53,10 +53,14 @@ const syncAttLogsInternal = async (pool, startDate) => {
                         cflag: row.cflag || ''
                     }
                 },
-                update: { idAbsen: row.id_absen || '' },
+                update: { 
+                    idAbsen: row.id_absen || '',
+                    emplId: row.id_absen || '' // User requested emplId be filled from id_absen
+                },
                 create: {
                     nik: cleanNik,
                     idAbsen: row.id_absen || '',
+                    emplId: row.id_absen || '', // User requested emplId be filled from id_absen
                     tanggal: parseDate(row.tanggal),
                     jam: row.jam || '',
                     cflag: row.cflag || ''
@@ -64,6 +68,7 @@ const syncAttLogsInternal = async (pool, startDate) => {
             });
             stats.imported++;
         } catch (err) {
+            console.error(`❌ Sync error for NIK ${row.nik}:`, err.message);
             stats.errors++;
         }
     }
@@ -253,8 +258,10 @@ router.post('/import/payroll', async (req, res) => {
         jnsPotongan: { total: 0, imported: 0, errors: 0 },
         jnsTunjangan: { total: 0, imported: 0, errors: 0 },
         jnsRapel: { total: 0, imported: 0, errors: 0 },
-        gaji: { total: 0, imported: 0, errors: 0 },
         potongan: { total: 0, imported: 0, errors: 0 },
+        pinjamHdr: { total: 0, imported: 0, errors: 0 },
+        pinjamDet: { total: 0, imported: 0, errors: 0 },
+        gaji: { total: 0, imported: 0, errors: 0 },
         tunjangan: { total: 0, imported: 0, errors: 0 },
         rapel: { total: 0, imported: 0, errors: 0 }
     };
@@ -303,6 +310,35 @@ router.post('/import/payroll', async (req, res) => {
             }
         }
         console.log(`✅ Imported ${importedPeriods} periods.`);
+
+        // Pre-fetch all master data for UUID mapping to optimize performance
+        console.log('⏳ Pre-fetching master data for UUID mapping...');
+        const [companies, facts, bags, depts, sies, jabatan, ptkps, jnsKarys, jnsPots, jnsTunjs, jnsRapels] = await Promise.all([
+            prisma.company.findMany(),
+            prisma.mstFact.findMany(),
+            prisma.mstBag.findMany(),
+            prisma.mstDept.findMany(),
+            prisma.mstSie.findMany(),
+            prisma.mstJab.findMany(),
+            prisma.ptkp.findMany(),
+            prisma.jnsKary.findMany(),
+            prisma.jnsPotongan.findMany(),
+            prisma.jnsTunjangan.findMany(),
+            prisma.jnsRapel.findMany()
+        ]);
+
+        const companyMap = new Map(companies.map(c => [c.kodeCmpy, c.id]));
+        const factMap = new Map(facts.map(f => [f.kdFact, f.id]));
+        const bagMap = new Map(bags.map(b => [b.kdBag, b.id]));
+        const deptMap = new Map(depts.map(d => [d.kdDept, d.id]));
+        const sieMap = new Map(sies.map(s => [s.kdSeksie, s.id]));
+        const jabatanMap = new Map(jabatan.map(j => [j.kdJab, j.id]));
+        const ptkpMap = new Map(ptkps.map(p => [p.kode, p.id]));
+        const jnsKaryMap = new Map(jnsKarys.map(jk => [jk.kdJns, jk.id]));
+        const jnsPotMap = new Map(jnsPots.map(jp => [jp.transCode, jp.id]));
+        const jnsTunjMap = new Map(jnsTunjs.map(jt => [jt.transCode, jt.id]));
+        const jnsRapelMap = new Map(jnsRapels.map(jr => [jr.transCode, jr.id]));
+        console.log('✅ Master data pre-fetched.');
 
         // 1. IMPORT MASTER REFERENCE TABLES (Required for Foreign Keys)
         
@@ -393,7 +429,48 @@ router.post('/import/payroll', async (req, res) => {
         }
         console.log(`✅ Imported ${importedJnsRapel} rapel types.`);
 
-        // 2. IMPORT GAJI
+        // 2. IMPORT POTONGAN - MOVED AFTER GAJI
+
+        // 3. IMPORT PINJAMHDR (Loans Header)
+        console.log('⏳ Importing PinjamHdr...');
+        const [mysqlPinjamHdr] = await pool.query('SELECT * FROM pinjamhdr');
+        stats.pinjamHdr.total = mysqlPinjamHdr.length;
+        for (const row of mysqlPinjamHdr) {
+            try {
+                await prisma.pinjamHdr.upsert({
+                    where: { pinjam_hdr_unique: { emplId: row.EMPL_ID, tglPinjam: new Date(row.TGL_PINJAM), totPinjam: parseFloat(row.TOT_PINJAM) || 0, jnsSumber: parseInt(row.JNS_SUMBER) || 0 } },
+                    update: {
+                        saldoPinjam: parseFloat(row.SALDO_PINJAM) || 0,
+                        jmlCicil: parseInt(row.JML_CICIL) || 0,
+                        keterangan: row.KETERANGAN || "",
+                        status: row.STATUS === 1,
+                        approved: row.APPROVED === 1,
+                        approvedBy: row.APPROVED_BY
+                    },
+                    create: {
+                        emplId: row.EMPL_ID,
+                        tglPinjam: new Date(row.TGL_PINJAM),
+                        totPinjam: parseFloat(row.TOT_PINJAM) || 0,
+                        jnsSumber: parseInt(row.JNS_SUMBER) || 0,
+                        saldoPinjam: parseFloat(row.SALDO_PINJAM) || 0,
+                        jmlCicil: parseInt(row.JML_CICIL) || 0,
+                        keterangan: row.KETERANGAN || "",
+                        status: row.STATUS === 1,
+                        approved: row.APPROVED === 1,
+                        approvedBy: row.APPROVED_BY
+                    }
+                });
+                stats.pinjamHdr.imported++;
+            } catch (err) {
+                stats.pinjamHdr.errors++;
+            }
+        }
+        console.log(`✅ Imported ${stats.pinjamHdr.imported} loan header records.`);
+
+        // 4. IMPORT PINJAMDET - MOVED AFTER GAJI
+
+        // 5. IMPORT GAJI (Imported AFTER Potongan & Pinjaman as requested)
+        console.log('⏳ Importing Gaji...');
         const [mysqlGaji] = await pool.query('SELECT * FROM gaji');
         stats.gaji.total = mysqlGaji.length;
         
@@ -417,66 +494,133 @@ router.post('/import/payroll', async (req, res) => {
                     tglProses: parseDate(row.TGL_PROSES) || new Date(),
                     tglMsk: parseDate(row.TGL_MSK) || new Date(),
                     
+                    // Employee Metadata & Tenure (NEW)
+                    typeEmpl: parseInt(row.TYPE_EMPL) || 0,
+                    kdPjk: parseInt(row.KD_PJK) || 0,
+                    typePjk: parseInt(row.TYPE_PJK) || 0,
+                    kdBpjsTk: row.KD_BPJSTK === 1,
+                    kdBpjsKes: row.KD_BPJSKES === 1,
+                    kdOut: row.KD_OUT === 1,
+                    kdJns: parseInt(row.KD_JNS) || 0,
+                    thnKerja: parseInt(row.THN_KERJA) || 0,
+                    blnKerja: parseInt(row.BLN_KERJA) || 0,
+                    hrKerja: parseInt(row.HR_KERJA) || 0,
+                    persenMasa: parseFloat(row.PERSENMASA) || 0,
+                    persenRmh: parseFloat(row.PERSEN_RMH) || 0,
+                    hrKerja1: parseInt(row.HR_KERJA1) || 0,
+                    hrKerja2: parseInt(row.HR_KERJA2) || 0,
+
                     // Base Salary
-                    pokokBln: row.POKOK_BLN || 0,
-                    pokokTrm: row.POKOK_TRM || 0,
+                    pokokBln: parseFloat(row.POKOK_BLN) || 0,
+                    pokokTrm: parseFloat(row.POKOK_TRM) || 0,
                     
                     // Allowances (Tunjangan) - Only fields that exist in schema
-                    tJabatan: row.TJABATAN || 0,
-                    tTransport: row.TTRANSPORT || 0,
-                    tMakan: row.TMAKAN || 0,
-                    tKhusus: row.TKHUSUS || 0,
-                    tLain: row.TLAIN || 0,
-                    tunjLain: row.TUNJLAIN || 0,
-                    tunjMedik: row.TUNJMEDIK || 0,
+                    tJabatan: parseFloat(row.TJABATAN) || 0,
+                    tTransport: parseFloat(row.TTRANSPORT) || 0,
+                    tMakan: parseFloat(row.TMAKAN) || 0,
+                    tKhusus: parseFloat(row.TKHUSUS) || 0,
+                    tLain: parseFloat(row.TLAIN) || 0,
+                    tunjLain: parseFloat(row.TUNJLAIN) || 0,
+                    tunjMedik: parseFloat(row.TUNJMEDIK) || 0,
                     
                     // Rapel
-                    rapel: row.RAPEL || 0,
-                    tunjRapel: row.TUNJRAPEL || 0,
+                    rapel: parseFloat(row.RAPEL) || 0,
+                    tunjRapel: parseFloat(row.TUNJRAPEL) || 0,
                     
                     // Overtime (Lembur) - Correct field names
-                    totJLembur: row.TOTJLEMBUR || 0,  // Hours
-                    totULembur: row.TOTULEMBUR || 0,  // Amount
-                    jLembur1: row.JLEMBUR1 || 0,
-                    jLembur2: row.JLEMBUR2 || 0,
-                    jLembur3: row.JLEMBUR3 || 0,
-                    jLembur4: row.JLEMBUR4 || 0,
-                    lebihJam: row.LEBIHJAM || 0,
-                    totLmbNerus: row.TOTLMBNERUS || 0,
+                    totJLembur: parseFloat(row.TOTJLEMBUR) || 0,  // Hours
+                    totULembur: parseFloat(row.TOTULEMBUR) || 0,  // Amount
+                    jLembur1: parseFloat(row.JLEMBUR1) || 0,
+                    jLembur2: parseFloat(row.JLEMBUR2) || 0,
+                    jLembur3: parseFloat(row.JLEMBUR3) || 0,
+                    jLembur4: parseFloat(row.JLEMBUR4) || 0,
+                    lebihJam: parseFloat(row.LEBIHJAM) || 0,
+                    totLmbNerus: parseFloat(row.TOTLMBNERUS) || 0,
                     
                     // Shift & Meal Allowances - Correct field names from schema
-                    totUShift: row.TOTUSHIFT || 0,  // Schema: totUShift
-                    mealOt: row.MEALOT || 0,        // Schema: mealOt
+                    hrShift1: parseInt(row.HR_SHIFT1) || 0,
+                    hrShift2: parseInt(row.HR_SHIFT2) || 0,
+                    hrShift3: parseInt(row.HR_SHIFT3) || 0,
+                    hrLShift: parseInt(row.HR_LSHIFT) || 0,
+                    hrShift4: parseInt(row.HR_SHIFT4) || 0,
+                    hrShift5: parseInt(row.HR_SHIFT5) || 0,
+                    hrShift6: parseInt(row.HR_SHIFT6) || 0,
+                    hrShift7: parseInt(row.HR_SHIFT7) || 0,
+                    hrShift8: parseInt(row.HR_SHIFT8) || 0,
+                    hrShift9: parseInt(row.HR_SHIFT9) || 0,
+                    hrShift10: parseInt(row.HR_SHIFT10) || 0,
+                    totUShift: parseFloat(row.TOTUSHIFT) || 0,  // Schema: totUShift
+                    mealOt: parseFloat(row.MEALOT) || 0,        // Schema: mealOt
                     
                     // BPJS Employee Contributions - Correct field names
-                    jhtEmpl: row.JHT_EMPL || 0,
-                    jpnEmpl: row.JPN_EMPL || 0,
-                    jknEmpl: row.JKN_EMPL || 0,
+                    jhtEmpl: parseFloat(row.JHT_EMPL) || 0,
+                    jpnEmpl: parseFloat(row.JPN_EMPL) || 0,
+                    jknEmpl: parseFloat(row.JKN_EMPL) || 0,
                     
                     // BPJS Company Contributions - Correct field names
-                    jhtComp: row.JHT_COMP || 0,
-                    jpnComp: row.JPN_COMP || 0,
-                    jknComp: row.JKN_COMP || 0,
+                    jhtComp: parseFloat(row.JHT_COMP) || 0,
+                    jpnComp: parseFloat(row.JPN_COMP) || 0,
+                    jknComp: parseFloat(row.JKN_COMP) || 0,
                     
                     // Tax
-                    tPph21: row.TPPH21 || 0,
-                    pphThr: row.PPH_THR || 0,
+                    tPph21: parseFloat(row.TPPH21) || 0,
+                    pphThr: parseFloat(row.PPH_THR) || 0,
                     
                     // Admin & Other
-                    admBank: row.ADM_BANK || 0,
-                    upahTetap: row.UPAHTETAP || 0,
+                    admBank: parseFloat(row.ADM_BANK) || 0,
+                    upahTetap: parseFloat(row.UPAHTETAP) || 0,
                     
                     // BPJS Basis
-                    dasarBpjsTk: row.DASAR_BPJSTK || 0,
-                    dasarBpjsKes: row.DASAR_BPJSKES || 0,
-                    dasarJpn: row.DASAR_JPN || 0,
+                    dasarBpjsTk: parseFloat(row.DASAR_BPJSTK) || 0,
+                    dasarBpjsKes: parseFloat(row.DASAR_BPJSKES) || 0,
+                    dasarJpn: parseFloat(row.DASAR_JPN) || 0,
                     
+                    // Jaminan & Other Deductions (NEW)
+                    jkk: parseFloat(row.JKK) || 0,
+                    jkm: parseFloat(row.JKM) || 0,
+                    jpk: parseFloat(row.JPK) || 0,
+                    ptkpAmount: parseFloat(row.PTKP) || 0,
+                    pphEmpl: parseFloat(row.PPH_EMPL) || 0,
+                    ptAbsen: parseFloat(row.PT_ABSEN) || 0,
+
+                    // Attendance/HR Counters (NEW)
+                    hrHadir: parseInt(row.HR_HADIR) || 0,
+                    hrMangkir: parseInt(row.HR_MANGKIR) || 0,
+                    hrSakit: parseInt(row.HR_SAKIT) || 0,
+                    hrTransp: parseInt(row.HR_TRANSP) || 0,
+                    hrMakan: parseInt(row.HR_MAKAN) || 0,
+                    hrIzin: parseInt(row.HR_IZIN) || 0,
+                    hrCuti1: parseInt(row.HR_CUTI1) || 0,
+                    hrCuti2: parseInt(row.HR_CUTI2) || 0,
+                    hrGantung: parseInt(row.HR_GANTUNG) || 0,
+                    hrLambat: parseInt(row.HR_LAMBAT) || 0,
+                    mnLambat: parseInt(row.MN_LAMBAT) || 0,
+                    hrPulang: parseInt(row.HR_PULANG) || 0,
+                    hrOff: parseInt(row.HR_OFF) || 0,
+                    hrExtMeal: parseInt(row.HR_EXTMEAL) || 0,
+                    hrExtSusu: parseInt(row.HR_EXTSUSU) || 0,
+                    hrExtShift: parseInt(row.HR_EXTSHIFT) || 0,
+
                     // THR (Holiday Allowance)
-                    thr: row.THR || 0,
+                    thr: parseFloat(row.THR) || 0,
                     
                     // Totals
-                    gKotor: row.GKOTOR || 0,
-                    gBersih: row.GBERSIH || 0,
+                    gKotor: parseFloat(row.GKOTOR) || 0,
+                    gBersih: parseFloat(row.GBERSIH) || 0,
+                    pinjam: parseFloat(row.PINJAM) || 0,
+                    koperasi: parseFloat(row.KOPERASI) || 0,
+                    ptLain: parseFloat(row.PT_LAIN) || 0,
+                    totPotong: parseFloat(row.TOTPOTONG) || 0,
+
+                    // UUID Relations
+                    companyId: companyMap.get(row.KD_CMPY) || null,
+                    factId: factMap.get(row.KD_FACT) || null,
+                    bagId: bagMap.get(row.KD_BAG) || null,
+                    deptId: deptMap.get(row.KD_DEPT) || null,
+                    sieId: sieMap.get(row.KD_SEKSIE) || null,
+                    jabatanId: jabatanMap.get(row.KD_JAB) || null,
+                    ptkpId: ptkpMap.get(parseInt(row.KD_PTKP)) || null,
+                    jnskaryId: jnsKaryMap.get(parseInt(row.KD_JNS)) || null,
                     
                     // Status
                     closing: row.CLOSING === 1,
@@ -499,8 +643,10 @@ router.post('/import/payroll', async (req, res) => {
                 console.error(`❌ Gaji ${row.EMPL_ID} error:`, err.message);
             }
         }
+        console.log(`✅ Imported ${stats.gaji.imported} gaji records.`);
 
-        // 3. IMPORT POTONGAN
+        // 2. IMPORT POTONGAN (Moved here to satisfy FK constraint to Gaji)
+        console.log('⏳ Importing Potongan (Post-Gaji)...');
         const [mysqlPotongan] = await pool.query('SELECT * FROM potongan');
         stats.potongan.total = mysqlPotongan.length;
         for (const row of mysqlPotongan) {
@@ -509,7 +655,8 @@ router.post('/import/payroll', async (req, res) => {
                     where: { potongan_unique: { period: row.PERIOD, transId: row.TRANS_ID } },
                     update: { 
                         jumlah: parseFloat(row.JUMLAH) || 0, 
-                        keterangan: row.KETERANGAN 
+                        keterangan: row.KETERANGAN,
+                        jenisPotId: jnsPotMap.get(parseInt(row.TRANS_CODE)) || null
                     },
                     create: {
                         period: row.PERIOD,
@@ -519,16 +666,54 @@ router.post('/import/payroll', async (req, res) => {
                         emplId: row.EMPL_ID,
                         nik: row.NIK,
                         jumlah: parseFloat(row.JUMLAH) || 0,
-                        keterangan: row.KETERANGAN
+                        keterangan: row.KETERANGAN,
+                        jenisPotId: jnsPotMap.get(parseInt(row.TRANS_CODE)) || null
                     }
                 });
                 stats.potongan.imported++;
             } catch (err) {
                 stats.potongan.errors++;
+                console.error(`❌ Potongan Error ${row.TRANS_ID} (Code: ${row.TRANS_CODE}):`, err.message);
             }
         }
+        console.log(`✅ Imported ${stats.potongan.imported} potongan records.`);
 
-        // 4. IMPORT TUNJANGAN
+        // 4. IMPORT PINJAMDET (Moved here to satisfy FK constraint to Gaji)
+        console.log('⏳ Importing PinjamDet (Post-Gaji)...');
+        const [mysqlPinjamDet] = await pool.query('SELECT * FROM pinjamdet');
+        stats.pinjamDet.total = mysqlPinjamDet.length;
+        for (const row of mysqlPinjamDet) {
+            try {
+                await prisma.pinjamDet.upsert({
+                    where: { pinjam_det_unique: { transId: row.TRANS_ID, periode: row.PERIODE, jnsSumber: parseInt(row.JNS_SUMBER) || 0, tglBayar: new Date(row.TGL_BAYAR) } },
+                    update: {
+                        jmlBayar: parseFloat(row.JML_BAYAR) || 0,
+                        saldoPinjam: parseFloat(row.SALDO_PINJAM) || 0,
+                        keterangan: row.KETERANGAN || "",
+                        flagLunas: row.FLAG_LUNAS === 1
+                    },
+                    create: {
+                        transId: row.TRANS_ID,
+                        periode: row.PERIODE,
+                        jnsSumber: parseInt(row.JNS_SUMBER) || 0,
+                        tglBayar: new Date(row.TGL_BAYAR),
+                        tglPinjam: new Date(row.TGL_PINJAM),
+                        emplId: row.EMPL_ID,
+                        jmlBayar: parseFloat(row.JML_BAYAR) || 0,
+                        saldoPinjam: parseFloat(row.SALDO_PINJAM) || 0,
+                        keterangan: row.KETERANGAN || "",
+                        flagLunas: row.FLAG_LUNAS === 1
+                    }
+                });
+                stats.pinjamDet.imported++;
+            } catch (err) {
+                stats.pinjamDet.errors++;
+            }
+        }
+        console.log(`✅ Imported ${stats.pinjamDet.imported} loan detail records.`);
+
+        // 6. IMPORT TUNJANGAN (Allowance Details)
+        console.log('⏳ Importing Tunjangan...');
         const [mysqlTunjangan] = await pool.query('SELECT * FROM tunjangan');
         stats.tunjangan.total = mysqlTunjangan.length;
         for (const row of mysqlTunjangan) {
@@ -537,13 +722,15 @@ router.post('/import/payroll', async (req, res) => {
                     where: { tunjangan_unique: { period: row.PERIOD, transId: row.TRANS_ID } },
                     update: { 
                         jumlah: parseFloat(row.JUMLAH) || 0, 
-                        keterangan: row.KETERANGAN 
+                        keterangan: row.KETERANGAN,
+                        jenisTunjId: jnsTunjMap.get(parseInt(row.TRANS_CODE)) || null
                     },
                     create: {
                         period: row.PERIOD,
                         transId: row.TRANS_ID,
                         transDate: new Date(row.TRANS_DATE),
                         transCode: parseInt(row.TRANS_CODE) || 0,
+                        jenisTunjId: jnsTunjMap.get(parseInt(row.TRANS_CODE)) || null,
                         emplId: row.EMPL_ID,
                         nik: row.NIK,
                         jumlah: parseFloat(row.JUMLAH) || 0,
@@ -555,8 +742,10 @@ router.post('/import/payroll', async (req, res) => {
                 stats.tunjangan.errors++;
             }
         }
+        console.log(`✅ Imported ${stats.tunjangan.imported} tunjangan records.`);
 
-        // 5. IMPORT RAPEL
+        // 7. IMPORT RAPEL
+        console.log('⏳ Importing Rapel...');
         const [mysqlRapel] = await pool.query('SELECT * FROM rapel');
         stats.rapel.total = mysqlRapel.length;
         for (const row of mysqlRapel) {
@@ -565,13 +754,15 @@ router.post('/import/payroll', async (req, res) => {
                     where: { rapel_unique: { period: row.PERIOD, transId: row.TRANS_ID } },
                     update: { 
                         jumlah: parseFloat(row.JUMLAH) || 0, 
-                        keterangan: row.KETERANGAN 
+                        keterangan: row.KETERANGAN,
+                        jenisRapelId: jnsRapelMap.get(parseInt(row.TRANS_CODE)) || null
                     },
                     create: {
                         period: row.PERIOD,
                         transId: row.TRANS_ID,
                         transDate: new Date(row.TRANS_DATE),
                         transCode: parseInt(row.TRANS_CODE) || 0,
+                        jenisRapelId: jnsRapelMap.get(parseInt(row.TRANS_CODE)) || null,
                         emplId: row.EMPL_ID,
                         nik: row.NIK,
                         jumlah: parseFloat(row.JUMLAH) || 0,
@@ -673,24 +864,22 @@ router.post('/import/attendance', async (req, res) => {
             try {
                 await prisma.jnsJam.upsert({
                     where: { kdJam: row.KD_JAM },
-                    update: { nmJam: row.NM_JAM, jamMsk: row.JAM_MSK, jamKlr: row.JAM_KLR },
-                    create: { kdJam: row.KD_JAM, nmJam: row.NM_JAM, jamMsk: row.JAM_MSK, jamKlr: row.JAM_KLR }
+                    update: { jnsJam: row.JNS_JAM || null },
+                    create: { kdJam: row.KD_JAM, jnsJam: row.JNS_JAM || null }
                 });
                 stats.dependencies.workHours.imported++;
             } catch (err) { /* silent fail for deps */ }
         }
 
-        // 4. IMPORT ATTENDANCE RECORDS (Last 6 Months)
-        const sixMonthsAgo = new Date();
-        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-        sixMonthsAgo.setDate(1);
-        sixMonthsAgo.setHours(0, 0, 0, 0);
+        // 4. IMPORT ATTENDANCE RECORDS (From January 1, 2026)
+        const startDate = new Date('2026-01-01');
+        startDate.setHours(0, 0, 0, 0);
 
-        console.log(`📅 Importing attendance since ${sixMonthsAgo.toISOString()}...`);
+        console.log(`📅 Importing attendance since ${startDate.toISOString()}...`);
 
         const [mysqlAbsent] = await pool.query(
             'SELECT * FROM absent WHERE TGL_ABSEN >= ?',
-            [sixMonthsAgo]
+            [startDate]
         );
 
         stats.total = mysqlAbsent.length;
@@ -865,7 +1054,7 @@ router.post('/import/attendance', async (req, res) => {
 
         // 5. AUTO-SYNC RAW LOGS (att_log) for the same period
         console.log('🔄 Syncing raw tap logs (att_log)...');
-        const logStats = await syncAttLogsInternal(pool, sixMonthsAgo);
+        const logStats = await syncAttLogsInternal(pool, startDate);
 
         res.status(200).json({ 
             success: true, 
@@ -1110,6 +1299,53 @@ router.post('/import/employees', async (req, res) => {
         console.log('🏁 Starting Employee Import (with Master Data dependencies)...');
         
         // --- 1. SEQUENTIAL MASTER DATA IMPORT ---
+        console.log('🏢 Importing Companies...');
+        const [mysqlCompanies] = await pool.query('SELECT * FROM company');
+        for (const row of mysqlCompanies) {
+            try {
+                await prisma.company.upsert({
+                    where: { kodeCmpy: row.KODE_CMPY },
+                    update: {
+                        company: row.COMPANY || null,
+                        address1: row.ADDRESS1 || null,
+                        address2: row.ADDRESS2 || null,
+                        address3: row.ADDRESS3 || null,
+                        tlp: row.TLP || null,
+                        fax: row.FAX || null,
+                        npwp: row.NPWP || null,
+                        director: row.DIRECTOR || null,
+                        npwpDir: row.NPWPDIR || null,
+                        logo: row.LOGO || null,
+                        npp: row.NPP || null,
+                        astekBayar: row.ASTEKBAYAR || null,
+                        email: row.EMAIL || null,
+                        homepage: row.HOMEPAGE || null,
+                        hrdMng: row.HRDMNG || null,
+                        npwpMng: row.NPWPMNG || null
+                    },
+                    create: {
+                        kodeCmpy: row.KODE_CMPY,
+                        company: row.COMPANY || null,
+                        address1: row.ADDRESS1 || null,
+                        address2: row.ADDRESS2 || null,
+                        address3: row.ADDRESS3 || null,
+                        tlp: row.TLP || null,
+                        fax: row.FAX || null,
+                        npwp: row.NPWP || null,
+                        director: row.DIRECTOR || null,
+                        npwpDir: row.NPWPDIR || null,
+                        logo: row.LOGO || null,
+                        npp: row.NPP || null,
+                        astekBayar: row.ASTEKBAYAR || null,
+                        email: row.EMAIL || null,
+                        homepage: row.HOMEPAGE || null,
+                        hrdMng: row.HRDMNG || null,
+                        npwpMng: row.NPWPMNG || null
+                    }
+                });
+            } catch (err) { console.error(`Failed to import Company ${row.KODE_CMPY}:`, err.message); }
+        }
+
         console.log('📚 Importing Religions...');
         const [mysqlAgm] = await pool.query('SELECT * FROM mstagm');
         for (const row of mysqlAgm) {
@@ -1245,7 +1481,52 @@ router.post('/import/employees', async (req, res) => {
             } catch (err) { console.error(`Failed to import Shift Group ${row.GROUP_SHIFT}:`, err.message); }
         }
 
+        console.log('⏳ Importing Work Hour Types (JnsJam)...');
+        const [mysqlJnsJam] = await pool.query('SELECT * FROM jnsjam');
+        for (const row of mysqlJnsJam) {
+            try {
+                await prisma.jnsJam.upsert({
+                    where: { kdJam: row.KD_JAM },
+                    update: { nmJam: row.NM_JAM, jamMsk: row.JAM_MSK, jamKlr: row.JAM_KLR },
+                    create: { kdJam: row.KD_JAM, nmJam: row.NM_JAM, jamMsk: row.JAM_MSK, jamKlr: row.JAM_KLR }
+                });
+            } catch (err) { console.error(`Failed to import JnsJam ${row.KD_JAM}:`, err.message); }
+        }
+
         console.log('✅ Master Data dependencies imported. Proceeding to employees...');
+        
+        // --- 1.5. FETCH MASTER DATA UUIDS FOR LOOKUP ---
+        console.log('🔍 Fetching Master Data UUIDs for mapping...');
+        
+        const [
+            allAgm, allSkl, allBank, allFact, allBag, 
+            allDept, allSie, allJab, allPkt, allCompany
+        ] = await Promise.all([
+            prisma.mstAgm.findMany({ select: { kdAgm: true, id: true } }),
+            prisma.mstSkl.findMany({ select: { kdSkl: true, id: true } }),
+            prisma.bank.findMany({ select: { bankCode: true, id: true } }),
+            prisma.mstFact.findMany({ select: { kdFact: true, id: true } }),
+            prisma.mstBag.findMany({ select: { kdBag: true, id: true } }),
+            prisma.mstDept.findMany({ select: { kdDept: true, id: true } }),
+            prisma.mstSie.findMany({ select: { kdSeksie: true, id: true } }),
+            prisma.mstJab.findMany({ select: { kdJab: true, id: true } }),
+            prisma.mstPkt.findMany({ select: { kdPkt: true, id: true } }),
+            prisma.company.findMany({ select: { kodeCmpy: true, id: true } })
+        ]);
+
+        // Create Lookup Maps: Code -> UUID
+        const mapAgm = new Map(allAgm.map(i => [i.kdAgm, i.id]));
+        const mapSkl = new Map(allSkl.map(i => [i.kdSkl, i.id]));
+        const mapBank = new Map(allBank.map(i => [i.bankCode, i.id]));
+        const mapFact = new Map(allFact.map(i => [i.kdFact, i.id]));
+        const mapBag = new Map(allBag.map(i => [i.kdBag, i.id]));
+        const mapDept = new Map(allDept.map(i => [i.kdDept, i.id]));
+        const mapSie = new Map(allSie.map(i => [i.kdSeksie, i.id]));
+        const mapJab = new Map(allJab.map(i => [i.kdJab, i.id]));
+        const mapPkt = new Map(allPkt.map(i => [i.kdPkt, i.id]));
+        const mapCompany = new Map(allCompany.map(i => [i.kodeCmpy, i.id]));
+
+        console.log('✅ Lookup maps created.');
 
         // --- 2. EMPLOYEE IMPORT ---
         const [mysqlEmployees] = await pool.query('SELECT * FROM karyawan');
@@ -1318,7 +1599,7 @@ router.post('/import/employees', async (req, res) => {
                     idAbsen: row.ID_ABSEN || null,
                     nama: row.NAMA,
                     
-                    // Foreign Keys
+                    // Foreign Keys - Legacy Codes
                     kdCmpy: row.KD_CMPY || null,
                     kdFact: row.KD_FACT || null,
                     kdBag: row.KD_BAG || null,
@@ -1394,6 +1675,7 @@ router.post('/import/employees', async (req, res) => {
                     
                     // Work Hours
                     kdJam: row.KD_JAM || 'A',
+                    jnsJamKdJam: row.KD_JAM || 'A',
                     
                     // Cooperative
                     kdKoperasi: row.KD_KOPERASI === 1,
@@ -1662,11 +1944,11 @@ router.post('/import/att-log', async (req, res) => {
     if (!pool) return res.status(500).json({ success: false, message: 'MySQL not configured' });
 
     try {
-        // Only import last 7 days to keep it fast for background sync
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        // Only import since 2026-01-01 for thorough verification
+        const startDate = new Date('2026-01-01');
+        startDate.setHours(0, 0, 0, 0);
         
-        const stats = await syncAttLogsInternal(pool, sevenDaysAgo);
+        const stats = await syncAttLogsInternal(pool, startDate);
         res.status(200).json({ success: true, stats, message: 'AttLog sync complete' });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });

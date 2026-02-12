@@ -9,51 +9,74 @@ export interface Employee {
     npwp: string | null;
     noBpjsTk: string | null;
     noBpjsKes: string | null;
-    tmpLhr: string | null;
-    agama?: {
-        kdAgm: string;
-        nmAgm: string;
-    };
-    jmlAnak?: number;
-    telpon?: string | null;
-    alamat1?: string | null;
-    kota?: string | null;
-    kdPos?: string | null;
-    pkt?: {
-        kdPkt: string;
-        nmPkt: string;
-    };
-
-    // Foreign Keys
-    kdCmpy: string | null;
-    kdFact: string | null;
-    kdBag: string | null;
-    kdDept: string | null;
-    kdSeksie: string | null;
-    kdJab: string | null;
-    bankCode: string | null;
-    superiorId: string | null;
-    superior2Id: string | null;
-
-    // Bank Details
-    bankUnit: string | null;
-    bankRekNo: string | null;
-    bankRekName: string | null;
-
     // Personal
     kdSex: 'LAKILAKI' | 'PEREMPUAN';
     email: string | null;
     handphone: string | null;
+    telpon: string | null;
     tglLhr: Date | null;
+    tmpLhr: string | null;
+    kdAgm: string | null;
+    kdSkl: string | null;
+    alamat1?: string | null;
+    alamat2: string | null;
+    alamatDom1?: string | null;
+    alamatDom2?: string | null;
+    kota?: string | null;
+    kdPos?: string | null;
+    tglNikah: Date | null;
+    jmlAnak?: number;
+    ibuKandung?: string | null;
+    kkNo?: string | null;
+    glDarah?: string | null;
+    validKtp?: Date | null;
+
+    // Employment
     tglMsk: Date | null;
+    tglAngkat: Date | null;
     tglOut: Date | null;
-
-    // Status
-    kdOut: boolean;
-    kdJns: 'KONTRAK' | 'TETAP' | 'HARIAN';
     kdSts: 'TIDAK_AKTIF' | 'AKTIF';
+    kdJns: 'KONTRAK' | 'TETAP' | 'HARIAN';
+    kdDept: string | null;
+    kdJab: string | null;
+    kdPkt: string | null;
+    kdCmpy: string | null;
+    kdFact: string | null;
+    kdBag: string | null;
+    kdSeksie: string | null;
+    superiorId: string | null;
+    superior2Id: string | null;
+    jnsJamId: string | null;
+    groupShiftId: string | null;
+    hariKerja?: number;
 
-    // Payroll
+    // Identification & Social Security
+    tglNpwp: Date | null;
+    kdBpjsTk: boolean;
+    kdBpjsKes: boolean;
+    tglAstek?: Date | null;
+
+    // Documents
+    typeSim?: string | null;
+    noSim?: string | null;
+    validSim?: Date | null;
+    pasportNo?: string | null;
+    kitasNo?: string | null;
+    validKitas?: Date | null;
+
+    // Emergency Contact
+    nmTeman?: string | null;
+    hubTeman?: string | null;
+    tlpTeman?: string | null;
+    almTeman?: string | null;
+
+    // Bank Details
+    bankCode: string | null;
+    bankUnit: string | null;
+    bankRekNo: string | null;
+    bankRekName: string | null;
+
+    // Payroll & Deductions
     pokokBln: number;
     tTransport: number;
     tMakan: number;
@@ -63,8 +86,20 @@ export interface Employee {
     tKhusus: number;
     tLmbtetap: number;
     fixOther: number;
+    kdPtkp: number;
+    potRumah: number;
+    noAnggota: string | null;
+
+    // Flags
     kdTransp: boolean;
     kdMakan: boolean;
+    kdOut: boolean;
+    kdLmb: boolean;
+    kdSpl: boolean;
+    kdPjk: boolean;
+    kdKoperasi: boolean;
+    kdptRumah: boolean;
+    kdSpsi: boolean;
 
     // Relations
     company?: {
@@ -94,6 +129,24 @@ export interface Employee {
     bank?: {
         bankCode: string;
         bankNama: string;
+    };
+    jnsJam?: {
+        id: string;
+        kdJam: string;
+        jnsJam: string;
+    };
+    groupShift?: {
+        id: string;
+        groupShift: string;
+        groupName: string;
+    };
+    agama?: {
+        kdAgm: string;
+        nmAgm: string;
+    };
+    pkt?: {
+        kdPkt: string;
+        nmPkt: string;
     };
 
     // Audit

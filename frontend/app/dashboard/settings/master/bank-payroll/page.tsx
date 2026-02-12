@@ -96,7 +96,7 @@ export default function BankPayrollPage() {
     );
 
     return (
-        <div className="p-4 md:p-6 md:px-2 space-y-6 w-full">
+        <div className="p-2 md:p-6 space-y-6 w-full">
             <HeaderCard
                 title="Data Bank / Payroll"
                 description="Kelola master data bank untuk sistem penggajian"

@@ -123,7 +123,7 @@ export function PayrollHistoryTable({ data, isLoading, showAllStatus = true, sho
                 <div className="border rounded-xl overflow-hidden">
                     <div className="h-12 bg-slate-50 border-b" />
                     {[1, 2, 3, 4, 5].map((i) => (
-                        <div key={i} className="h-16 border-b bg-white animate-pulse" />
+                        <div key={i} className="h-16 border-b bg-white dark:bg-slate-900/30 animate-pulse" />
                     ))}
                 </div>
             </div>
@@ -218,7 +218,7 @@ export function PayrollHistoryTable({ data, isLoading, showAllStatus = true, sho
             {/* Mobile View */}
             <div className="md:hidden space-y-3">
                 {displayData.length === 0 ? (
-                    <div className="bg-white p-12 rounded-xl border border-dashed text-center text-slate-400 text-sm">
+                    <div className="bg-white dark:bg-slate-900/50 p-12 rounded-xl border dark:border-slate-800 border-dashed text-center text-slate-400 dark:text-slate-500 text-sm">
                         Data tidak ditemukan.
                     </div>
                 ) : (
@@ -271,7 +271,7 @@ export function PayrollHistoryTable({ data, isLoading, showAllStatus = true, sho
                                 <>
                                     <div className="flex justify-between items-start">
                                         <div className="flex gap-3">
-                                            <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                                            <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                                                 <Calendar className="h-5 w-5" />
                                             </div>
                                             <div>
@@ -307,7 +307,7 @@ export function PayrollHistoryTable({ data, isLoading, showAllStatus = true, sho
                                         <Button
                                             size="sm"
                                             variant="secondary"
-                                            className="h-8 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold border-none rounded-lg px-4"
+                                            className="h-8 text-xs bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-950/50 text-blue-700 dark:text-blue-400 font-bold border-none rounded-lg px-4"
                                         >
                                             {isEmployee ? 'Pdc' : 'Detail'}
                                             <ArrowRight className="ml-1.5 h-3.5 w-3.5" />

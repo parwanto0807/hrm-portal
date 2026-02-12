@@ -7,6 +7,8 @@ import { useState, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import { requestNotificationPermission, onMessageListener } from "@/lib/firebase";
+import { toast } from "sonner";
 
 interface ClientProvidersProps {
     children: React.ReactNode;
@@ -34,6 +36,28 @@ export default function ClientProviders({
         const timer = setTimeout(() => setMounted(true), 0);
         return () => clearTimeout(timer);
     }, []);
+
+    // Firebase Messaging
+    useEffect(() => {
+        if (mounted) {
+            // Request permission
+            requestNotificationPermission();
+
+            // Set up foreground listener
+            const unsubscribe = onMessageListener((payload: any) => {
+                console.log('Foreground message received:', payload);
+                if (payload?.notification) {
+                    toast(payload.notification.title || 'New Notification', {
+                        description: payload.notification.body,
+                    });
+                }
+            });
+
+            return () => {
+                if (unsubscribe) unsubscribe();
+            };
+        }
+    }, [mounted]);
 
     // Render minimal version sebelum mounted
     // Ini mencegah blank screen

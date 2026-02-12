@@ -15,9 +15,9 @@ const router = express.Router();
 router.use(protect);
 
 router.get('/', getHolidays);
-router.post('/', authorize('ADMIN', 'HR_MANAGER'), createHoliday);
-router.put('/:id', authorize('ADMIN', 'HR_MANAGER'), updateHoliday);
-router.delete('/:id', authorize('ADMIN', 'HR_MANAGER'), deleteHoliday);
-router.post('/sync', authorize('ADMIN', 'HR_MANAGER'), syncHolidays);
+router.post('/', authorize('SUPER_ADMIN', 'ADMIN', 'HR_MANAGER'), createHoliday);
+router.put('/:id', authorize('SUPER_ADMIN', 'ADMIN', 'HR_MANAGER'), updateHoliday);
+router.delete('/:id', authorize('SUPER_ADMIN', 'ADMIN', 'HR_MANAGER'), deleteHoliday);
+router.post('/sync', authorize('SUPER_ADMIN', 'ADMIN', 'HR_MANAGER'), syncHolidays);
 
 export default router;

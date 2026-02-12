@@ -53,7 +53,7 @@ export default function PayrollPage() {
     };
 
     return (
-        <div className="flex flex-col gap-4 md:gap-6 p-3 md:p-2 lg:p-2 pb-24 md:pb-6">
+        <div className="flex flex-col gap-4 md:gap-6 p-2 md:p-6 pb-24 md:pb-6">
             {/* Breadcrumb Section */}
             <Breadcrumb>
                 <BreadcrumbList>

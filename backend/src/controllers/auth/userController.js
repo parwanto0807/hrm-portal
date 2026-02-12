@@ -19,7 +19,8 @@ export const getProfile = async (req, res) => {
                 name: true,
                 email: true,
                 image: true,
-                role: true
+                role: true,
+                fcmToken: true // Include fcmToken in user selection
             }
         });
 
@@ -65,15 +66,48 @@ export const getProfile = async (req, res) => {
             }
         }
 
-        console.log(`[getProfile] Success for ${user.email}. Linked employee: ${employee ? employee.nama : 'NONE'}`);
+        // Use employee name as primary name if available
+        if (employee && employee.nama) {
+            user.name = employee.nama;
+        }
 
         res.status(200).json({
             ...user,
+            emplId: employee ? employee.emplId : undefined, // Top-level emplId for convenience
             employee
         });
-
     } catch (error) {
         console.error("Error getProfile:", error);
         res.status(500).json({ msg: "Internal Server Error" });
+    }
+};
+
+/**
+ * Update user's FCM token for push notifications
+ */
+export const updateFcmToken = async (req, res) => {
+    try {
+        const { fcmToken } = req.body;
+        
+        if (!fcmToken) {
+            return res.status(400).json({ success: false, message: 'FCM Token is required' });
+        }
+
+        // Use req.userId or req.user.id depending on your auth middleware
+        const userId = req.userId || (req.user && req.user.id);
+
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
+        }
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: { fcmToken }
+        });
+
+        res.json({ success: true, message: 'FCM Token updated successfully' });
+    } catch (error) {
+        console.error('❌ Update FCM Token error:', error);
+        res.status(500).json({ success: false, message: 'Failed to update FCM Token' });
     }
 };

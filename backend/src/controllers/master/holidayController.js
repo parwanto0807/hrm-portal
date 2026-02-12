@@ -100,55 +100,78 @@ export const deleteHoliday = async (req, res) => {
 export const syncHolidays = async (req, res) => {
     try {
         const { year } = req.body;
-        const targetYear = year || new Date().getFullYear();
+        const targetYear = parseInt(year) || new Date().getFullYear();
 
         console.log(`🔄 Syncing holidays for year ${targetYear}...`);
-
-        // Use a more reliable API source (Day.js / Nager.Date fallback)
-        // Original: https://api-harilibur.vercel.app/api?year=${targetYear} (Often Rate Limited/Down)
-        // New: https://dayoffapi.vercel.app/api?year=${targetYear} (Alternative)
-        // Backup: https://date.nager.at/api/v3/PublicHolidays/${targetYear}/ID
 
         let data = [];
         let source = 'primary';
 
-        try {
-            // Try Primary Source (Specialized for Indonesia, includes Cuti Bersama)
-            const response = await fetch(`https://dayoffapi.vercel.app/api?year=${targetYear}`);
-            const text = await response.text();
-            
+        // FORCE HARDCODED LIST FOR 2026 AS PER USER REQUEST
+        if (targetYear === 2026) {
+            console.log('Using HARDCODED list for 2026');
+            source = 'manual-override-2026';
+            data = [
+                // Fixed Dates
+                { holiday_date: '2026-01-01', holiday_name: 'Tahun Baru Masehi', is_cuti_bersama: false },
+                { holiday_date: '2026-05-01', holiday_name: 'Hari Buruh Internasional', is_cuti_bersama: false },
+                { holiday_date: '2026-06-01', holiday_name: 'Hari Lahir Pancasila', is_cuti_bersama: false },
+                { holiday_date: '2026-08-17', holiday_name: 'Hari Kemerdekaan RI', is_cuti_bersama: false },
+                { holiday_date: '2026-12-25', holiday_name: 'Hari Raya Natal', is_cuti_bersama: false },
+                // Moving Dates
+                { holiday_date: '2026-01-16', holiday_name: 'Isra’ Mi’raj Nabi Muhammad SAW', is_cuti_bersama: false },
+                { holiday_date: '2026-02-17', holiday_name: 'Tahun Baru Imlek 2577 Kongzili', is_cuti_bersama: false },
+                { holiday_date: '2026-03-19', holiday_name: 'Hari Suci Nyepi (Tahun Baru Saka 1948)', is_cuti_bersama: false },
+                { holiday_date: '2026-03-21', holiday_name: 'Idul Fitri 1447 H', is_cuti_bersama: false },
+                { holiday_date: '2026-03-22', holiday_name: 'Idul Fitri 1447 H', is_cuti_bersama: false },
+                { holiday_date: '2026-04-03', holiday_name: 'Wafat Isa Almasih', is_cuti_bersama: false },
+                { holiday_date: '2026-04-05', holiday_name: 'Paskah', is_cuti_bersama: false },
+                { holiday_date: '2026-05-14', holiday_name: 'Kenaikan Isa Almasih', is_cuti_bersama: false },
+                { holiday_date: '2026-05-27', holiday_name: 'Idul Adha 1447 H', is_cuti_bersama: false },
+                { holiday_date: '2026-05-31', holiday_name: 'Hari Raya Waisak 2570 BE', is_cuti_bersama: false },
+                { holiday_date: '2026-06-16', holiday_name: 'Tahun Baru Islam 1448 H', is_cuti_bersama: false },
+                { holiday_date: '2026-08-25', holiday_name: 'Maulid Nabi Muhammad SAW', is_cuti_bersama: false },
+            ];
+        } else {
+            // ... existing API fetch logic for other years ...
             try {
-                data = JSON.parse(text);
-                // Map dayoffapi format to our standard format
-                data = data.map(item => ({
-                    holiday_date: item.tanggal,
-                    holiday_name: item.keterangan,
-                    is_cuti_bersama: item.is_cuti
-                }));
-            } catch (e) {
-                console.warn('Primary API returned non-JSON:', text.substring(0, 100));
-                throw new Error('Invalid JSON from Primary API');
-            }
-        } catch (primaryError) {
-            console.warn('Primary API failed, trying backup...', primaryError.message);
-            source = 'backup';
-            
-            // Try Backup Source (Nager.Date - Global, stable, but might miss Cuti Bersama)
-            const backupResponse = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${targetYear}/ID`);
-             const text = await backupResponse.text();
-            
-            try {
-                const backupData = JSON.parse(text);
-                // Map Nager.Date format to our expected format
-                data = backupData.map(item => ({
-                    holiday_date: item.date,
-                    holiday_name: item.localName,
-                    is_national_holiday: true,
-                    is_cuti_bersama: false // Nager mostly tracks public holidays
-                }));
-            } catch (e) {
-                 console.error('Backup API returned non-JSON:', text.substring(0, 100));
-                 throw new Error('Both APIs failed. Please try again later or input manually.');
+                // Try Primary Source (Specialized for Indonesia, includes Cuti Bersama)
+                const response = await fetch(`https://dayoffapi.vercel.app/api?year=${targetYear}`);
+                const text = await response.text();
+                
+                try {
+                    data = JSON.parse(text);
+                    // Map dayoffapi format to our standard format
+                    data = data.map(item => ({
+                        holiday_date: item.tanggal,
+                        holiday_name: item.keterangan,
+                        is_cuti_bersama: item.is_cuti
+                    }));
+                } catch (e) {
+                    console.warn('Primary API returned non-JSON:', text.substring(0, 100));
+                    throw new Error('Invalid JSON from Primary API');
+                }
+            } catch (primaryError) {
+                console.warn('Primary API failed, trying backup...', primaryError.message);
+                source = 'backup';
+                
+                // Try Backup Source (Nager.Date - Global, stable, but might miss Cuti Bersama)
+                const backupResponse = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${targetYear}/ID`);
+                 const text = await backupResponse.text();
+                
+                try {
+                    const backupData = JSON.parse(text);
+                    // Map Nager.Date format to our expected format
+                    data = backupData.map(item => ({
+                        holiday_date: item.date,
+                        holiday_name: item.localName,
+                        is_national_holiday: true,
+                        is_cuti_bersama: false // Nager mostly tracks public holidays
+                    }));
+                } catch (e) {
+                     console.error('Backup API returned non-JSON:', text.substring(0, 100));
+                     throw new Error('Both APIs failed. Please try again later or input manually.');
+                }
             }
         }
 
@@ -157,6 +180,20 @@ export const syncHolidays = async (req, res) => {
         }
 
         let syncedCount = 0;
+
+        // If hardcoded 2026, clear existing first to be safe and avoid duplicates if logic changed
+        if (targetYear === 2026) {
+             const startDate = new Date(`${targetYear}-01-01`);
+             const endDate = new Date(`${targetYear}-12-31`);
+             await prisma.holiday.deleteMany({
+                 where: {
+                     tanggal: {
+                         gte: startDate,
+                         lte: endDate
+                     }
+                 }
+             });
+        }
 
         for (const item of data) {
             // Determine Type

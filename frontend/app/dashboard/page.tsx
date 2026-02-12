@@ -9,6 +9,7 @@ import { QuickAccess } from '@/components/dashboard/QuickAccess';
 
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import { SkeletonDashboard } from '@/components/dashboard/SkeletonDashboard';
+import { SkeletonEmployeeDashboard } from '@/components/dashboard/SkeletonEmployeeDashboard';
 
 import DashboardCharts from '@/components/dashboard/ChartSummary';
 
@@ -26,7 +27,7 @@ export default function DashboardPage() {
     }, []);
 
     if (loading) {
-        return <SkeletonDashboard />;
+        return isEmployee ? <SkeletonEmployeeDashboard /> : <SkeletonDashboard />;
     }
 
     if (isEmployee) {

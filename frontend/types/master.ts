@@ -17,6 +17,9 @@ export interface Factory {
     kdFact: string;
     nmFact: string;
     keterangan?: string;
+    lat?: string;
+    long?: string;
+    radius?: number;
     createdAt: string;
     updatedAt: string;
 }

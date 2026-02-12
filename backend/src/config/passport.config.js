@@ -36,8 +36,21 @@ passport.use(new GoogleStrategy({
       }
 
       const email = profile.emails[0].value;
-      const name = profile.displayName || email.split('@')[0];
+      const googleName = profile.displayName || email.split('@')[0];
       const image = profile.photos?.[0]?.value;
+
+      // 🚀 SECURITY: Check if the email exists in the Karyawan table and is AKTIF.
+      const employeeRecord = await prisma.karyawan.findFirst({
+        where: { 
+          email: { equals: email, mode: 'insensitive' },
+          kdSts: 'AKTIF'
+        }
+      });
+
+      if (!employeeRecord) {
+        console.error('❌ Access Denied: Email not in Karyawan table or not AKTIF:', email);
+        return done(null, false, { message: 'Akses Ditolak: Email Anda tidak terdaftar sebagai karyawan aktif. Silakan hubungi HR.' });
+      }
 
       // Cari atau buat user dengan transaction
       const result = await prisma.$transaction(async (tx) => {
@@ -52,7 +65,7 @@ passport.use(new GoogleStrategy({
           user = await tx.user.create({
             data: {
               email,
-              name,
+              name: employeeRecord.nama || googleName,
               image,
               role: 'EMPLOYEE',
               isActive: true
@@ -67,7 +80,7 @@ passport.use(new GoogleStrategy({
           user = await tx.user.update({
             where: { id: user.id },
             data: { 
-              name: name || user.name,
+              name: employeeRecord.nama || googleName,
               image: image || user.image 
             }
           });

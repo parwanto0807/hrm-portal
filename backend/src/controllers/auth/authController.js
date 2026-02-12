@@ -1,24 +1,17 @@
-// src/controllers/authController.js
-
 import config from '../../config/env.js';
 import { prisma } from '../../config/prisma.js';
-import fetch from 'node-fetch'; // 1. Use node-fetch for consistent HTTP requests
-
-// Import Helper Modular yang sudah Anda buat sebelumnya
-import { sendTokenResponse } from '../../utils/jwtToken.js'; // Mengurus Response & Cookie
-import { verifyToken } from '../../utils/jwt.utils.js';      // Mengurus Verifikasi Token
-
-// ==========================================
-// MAIN CONTROLLERS
-// ==========================================
+import fetch from 'node-fetch'; 
+import { sendTokenResponse } from '../../utils/jwtToken.js';
+import { verifyToken } from '../../utils/jwt.utils.js';
+import { sysLog } from '../../utils/logger.js';
+import { ensureSysUser } from '../../utils/userSync.js';
+import bcrypt from 'bcryptjs';
 
 // 1. Google Login (Client-Side Popup Flow)
 export const googleLogin = async (req, res) => {
-  const { token } = req.body; // Access Token Google (ya29...)
+  const { token } = req.body;
 
   try {
-    // A. Fetch Data User dari Google
-    // Menggunakan node-fetch
     const googleResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
       method: 'GET',
       headers: {
@@ -33,9 +26,23 @@ export const googleLogin = async (req, res) => {
     const payload = await googleResponse.json();
     const { email, name, picture, sub: googleId } = payload;
 
-    console.log(`✅ Google User Verified: ${email}`);
+    // 🚀 SECURITY: Restrict login to authorized active employees only
+    const employeeRecord = await prisma.karyawan.findFirst({
+      where: { 
+        email: { equals: email, mode: 'insensitive' },
+        kdSts: 'AKTIF' // Only allow active employees
+      }
+    });
 
-    // B. Database Transaction (Create or Update)
+    if (!employeeRecord) {
+      return res.status(403).json({
+        success: false,
+        message: 'Akses Ditolak: Email Anda tidak terdaftar sebagai karyawan aktif. Silakan hubungi HR.',
+        code: 'UNAUTHORIZED_EMAIL'
+      });
+    }
+
+    // Database Transaction (Create or Update)
     const user = await prisma.$transaction(async (tx) => {
       let existingUser = await tx.user.findUnique({
         where: { email: email },
@@ -43,13 +50,13 @@ export const googleLogin = async (req, res) => {
       });
 
       if (!existingUser) {
-        // Buat User Baru
         existingUser = await tx.user.create({
           data: {
             email,
-            name,
+            name: employeeRecord.nama || name, // Prioritize official employee name
             image: picture,
             role: 'EMPLOYEE',
+            isActive: true,
             accounts: {
               create: {
                 provider: 'google',
@@ -59,8 +66,13 @@ export const googleLogin = async (req, res) => {
             }
           }
         });
+
+        // 🔗 AUTO-LINK: Link User back to Karyawan record
+        await tx.karyawan.update({
+            where: { id: employeeRecord.id },
+            data: { userId: existingUser.id }
+        });
       } else {
-        // User Ada, Cek/Update Account Linking
         const linkedAccount = existingUser.accounts.find(
           acc => acc.provider === 'google' && acc.providerAccountId === googleId
         );
@@ -76,25 +88,45 @@ export const googleLogin = async (req, res) => {
           });
         }
         
-        // Update data profil terbaru dari Google
-        await tx.user.update({
+        existingUser = await tx.user.update({
           where: { id: existingUser.id },
-          data: { name, image: picture }
+          data: { 
+              name: employeeRecord.nama || name, // Sync official name
+              image: picture 
+          }
         });
       }
 
       return existingUser;
-    }, {
-      maxWait: 5000, // Wait max 5s for a connection from the pool
-      timeout: 10000 // Transaction MUST finish in 10s
     });
 
-    // C. Kirim Response Sukses
+    // Log the successful Google login
+    const sysUser = await ensureSysUser(employeeRecord.emplId);
+    sysLog({
+        logUser: sysUser?.username || user.email,
+        modul: 'AUTH',
+        action: 'LOGIN',
+        data: { method: 'GOOGLE', email: user.email },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+    });
+
+    // 🔍 DEEP SYNC: Forcing employee name override to ensure dashboard shows correct name
+    if (employeeRecord && employeeRecord.nama) {
+        if (user.name !== employeeRecord.nama) {
+            console.log(`🔄 Syncing name for ${user.email}: "${user.name}" -> "${employeeRecord.nama}"`);
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { name: employeeRecord.nama }
+            });
+            user.name = employeeRecord.nama; // Ensure the object sent to client is correct
+        }
+    }
+
     sendTokenResponse(user, 200, res);
 
   } catch (error) {
     console.error("Auth Error:", error);
-    // DEBUG: Kirim detail error ke frontend agar tahu penyebabnya (Fetch error / DB error)
     res.status(500).json({ 
       success: false,
       message: `Login Gagal: ${error.message}`, 
@@ -118,14 +150,63 @@ export const login = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Email atau password salah' });
     }
 
-    // ⚠️ PENTING: Di Production pastikan menggunakan bcrypt.compare
-    const isPasswordValid = user.password === password; 
+    // Check if user has a password (might be OAuth only)
+    if (!user.password) {
+        return res.status(401).json({ success: false, message: 'Silakan login menggunakan Google' });
+    }
+
+    // 🔥 SECURITY: Use bcrypt to compare hashed password
+    // Supporting both hashed and plain (for migration)
+    let isPasswordValid = false;
+    if (user.password.startsWith('$2a$') || user.password.startsWith('$2b$')) {
+        isPasswordValid = await bcrypt.compare(password, user.password);
+    } else {
+        // Fallback for legacy plain text passwords
+        isPasswordValid = user.password === password;
+        
+        // 🔒 Migration: If valid plain text, hash it and save for next time
+        if (isPasswordValid) {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { 
+                    password: hashedPassword,
+                    // If employee record already exists, sync name now
+                    name: (await prisma.karyawan.findFirst({ where: { userId: user.id } }))?.nama || user.name
+                }
+            });
+            console.log(`✅ Automatically hashed legacy password and synced name for: ${user.email}`);
+        }
+    }
 
     if (!isPasswordValid) {
       return res.status(401).json({ success: false, message: 'Email atau password salah' });
     }
 
-    // Menggunakan helper agar konsisten (Set Cookie + JSON)
+    // Log the successful login
+    const employee = await prisma.karyawan.findFirst({ where: { userId: user.id } });
+    const sysUser = employee ? await ensureSysUser(employee.emplId) : null;
+    
+    sysLog({
+        logUser: sysUser?.username || user.email,
+        modul: 'AUTH',
+        action: 'LOGIN',
+        data: { method: 'MANUAL', email: user.email },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+    });
+
+    // Use employee name as primary name if available and sync to DB
+    if (employee && employee.nama) {
+        if (user.name !== employee.nama) {
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { name: employee.nama }
+            });
+            user.name = employee.nama;
+        }
+    }
+
     sendTokenResponse(user, 200, res);
 
   } catch (error) {
@@ -137,19 +218,14 @@ export const login = async (req, res) => {
 // 3. Refresh Token
 export const refreshToken = async (req, res) => {
   try {
-    // Ambil token dari Cookie (Prioritas) atau Body
     const token = req.cookies.refreshToken || req.body.refreshToken;
 
     if (!token) {
       return res.status(401).json({ success: false, message: 'Refresh token tidak ditemukan, silakan login ulang' });
     }
 
-    // 1. Verifikasi Token menggunakan helper modular 'verifyToken'
-    // Helper ini akan throw error jika token invalid/expired
     const decoded = verifyToken(token, 'refresh');
     
-    // 2. Cek User di DB (Security Check)
-    // Perhatikan: decoded.userId sesuai dengan logic di jwt.utils.js
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
     });
@@ -158,8 +234,18 @@ export const refreshToken = async (req, res) => {
       return res.status(401).json({ success: false, message: 'User tidak ditemukan' });
     }
 
-    // 3. Generate Token Baru & Update Cookie (Token Rotation)
-    // Kita panggil sendTokenResponse lagi untuk memperbarui masa aktif Access & Refresh Token
+    // Use employee name as primary name if available and sync to DB
+    const employee = await prisma.karyawan.findFirst({ where: { userId: user.id } });
+    if (employee && employee.nama) {
+        if (user.name !== employee.nama) {
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { name: employee.nama }
+            });
+            user.name = employee.nama;
+        }
+    }
+
     sendTokenResponse(user, 200, res);
 
   } catch (error) {
@@ -177,7 +263,6 @@ export const logout = (req, res) => {
       sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
     };
 
-    // Hapus KEDUA cookie (accessToken dan refreshToken)
     res.clearCookie('accessToken', cookieOptions);
     res.clearCookie('refreshToken', cookieOptions);
     
@@ -187,7 +272,7 @@ export const logout = (req, res) => {
   }
 };
 
-// 5. Google Callback Handler (Opsional - Jika pakai Passport/Redirect Flow)
+// 5. Google Callback Handler
 export const googleCallbackHandler = async (req, res) => {
     try {
       if (!req.user) throw new Error('No user data');
@@ -196,12 +281,18 @@ export const googleCallbackHandler = async (req, res) => {
       const redirectUrl = req.session?.redirectUrl || `${config.frontendUrl}/auth/callback`;
       const frontendUrl = new URL(redirectUrl);
       
-      // Mengirim token via URL params (kurang aman dibanding cookie, tapi standar untuk redirect flow)
+      const employee = await prisma.karyawan.findFirst({ where: { userId: user.id } });
+      const displayName = employee?.nama || user.name;
+
       frontendUrl.searchParams.append('accessToken', tokens.accessToken);
       frontendUrl.searchParams.append('refreshToken', tokens.refreshToken);
+      frontendUrl.searchParams.append('userId', user.id);
+      frontendUrl.searchParams.append('email', encodeURIComponent(user.email));
+      frontendUrl.searchParams.append('name', encodeURIComponent(displayName));
+      frontendUrl.searchParams.append('role', user.role || 'EMPLOYEE');
+      frontendUrl.searchParams.append('image', encodeURIComponent(user.image || ''));
       frontendUrl.searchParams.append('success', 'true');
       
-      // CHANGE: Set cookie agar Server Actions (Next.js) bisa membacanya
       const cookieOptions = {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
@@ -217,6 +308,18 @@ export const googleCallbackHandler = async (req, res) => {
         expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
       });
 
+      // Log the successful Google Login (Passport/Redirect Flow)
+      const sysUser = employee ? await ensureSysUser(employee.emplId) : null;
+
+      sysLog({
+          logUser: sysUser?.username || user.email,
+          modul: 'AUTH',
+          action: 'LOGIN',
+          data: { method: 'GOOGLE_CALLBACK', email: user.email },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+      });
+
       res.redirect(frontendUrl.toString());
     } catch (error) {
       res.redirect(`${config.frontendUrl}/login?error=auth_failed`);
@@ -230,7 +333,7 @@ export const getDebugConfig = (req, res) => {
     config: {
       env: process.env.NODE_ENV,
       frontendUrl: config.frontendUrl,
-      backendUrl: config.serverUrl, // Asumsi config.serverUrl ada di env.js
+      backendUrl: config.serverUrl,
     }
   });
 };

@@ -39,9 +39,9 @@ export const StatsCards = ({ stats, isLoading, machineStatus }: StatsCardsProps)
             title: 'Total Kehadiran',
             value: stats?.total || 0,
             icon: Users,
-            color: 'text-blue-600',
-            bgColor: 'bg-blue-50',
-            borderColor: 'border-blue-100',
+            color: 'text-blue-600 dark:text-blue-400',
+            bgColor: 'bg-blue-50 dark:bg-blue-950/30',
+            borderColor: 'border-blue-100 dark:border-blue-900/50',
             description: 'Total data log'
         },
         {
@@ -49,9 +49,9 @@ export const StatsCards = ({ stats, isLoading, machineStatus }: StatsCardsProps)
             value: `${stats?.presentPercentage.toFixed(1) || 0}%`,
             subValue: `${stats?.presentCount || 0} karyawan`,
             icon: UserCheck,
-            color: 'text-emerald-600',
-            bgColor: 'bg-emerald-50',
-            borderColor: 'border-emerald-100',
+            color: 'text-emerald-600 dark:text-emerald-400',
+            bgColor: 'bg-emerald-50 dark:bg-emerald-950/30',
+            borderColor: 'border-emerald-100 dark:border-emerald-900/50',
             description: 'Tepat waktu & Hadir'
         },
         {
@@ -59,9 +59,9 @@ export const StatsCards = ({ stats, isLoading, machineStatus }: StatsCardsProps)
             value: `${stats?.latePercentage.toFixed(1) || 0}%`,
             subValue: `${stats?.lateCount || 0} karyawan`,
             icon: Clock,
-            color: 'text-amber-600',
-            bgColor: 'bg-amber-50',
-            borderColor: 'border-amber-100',
+            color: 'text-amber-600 dark:text-amber-400',
+            bgColor: 'bg-amber-50 dark:bg-amber-950/30',
+            borderColor: 'border-amber-100 dark:border-amber-900/50',
             description: 'Masuk setelah jadwal'
         },
         {
@@ -69,9 +69,9 @@ export const StatsCards = ({ stats, isLoading, machineStatus }: StatsCardsProps)
             value: `${stats?.absentPercentage.toFixed(1) || 0}%`,
             subValue: `${stats?.absentCount || 0} karyawan`,
             icon: UserX,
-            color: 'text-rose-600',
-            bgColor: 'bg-rose-50',
-            borderColor: 'border-rose-100',
+            color: 'text-rose-600 dark:text-rose-400',
+            bgColor: 'bg-rose-50 dark:bg-rose-950/30',
+            borderColor: 'border-rose-100 dark:border-rose-900/50',
             description: 'Tanpa keterangan'
         }
     ];
@@ -114,8 +114,8 @@ export const StatsCards = ({ stats, isLoading, machineStatus }: StatsCardsProps)
                                         className={cn(
                                             "text-[9px] px-1.5 py-0 border-none flex items-center gap-1",
                                             machineStatus.success
-                                                ? "bg-emerald-50 text-emerald-600 animate-pulse"
-                                                : "bg-rose-50 text-rose-600"
+                                                ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 animate-pulse"
+                                                : "bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400"
                                         )}
                                     >
                                         <div className={cn("h-1.5 w-1.5 rounded-full", machineStatus.success ? "bg-emerald-500" : "bg-rose-500")} />

@@ -17,12 +17,14 @@ model AccountEmail {
 model User {
   id        String    @id @default(uuid())
   email     String    @unique
+  password  String?
   name      String?
   image     String?
   role      UserRole  @default(EMPLOYEE)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   isActive  Boolean   @default(true)
+  fcmToken  String?
   accounts  Account[]
   sessions  Session[]
   employee  Karyawan?
@@ -83,6 +85,8 @@ model Company {
   createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt  DateTime    @updatedAt @map("updated_at") @db.Timestamp(6)
   dshift     Dshift[]
+  gajiCode   Gaji[]      @relation("GajiCompanyCode")
+  gajiRef    Gaji[]      @relation("GajiCompanyUUID")
   karyawan   Karyawan[]
   parameter  Parameter[]
   periode    Periode[]
@@ -93,22 +97,31 @@ model Company {
 }
 
 model MstFact {
-  kdFact     String     @id @map("CKD_FACT") @db.VarChar(20)
+  id         String     @id @default(uuid()) @db.Uuid
+  kdFact     String     @unique @map("CKD_FACT") @db.VarChar(20)
   nmFact     String?    @map("CNM_FACT") @db.VarChar(30)
   keterangan String?    @map("KETERANGAN") @db.VarChar(50)
+  lat        String?    @map("LAT") @db.VarChar(50)
+  long       String?    @map("LONG") @db.VarChar(50)
+  radius     Int?       @default(50) @map("RADIUS")
   createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt  DateTime   @updatedAt @map("updated_at") @db.Timestamp(6)
+  gajiCode   Gaji[]     @relation("GajiFactCode")
+  gajiRef    Gaji[]     @relation("GajiFactUUID")
   karyawan   Karyawan[]
 
   @@map("mstfact")
 }
 
 model MstBag {
-  kdBag      String     @id @map("CKD_BAG") @db.VarChar(20)
+  id         String     @id @default(uuid()) @db.Uuid
+  kdBag      String     @unique @map("CKD_BAG") @db.VarChar(20)
   nmBag      String?    @map("CNM_BAG") @db.VarChar(30)
   keterangan String?    @map("KETERANGAN") @db.VarChar(50)
   createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt  DateTime   @updatedAt @map("updated_at") @db.Timestamp(6)
+  gajiCode   Gaji[]     @relation("GajiBagCode")
+  gajiRef    Gaji[]     @relation("GajiBagUUID")
   karyawan   Karyawan[]
   depts      MstDept[]
   sies       MstSie[]
@@ -124,9 +137,11 @@ model MstDept {
   keterangan String?    @map("KETERANGAN") @db.VarChar(50)
   createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt  DateTime   @updatedAt @map("updated_at") @db.Timestamp(6)
+  gajiCode   Gaji[]     @relation("GajiDeptCode")
+  gajiRef    Gaji[]     @relation("GajiDeptUUID")
   karyawan   Karyawan[]
   bag        MstBag?    @relation(fields: [kdBag], references: [kdBag])
-  sies       MstSie[]
+  sies       MstSie[]   @relation("DeptSie")
 
   @@unique([kdBag, kdDept], name: "dept_unique")
   @@index([kdBag])
@@ -142,9 +157,11 @@ model MstSie {
   keterangan String?    @map("KETERANGAN") @db.VarChar(80)
   createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt  DateTime   @updatedAt @map("updated_at") @db.Timestamp(6)
+  gajiCode   Gaji[]     @relation("GajiSieCode")
+  gajiRef    Gaji[]     @relation("GajiSieUUID")
   karyawan   Karyawan[]
   bag        MstBag?    @relation(fields: [kdBag], references: [kdBag])
-  dept       MstDept?   @relation(fields: [kdDept], references: [kdDept])
+  dept       MstDept?   @relation("DeptSie", fields: [kdDept], references: [kdDept])
 
   @@unique([kdBag, kdDept, kdSeksie], name: "sie_unique")
   @@index([kdBag, kdDept])
@@ -152,7 +169,8 @@ model MstSie {
 }
 
 model MstJab {
-  kdJab      String     @id @map("CKD_JAB") @db.VarChar(20)
+  id         String     @id @default(uuid()) @db.Uuid
+  kdJab      String     @unique @map("CKD_JAB") @db.VarChar(20)
   nmJab      String?    @map("CNM_JAB") @db.VarChar(30)
   nTjabatan  Decimal?   @map("NTJABATAN") @db.Decimal(12, 0)
   nTransport Decimal?   @map("NTRANSPORT") @db.Decimal(12, 0)
@@ -163,14 +181,16 @@ model MstJab {
   keterangan String?    @map("KETERANGAN") @db.VarChar(50)
   createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt  DateTime   @updatedAt @map("updated_at") @db.Timestamp(6)
-  gaji       Gaji[]
+  gajiCode   Gaji[]     @relation("GajiJabatanCode")
+  gajiRef    Gaji[]     @relation("GajiJabatanUUID")
   karyawan   Karyawan[]
 
   @@map("mstjab")
 }
 
 model MstPkt {
-  kdPkt      String     @id @map("CKD_PKT") @db.VarChar(5)
+  id         String     @id @default(uuid()) @db.Uuid
+  kdPkt      String     @unique @map("CKD_PKT") @db.VarChar(5)
   nmPkt      String?    @map("CNM_PKT") @db.VarChar(30)
   keterangan String?    @map("KETERANGAN") @db.VarChar(30)
   createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
@@ -181,7 +201,8 @@ model MstPkt {
 }
 
 model MstAgm {
-  kdAgm      String     @id @map("CKD_AGM") @db.VarChar(2)
+  id         String     @id @default(uuid()) @db.Uuid
+  kdAgm      String     @unique @map("CKD_AGM") @db.VarChar(2)
   nmAgm      String?    @map("CNM_AGM") @db.VarChar(30)
   keterangan String?    @map("KETERANGAN") @db.VarChar(50)
   createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
@@ -192,7 +213,8 @@ model MstAgm {
 }
 
 model MstSkl {
-  kdSkl      String     @id @map("CKD_SKL") @db.VarChar(2)
+  id         String     @id @default(uuid()) @db.Uuid
+  kdSkl      String     @unique @map("CKD_SKL") @db.VarChar(2)
   nmSkl      String?    @map("CNM_SKL") @db.VarChar(30)
   keterangan String?    @map("KETERANGAN") @db.VarChar(50)
   createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
@@ -203,7 +225,8 @@ model MstSkl {
 }
 
 model Bank {
-  bankCode  String     @id @map("BANK_CODE") @db.Char(2)
+  id        String     @id @default(uuid()) @db.Uuid
+  bankCode  String     @unique @map("BANK_CODE") @db.Char(2)
   bankNama  String?    @map("BANK_NAMA") @db.VarChar(30)
   createdAt DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt DateTime   @updatedAt @map("updated_at") @db.Timestamp(6)
@@ -315,12 +338,14 @@ model Karyawan {
   updatedAt     DateTime        @updatedAt @map("updated_at") @db.Timestamp(6)
   deletedAt     DateTime?       @map("deleted_at") @db.Timestamp(6)
   jnsJamKdJam   String?         @db.VarChar(2)
+  superiorId    String?         @map("SUPERIOR_ID") @db.VarChar(9)
+  superior2Id   String?         @map("SUPERIOR2_ID") @db.VarChar(9)
   absent        Absent[]
+  approvalsLog  ApprovalLog[]
   attLog        AttLog[]
   dcuti         Dcuti[]
   gaji          Gaji[]
   hcuti         Hcuti[]
-  user          User?           @relation(fields: [userId], references: [id])
   bank          Bank?           @relation(fields: [bankCode], references: [bankCode])
   groupShiftRef GroupShift?     @relation(fields: [groupShift], references: [groupShift])
   agama         MstAgm?         @relation(fields: [kdAgm], references: [kdAgm])
@@ -332,7 +357,12 @@ model Karyawan {
   pkt           MstPkt?         @relation(fields: [kdPkt], references: [kdPkt])
   sie           MstSie?         @relation(fields: [kdSeksie], references: [kdSeksie])
   sekolah       MstSkl?         @relation(fields: [kdSkl], references: [kdSkl])
-  jnsJam        JnsJam?         @relation(fields: [jnsJamKdJam], references: [kdJam])
+  superior2     Karyawan?       @relation("Superior2Relation", fields: [superior2Id], references: [emplId])
+  subordinates2 Karyawan[]      @relation("Superior2Relation")
+  superior      Karyawan?       @relation("SuperiorRelation", fields: [superiorId], references: [emplId])
+  subordinates  Karyawan[]      @relation("SuperiorRelation")
+  jnsJamRef     JnsJam?         @relation(fields: [jnsJamKdJam], references: [kdJam])
+  user          User?           @relation(fields: [userId], references: [id])
   keluarga      Keluarga[]
   kerjaHist     Kerja[]
   kondite       Kondite[]
@@ -341,6 +371,7 @@ model Karyawan {
   lembur        Lembur[]
   medikTrans    MedikTrans[]
   mutasi        Mutasi[]
+  pengajuan     Pengajuan[]
   pesangon      Pesangon?
   pinjamDet     PinjamDet[]
   pinjamHdr     PinjamHdr[]
@@ -351,14 +382,6 @@ model Karyawan {
   sekolahHist   Sekolah[]
   shiftAllw     ShiftAllw[]
   sysUsers      SysUser[]
-  superiorId    String?         @map("SUPERIOR_ID") @db.VarChar(9)
-  superior      Karyawan?       @relation("SuperiorRelation", fields: [superiorId], references: [emplId])
-  subordinates  Karyawan[]      @relation("SuperiorRelation")
-  superior2Id   String?         @map("SUPERIOR2_ID") @db.VarChar(9)
-  superior2     Karyawan?       @relation("Superior2Relation", fields: [superior2Id], references: [emplId])
-  subordinates2 Karyawan[]      @relation("Superior2Relation")
-  pengajuan     Pengajuan[]
-  approvalsLog  ApprovalLog[]
   tunjangan     Tunjangan[]
 
   @@index([kdCmpy])
@@ -589,22 +612,6 @@ model Absent {
   @@map("absent")
 }
 
-model AttLog {
-  id        String   @id @default(uuid()) @db.Uuid
-  nik       String   @default("") @map("nik") @db.VarChar(20)
-  idAbsen   String   @default("") @map("id_absen") @db.VarChar(9)
-  tanggal   DateTime @default(now()) @map("tanggal") @db.Date
-  jam       String   @default("") @map("jam") @db.Char(5)
-  cflag     String   @default("") @map("cflag") @db.Char(1)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
-  karyawan  Karyawan @relation(fields: [nik], references: [nik])
-
-  @@unique([nik, tanggal, jam, cflag], name: "att_log_unique")
-  @@index([nik])
-  @@index([tanggal])
-  @@map("att_log")
-}
-
 model TimeWork {
   id           String   @id @default(uuid()) @db.Uuid
   tanggal      DateTime @map("TANGGAL") @db.Date
@@ -697,7 +704,8 @@ model Holiday {
 }
 
 model DescAbsen {
-  kodeDesc   String    @id @map("KODE_DESC") @db.Char(3)
+  id         String    @id @default(uuid()) @db.Uuid
+  kodeDesc   String    @unique @map("KODE_DESC") @db.Char(3)
   keterangan String?   @map("KETERANGAN") @db.VarChar(30)
   colorCode  String?   @default("#000000") @map("color_code") @db.VarChar(7)
   isActive   Boolean?  @default(true) @map("is_active")
@@ -710,9 +718,12 @@ model DescAbsen {
 }
 
 model JnsJam {
-  kdJam     String     @id @map("KD_JAM") @db.VarChar(2)
+  id        String     @id @default(uuid()) @db.Uuid
+  kdJam     String     @unique @map("KD_JAM") @db.VarChar(2)
   jnsJam    String?    @map("JNS_JAM") @db.VarChar(30)
   jmShif    Int?       @default(1) @map("JMSHIF")
+  jamMasuk  String?    @map("JAM_MASUK") @db.VarChar(5)
+  jamKeluar String?    @map("JAM_KELUAR") @db.VarChar(5)
   isActive  Boolean?   @default(true) @map("is_active")
   createdAt DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt DateTime   @updatedAt @map("updated_at") @db.Timestamp(6)
@@ -724,89 +735,141 @@ model JnsJam {
 }
 
 model Gaji {
-  id           String    @id @default(uuid()) @db.Uuid
-  period       String    @map("PERIOD") @db.VarChar(6)
-  emplId       String    @map("EMPL_ID") @db.VarChar(9)
-  tglProses    DateTime  @map("TGL_PROSES") @db.Date
-  nik          String?   @map("NIK") @db.VarChar(10)
-  nama         String?   @map("NAMA") @db.VarChar(30)
-  kdCmpy       String?   @map("KD_CMPY") @db.VarChar(3)
-  kdFact       String?   @map("KD_FACT") @db.VarChar(2)
-  kdBag        String?   @map("KD_BAG") @db.VarChar(2)
-  kdDept       String?   @map("KD_DEPT") @db.VarChar(2)
-  kdSeksie     String?   @map("KD_SEKSIE") @db.VarChar(6)
-  kdJab        String?   @map("KD_JAB") @db.VarChar(3)
-  tglMsk       DateTime  @map("TGL_MSK") @db.Date
-  typeEmpl     Int?      @default(0) @map("TYPE_EMPL")
-  kdPtkp       Int?      @default(0) @map("KD_PTKP")
-  kdPjk        Int?      @default(0) @map("KD_PJK")
-  typePjk      Int?      @default(0) @map("TYPE_PJK")
-  kdBpjsTk     Boolean?  @default(false) @map("KD_BPJSTK")
-  kdBpjsKes    Boolean?  @default(false) @map("KD_BPJSKES")
-  kdOut        Boolean?  @default(false) @map("KD_OUT")
-  kdJns        Int?      @default(0) @map("KD_JNS")
-  thnKerja     Int?      @default(0) @map("THN_KERJA")
-  blnKerja     Int?      @default(0) @map("BLN_KERJA")
-  hrKerja      Int?      @default(0) @map("HR_KERJA")
-  persenMasa   Decimal?  @default(0.00) @map("PERSENMASA") @db.Decimal(5, 2)
-  persenRmh    Decimal?  @default(0.00) @map("PERSEN_RMH") @db.Decimal(5, 2)
-  hrKerja1     Int?      @default(0) @map("HR_KERJA1")
-  hrKerja2     Int?      @default(0) @map("HR_KERJA2")
-  pokokBln     Decimal?  @default(0) @map("POKOK_BLN") @db.Decimal(15, 0)
-  pokokTrm     Decimal?  @default(0) @map("POKOK_TRM") @db.Decimal(15, 0)
-  tJabatan     Decimal?  @default(0) @map("TJABATAN") @db.Decimal(15, 0)
-  tTransport   Decimal?  @default(0) @map("TTRANSPORT") @db.Decimal(15, 0)
-  tKhusus      Decimal?  @default(0) @map("TKHUSUS") @db.Decimal(15, 0)
-  tMakan       Decimal?  @default(0) @map("TMAKAN") @db.Decimal(15, 0)
-  totUShift    Decimal?  @default(0) @map("TOTUSHIFT") @db.Decimal(15, 0)
-  mealOt       Decimal?  @default(0) @map("MEALOT") @db.Decimal(15, 0)
-  tunjRapel    Decimal?  @default(0) @map("TUNJRAPEL") @db.Decimal(15, 0)
-  tunjMedik    Decimal?  @default(0) @map("TUNJMEDIK") @db.Decimal(15, 0)
-  tunjLain     Decimal?  @default(0) @map("TUNJLAIN") @db.Decimal(15, 0)
-  admBank      Decimal?  @default(0) @map("ADM_BANK") @db.Decimal(15, 0)
-  rapel        Decimal?  @default(0) @map("RAPEL") @db.Decimal(15, 0)
-  tLain        Decimal?  @default(0) @map("TLAIN") @db.Decimal(15, 0)
-  tPph21       Decimal?  @default(0) @map("TPPH21") @db.Decimal(15, 0)
-  upahTetap    Decimal?  @default(0) @map("UPAHTETAP") @db.Decimal(15, 0)
-  dasarBpjsTk  Decimal?  @default(0) @map("DASAR_BPJSTK") @db.Decimal(15, 0)
-  dasarBpjsKes Decimal?  @default(0) @map("DASAR_BPJSKES") @db.Decimal(15, 0)
-  dasarJpn     Decimal?  @default(0) @map("DASAR_JPN") @db.Decimal(15, 0)
-  jLembur1     Decimal?  @default(0.00) @map("JLEMBUR1") @db.Decimal(6, 2)
-  jLembur2     Decimal?  @default(0.00) @map("JLEMBUR2") @db.Decimal(6, 2)
-  jLembur3     Decimal?  @default(0.00) @map("JLEMBUR3") @db.Decimal(6, 2)
-  jLembur4     Decimal?  @default(0.00) @map("JLEMBUR4") @db.Decimal(6, 2)
-  totJLembur   Decimal?  @default(0.00) @map("TOTJLEMBUR") @db.Decimal(7, 2)
-  lebihJam     Decimal?  @default(0.00) @map("LEBIHJAM") @db.Decimal(7, 2)
-  totULembur   Decimal?  @default(0) @map("TOTULEMBUR") @db.Decimal(15, 0)
-  totLmbNerus  Decimal?  @default(0) @map("TOTLMBNERUS") @db.Decimal(15, 0)
-  jknComp      Decimal?  @default(0.0000) @map("JKN_COMP") @db.Decimal(14, 4)
-  jknEmpl      Decimal?  @default(0.0000) @map("JKN_EMPL") @db.Decimal(14, 4)
-  jhtComp      Decimal?  @default(0.0000) @map("JHT_COMP") @db.Decimal(14, 4)
-  jhtEmpl      Decimal?  @default(0.0000) @map("JHT_EMPL") @db.Decimal(14, 4)
-  jpnComp      Decimal?  @default(0.0000) @map("JPN_COMP") @db.Decimal(14, 4)
-  jpnEmpl      Decimal?  @default(0.0000) @map("JPN_EMPL") @db.Decimal(14, 4)
-  hrShift1     Int?      @default(0) @map("HR_SHIFT1")
-  hrShift2     Int?      @default(0) @map("HR_SHIFT2")
-  hrShift3     Int?      @default(0) @map("HR_SHIFT3")
-  hrShift4     Int?      @default(0) @map("HR_SHIFT4")
-  hrShift5     Int?      @default(0) @map("HR_SHIFT5")
-  hrShift6     Int?      @default(0) @map("HR_SHIFT6")
-  hrShift7     Int?      @default(0) @map("HR_SHIFT7")
-  hrShift8     Int?      @default(0) @map("HR_SHIFT8")
-  hrShift9     Int?      @default(0) @map("HR_SHIFT9")
-  hrShift10    Int?      @default(0) @map("HR_SHIFT10")
-  gKotor       Decimal?  @default(0) @map("GKOTOR") @db.Decimal(15, 0)
-  gBersih      Decimal?  @default(0) @map("GBERSIH") @db.Decimal(15, 0)
-  thr          Decimal?  @default(0) @map("THR") @db.Decimal(15, 0)
-  pphThr       Decimal?  @default(0) @map("PPH_THR") @db.Decimal(15, 0)
-  closing      Boolean?  @default(false) @map("CLOSING")
-  paidDate     DateTime? @map("paid_date") @db.Date
-  paidBy       String?   @map("paid_by") @db.VarChar(50)
-  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
-  karyawan     Karyawan  @relation(fields: [emplId], references: [emplId])
-  jabatan      MstJab?   @relation(fields: [kdJab], references: [kdJab])
-  periodeRef   Periode   @relation(fields: [period], references: [periodeId])
+  id           String      @id @default(uuid()) @db.Uuid
+  period       String      @map("PERIOD") @db.VarChar(6)
+  emplId       String      @map("EMPL_ID") @db.VarChar(9)
+  tglProses    DateTime    @map("TGL_PROSES") @db.Date
+  nik          String?     @map("NIK") @db.VarChar(10)
+  nama         String?     @map("NAMA") @db.VarChar(30)
+  kdCmpy       String?     @map("KD_CMPY") @db.VarChar(3)
+  companyId    String?     @map("company_id") @db.Uuid
+  kdFact       String?     @map("KD_FACT") @db.VarChar(20)
+  factId       String?     @map("fact_id") @db.Uuid
+  kdBag        String?     @map("KD_BAG") @db.VarChar(20)
+  bagId        String?     @map("bag_id") @db.Uuid
+  kdDept       String?     @map("KD_DEPT") @db.VarChar(20)
+  deptId       String?     @map("dept_id") @db.Uuid
+  kdSeksie     String?     @map("KD_SEKSIE") @db.VarChar(20)
+  sieId        String?     @map("sie_id") @db.Uuid
+  kdJab        String?     @map("KD_JAB") @db.VarChar(20)
+  jabatanId    String?     @map("jab_id") @db.Uuid
+  tglMsk       DateTime    @map("TGL_MSK") @db.Date
+  typeEmpl     Int?        @default(0) @map("TYPE_EMPL")
+  kdPtkp       Int?        @default(0) @map("KD_PTKP")
+  ptkpId       String?     @map("ptkp_id") @db.Uuid
+  kdPjk        Int?        @default(0) @map("KD_PJK")
+  typePjk      Int?        @default(0) @map("TYPE_PJK")
+  kdBpjsTk     Boolean?    @default(false) @map("KD_BPJSTK")
+  kdBpjsKes    Boolean?    @default(false) @map("KD_BPJSKES")
+  kdOut        Boolean?    @default(false) @map("KD_OUT")
+  kdJns        Int?        @default(0) @map("KD_JNS")
+  jnskaryId    String?     @map("jnskary_id") @db.Uuid
+  thnKerja     Int?        @default(0) @map("THN_KERJA")
+  blnKerja     Int?        @default(0) @map("BLN_KERJA")
+  hrKerja      Int?        @default(0) @map("HR_KERJA")
+  persenMasa   Decimal?    @default(0.00) @map("PERSENMASA") @db.Decimal(5, 2)
+  persenRmh    Decimal?    @default(0.00) @map("PERSEN_RMH") @db.Decimal(5, 2)
+  hrKerja1     Int?        @default(0) @map("HR_KERJA1")
+  hrKerja2     Int?        @default(0) @map("HR_KERJA2")
+  pokokBln     Decimal?    @default(0) @map("POKOK_BLN") @db.Decimal(15, 0)
+  pokokTrm     Decimal?    @default(0) @map("POKOK_TRM") @db.Decimal(15, 0)
+  tJabatan     Decimal?    @default(0) @map("TJABATAN") @db.Decimal(15, 0)
+  tTransport   Decimal?    @default(0) @map("TTRANSPORT") @db.Decimal(15, 0)
+  tKhusus      Decimal?    @default(0) @map("TKHUSUS") @db.Decimal(15, 0)
+  tMakan       Decimal?    @default(0) @map("TMAKAN") @db.Decimal(15, 0)
+  totUShift    Decimal?    @default(0) @map("TOTUSHIFT") @db.Decimal(15, 0)
+  mealOt       Decimal?    @default(0) @map("MEALOT") @db.Decimal(15, 0)
+  tunjRapel    Decimal?    @default(0) @map("TUNJRAPEL") @db.Decimal(15, 0)
+  tunjMedik    Decimal?    @default(0) @map("TUNJMEDIK") @db.Decimal(15, 0)
+  tunjLain     Decimal?    @default(0) @map("TUNJLAIN") @db.Decimal(15, 0)
+  admBank      Decimal?    @default(0) @map("ADM_BANK") @db.Decimal(15, 0)
+  rapel        Decimal?    @default(0) @map("RAPEL") @db.Decimal(15, 0)
+  tLain        Decimal?    @default(0) @map("TLAIN") @db.Decimal(15, 0)
+  tPph21       Decimal?    @default(0) @map("TPPH21") @db.Decimal(15, 0)
+  upahTetap    Decimal?    @default(0) @map("UPAHTETAP") @db.Decimal(15, 0)
+  dasarBpjsTk  Decimal?    @default(0) @map("DASAR_BPJSTK") @db.Decimal(15, 0)
+  dasarBpjsKes Decimal?    @default(0) @map("DASAR_BPJSKES") @db.Decimal(15, 0)
+  dasarJpn     Decimal?    @default(0) @map("DASAR_JPN") @db.Decimal(15, 0)
+  jLembur1     Decimal?    @default(0.00) @map("JLEMBUR1") @db.Decimal(6, 2)
+  jLembur2     Decimal?    @default(0.00) @map("JLEMBUR2") @db.Decimal(6, 2)
+  jLembur3     Decimal?    @default(0.00) @map("JLEMBUR3") @db.Decimal(6, 2)
+  jLembur4     Decimal?    @default(0.00) @map("JLEMBUR4") @db.Decimal(6, 2)
+  totJLembur   Decimal?    @default(0.00) @map("TOTJLEMBUR") @db.Decimal(7, 2)
+  lebihJam     Decimal?    @default(0.00) @map("LEBIHJAM") @db.Decimal(7, 2)
+  totULembur   Decimal?    @default(0) @map("TOTULEMBUR") @db.Decimal(15, 0)
+  totLmbNerus  Decimal?    @default(0) @map("TOTLMBNERUS") @db.Decimal(15, 0)
+  jknComp      Decimal?    @default(0.0000) @map("JKN_COMP") @db.Decimal(14, 4)
+  jknEmpl      Decimal?    @default(0.0000) @map("JKN_EMPL") @db.Decimal(14, 4)
+  jhtComp      Decimal?    @default(0.0000) @map("JHT_COMP") @db.Decimal(14, 4)
+  jhtEmpl      Decimal?    @default(0.0000) @map("JHT_EMPL") @db.Decimal(14, 4)
+  jpnComp      Decimal?    @default(0.0000) @map("JPN_COMP") @db.Decimal(14, 4)
+  jpnEmpl      Decimal?    @default(0.0000) @map("JPN_EMPL") @db.Decimal(14, 4)
+  hrShift1     Int?        @default(0) @map("HR_SHIFT1")
+  hrShift2     Int?        @default(0) @map("HR_SHIFT2")
+  hrShift3     Int?        @default(0) @map("HR_SHIFT3")
+  hrShift4     Int?        @default(0) @map("HR_SHIFT4")
+  hrShift5     Int?        @default(0) @map("HR_SHIFT5")
+  hrShift6     Int?        @default(0) @map("HR_SHIFT6")
+  hrShift7     Int?        @default(0) @map("HR_SHIFT7")
+  hrShift8     Int?        @default(0) @map("HR_SHIFT8")
+  hrShift9     Int?        @default(0) @map("HR_SHIFT9")
+  hrShift10    Int?        @default(0) @map("HR_SHIFT10")
+  gKotor       Decimal?    @default(0) @map("GKOTOR") @db.Decimal(15, 0)
+  gBersih      Decimal?    @default(0) @map("GBERSIH") @db.Decimal(15, 0)
+  thr          Decimal?    @default(0) @map("THR") @db.Decimal(15, 0)
+  pphThr       Decimal?    @default(0) @map("PPH_THR") @db.Decimal(15, 0)
+  closing      Boolean?    @default(false) @map("CLOSING")
+  paidDate     DateTime?   @map("paid_date") @db.Date
+  paidBy       String?     @map("paid_by") @db.VarChar(50)
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamp(6)
+  koperasi     Decimal?    @default(0) @map("KOPERASI") @db.Decimal(15, 0)
+  pinjam       Decimal?    @default(0) @map("PINJAM") @db.Decimal(15, 0)
+  ptLain       Decimal?    @default(0) @map("PT_LAIN") @db.Decimal(15, 0)
+  totPotong    Decimal?    @default(0) @map("TOTPOTONG") @db.Decimal(15, 0)
+  hrCuti1      Int?        @default(0) @map("HR_CUTI1")
+  hrCuti2      Int?        @default(0) @map("HR_CUTI2")
+  hrExtMeal    Int?        @default(0) @map("HR_EXTMEAL")
+  hrExtShift   Int?        @default(0) @map("HR_EXTSHIFT")
+  hrExtSusu    Int?        @default(0) @map("HR_EXTSUSU")
+  hrGantung    Int?        @default(0) @map("HR_GANTUNG")
+  hrHadir      Int?        @default(0) @map("HR_HADIR")
+  hrIzin       Int?        @default(0) @map("HR_IZIN")
+  hrLambat     Int?        @default(0) @map("HR_LAMBAT")
+  hrMakan      Int?        @default(0) @map("HR_MAKAN")
+  hrMangkir    Int?        @default(0) @map("HR_MANGKIR")
+  hrOff        Int?        @default(0) @map("HR_OFF")
+  hrPulang     Int?        @default(0) @map("HR_PULANG")
+  hrSakit      Int?        @default(0) @map("HR_SAKIT")
+  hrTransp     Int?        @default(0) @map("HR_TRANSP")
+  jkk          Decimal?    @default(0.0000) @map("JKK") @db.Decimal(14, 4)
+  jkm          Decimal?    @default(0.0000) @map("JKM") @db.Decimal(14, 4)
+  jpk          Decimal?    @default(0.0000) @map("JPK") @db.Decimal(14, 4)
+  mnLambat     Int?        @default(0) @map("MN_LAMBAT")
+  pphEmpl      Decimal?    @default(0) @map("PPH_EMPL") @db.Decimal(15, 0)
+  ptkpAmount   Decimal?    @default(0) @map("PTKP") @db.Decimal(15, 0)
+  ptAbsen      Decimal?    @default(0) @map("PT_ABSEN") @db.Decimal(12, 0)
+  hrLShift     Int?        @default(0) @map("HR_LSHIFT")
+  karyawan     Karyawan    @relation(fields: [emplId], references: [emplId])
+  bag          MstBag?     @relation("GajiBagCode", fields: [kdBag], references: [kdBag])
+  company      Company?    @relation("GajiCompanyCode", fields: [kdCmpy], references: [kodeCmpy])
+  dept         MstDept?    @relation("GajiDeptCode", fields: [kdDept], references: [kdDept])
+  fact         MstFact?    @relation("GajiFactCode", fields: [kdFact], references: [kdFact])
+  jabatan      MstJab?     @relation("GajiJabatanCode", fields: [kdJab], references: [kdJab])
+  sie          MstSie?     @relation("GajiSieCode", fields: [kdSeksie], references: [kdSeksie])
+  periodeRef   Periode     @relation(fields: [period], references: [periodeId])
+  bagRef       MstBag?     @relation("GajiBagUUID", fields: [bagId], references: [id])
+  companyRef   Company?    @relation("GajiCompanyUUID", fields: [companyId], references: [id])
+  deptRef      MstDept?    @relation("GajiDeptUUID", fields: [deptId], references: [id])
+  factRef      MstFact?    @relation("GajiFactUUID", fields: [factId], references: [id])
+  jabatanRef   MstJab?     @relation("GajiJabatanUUID", fields: [jabatanId], references: [id])
+  jnsKaryRef   JnsKary?    @relation("GajiJnsKaryUUID", fields: [jnskaryId], references: [id])
+  ptkpRef      Ptkp?       @relation("GajiPtkpUUID", fields: [ptkpId], references: [id])
+  sieRef       MstSie?     @relation("GajiSieUUID", fields: [sieId], references: [id])
+  pinjamDet    PinjamDet[]
+  potongans    Potongan[]
+  rapels       Rapel[]
+  tunjangans   Tunjangan[]
 
   @@unique([period, emplId], name: "gaji_unique")
   @@index([period])
@@ -817,21 +880,24 @@ model Gaji {
 }
 
 model Potongan {
-  id         String      @id @default(uuid()) @db.Uuid
-  period     String      @map("PERIOD") @db.VarChar(6)
-  transId    String      @map("TRANS_ID") @db.VarChar(10)
-  transDate  DateTime    @map("TRANS_DATE") @db.Date
-  transCode  Int         @default(0) @map("TRANS_CODE")
-  emplId     String      @map("EMPL_ID") @db.VarChar(9)
-  nik        String?     @map("NIK") @db.VarChar(10)
-  jumlah     Decimal?    @default(0) @map("JUMLAH") @db.Decimal(15, 0)
-  keterangan String?     @map("KETERANGAN") @db.VarChar(50)
-  status     Boolean?    @default(true) @map("status")
-  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt  DateTime    @updatedAt @map("updated_at") @db.Timestamp(6)
-  karyawan   Karyawan    @relation(fields: [emplId], references: [emplId])
-  periodeRef Periode     @relation(fields: [period], references: [periodeId])
-  jenisPot   JnsPotongan @relation(fields: [transCode], references: [transCode])
+  id          String       @id @default(uuid()) @db.Uuid
+  period      String       @map("PERIOD") @db.VarChar(6)
+  transId     String       @map("TRANS_ID") @db.VarChar(10)
+  transDate   DateTime     @map("TRANS_DATE") @db.Date
+  transCode   Int          @default(0) @map("TRANS_CODE")
+  emplId      String       @map("EMPL_ID") @db.VarChar(9)
+  jenisPotId  String?      @map("jenis_pot_id") @db.Uuid
+  nik         String?      @map("NIK") @db.VarChar(10)
+  jumlah      Decimal?     @default(0) @map("JUMLAH") @db.Decimal(15, 0)
+  keterangan  String?      @map("KETERANGAN") @db.VarChar(50)
+  status      Boolean?     @default(true) @map("status")
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamp(6)
+  karyawan    Karyawan     @relation(fields: [emplId], references: [emplId])
+  gajiRef     Gaji         @relation(fields: [period, emplId], references: [period, emplId])
+  periodeRef  Periode      @relation(fields: [period], references: [periodeId])
+  jenisPot    JnsPotongan  @relation("PotonganJenisCode", fields: [transCode], references: [transCode])
+  jenisPotRef JnsPotongan? @relation("PotonganJenisUUID", fields: [jenisPotId], references: [id])
 
   @@unique([period, transId], name: "potongan_unique")
   @@index([period])
@@ -841,21 +907,24 @@ model Potongan {
 }
 
 model Tunjangan {
-  id         String       @id @default(uuid()) @db.Uuid
-  period     String       @map("PERIOD") @db.VarChar(6)
-  transId    String       @map("TRANS_ID") @db.VarChar(10)
-  transDate  DateTime     @map("TRANS_DATE") @db.Date
-  transCode  Int          @default(0) @map("TRANS_CODE")
-  emplId     String       @map("EMPL_ID") @db.VarChar(9)
-  nik        String?      @map("NIK") @db.VarChar(10)
-  jumlah     Decimal?     @default(0) @map("JUMLAH") @db.Decimal(15, 0)
-  keterangan String?      @map("KETERANGAN") @db.VarChar(50)
-  status     Boolean?     @default(true) @map("status")
-  createdAt  DateTime     @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt  DateTime     @updatedAt @map("updated_at") @db.Timestamp(6)
-  karyawan   Karyawan     @relation(fields: [emplId], references: [emplId])
-  periodeRef Periode      @relation(fields: [period], references: [periodeId])
-  jenisTunj  JnsTunjangan @relation(fields: [transCode], references: [transCode])
+  id           String        @id @default(uuid()) @db.Uuid
+  period       String        @map("PERIOD") @db.VarChar(6)
+  transId      String        @map("TRANS_ID") @db.VarChar(10)
+  transDate    DateTime      @map("TRANS_DATE") @db.Date
+  transCode    Int           @default(0) @map("TRANS_CODE")
+  emplId       String        @map("EMPL_ID") @db.VarChar(9)
+  jenisTunjId  String?       @map("jenis_tunj_id") @db.Uuid
+  nik          String?       @map("NIK") @db.VarChar(10)
+  jumlah       Decimal?      @default(0) @map("JUMLAH") @db.Decimal(15, 0)
+  keterangan   String?       @map("KETERANGAN") @db.VarChar(50)
+  status       Boolean?      @default(true) @map("status")
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt    DateTime      @updatedAt @map("updated_at") @db.Timestamp(6)
+  karyawan     Karyawan      @relation(fields: [emplId], references: [emplId])
+  gajiRef      Gaji          @relation(fields: [period, emplId], references: [period, emplId])
+  periodeRef   Periode       @relation(fields: [period], references: [periodeId])
+  jenisTunj    JnsTunjangan  @relation("TunjanganJenisCode", fields: [transCode], references: [transCode])
+  jenisTunjRef JnsTunjangan? @relation("TunjanganJenisUUID", fields: [jenisTunjId], references: [id])
 
   @@unique([period, transId], name: "tunjangan_unique")
   @@index([period])
@@ -865,21 +934,24 @@ model Tunjangan {
 }
 
 model Rapel {
-  id         String   @id @default(uuid()) @db.Uuid
-  period     String   @map("PERIOD") @db.VarChar(6)
-  transId    String   @map("TRANS_ID") @db.VarChar(10)
-  transDate  DateTime @map("TRANS_DATE") @db.Date
-  transCode  Int      @default(0) @map("TRANS_CODE")
-  emplId     String   @map("EMPL_ID") @db.VarChar(9)
-  nik        String?  @map("NIK") @db.VarChar(10)
-  jumlah     Decimal? @default(0) @map("JUMLAH") @db.Decimal(15, 0)
-  keterangan String?  @map("KETERANGAN") @db.VarChar(50)
-  status     Boolean? @default(true) @map("status")
-  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
-  karyawan   Karyawan @relation(fields: [emplId], references: [emplId])
-  periodeRef Periode  @relation(fields: [period], references: [periodeId])
-  jenisRapel JnsRapel @relation(fields: [transCode], references: [transCode])
+  id            String    @id @default(uuid()) @db.Uuid
+  period        String    @map("PERIOD") @db.VarChar(6)
+  transId       String    @map("TRANS_ID") @db.VarChar(10)
+  transDate     DateTime  @map("TRANS_DATE") @db.Date
+  transCode     Int       @default(0) @map("TRANS_CODE")
+  emplId        String    @map("EMPL_ID") @db.VarChar(9)
+  jenisRapelId  String?   @map("jenis_rapel_id") @db.Uuid
+  nik           String?   @map("NIK") @db.VarChar(10)
+  jumlah        Decimal?  @default(0) @map("JUMLAH") @db.Decimal(15, 0)
+  keterangan    String?   @map("KETERANGAN") @db.VarChar(50)
+  status        Boolean?  @default(true) @map("status")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
+  karyawan      Karyawan  @relation(fields: [emplId], references: [emplId])
+  gajiRef       Gaji      @relation(fields: [period, emplId], references: [period, emplId])
+  periodeRef    Periode   @relation(fields: [period], references: [periodeId])
+  jenisRapel    JnsRapel  @relation("RapelJenisCode", fields: [transCode], references: [transCode])
+  jenisRapelRef JnsRapel? @relation("RapelJenisUUID", fields: [jenisRapelId], references: [id])
 
   @@unique([period, transId], name: "rapel_unique")
   @@index([period])
@@ -918,7 +990,8 @@ model PphThn {
 }
 
 model Ptkp {
-  kode       Int      @id @default(0) @map("KODE")
+  id         String   @id @default(uuid()) @db.Uuid
+  kode       Int      @unique @default(0) @map("KODE")
   type       String   @default("") @map("TYPE") @db.VarChar(3)
   wPajak     Decimal  @default(0) @map("WPAJAK") @db.Decimal(15, 0)
   tKeluarga  Decimal  @default(0) @map("TKELUARGA") @db.Decimal(15, 0)
@@ -926,6 +999,7 @@ model Ptkp {
   isActive   Boolean? @default(true) @map("is_active")
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
+  gajiRef    Gaji[]   @relation("GajiPtkpUUID")
 
   @@map("ptkp")
 }
@@ -973,7 +1047,8 @@ model MasaKerja {
 }
 
 model GradeBonus {
-  grade     String   @id @map("GRADE") @db.Char(1)
+  id        String   @id @default(uuid()) @db.Uuid
+  grade     String   @unique @map("GRADE") @db.Char(1)
   persen    Decimal  @map("PERSEN") @db.Decimal(5, 2)
   isActive  Boolean? @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
@@ -1023,6 +1098,7 @@ model PinjamDet {
   updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
   pinjamHdr   PinjamHdr @relation(fields: [emplId, tglPinjam], references: [emplId, tglPinjam])
   karyawan    Karyawan  @relation(fields: [emplId], references: [emplId])
+  gajiRef     Gaji      @relation(fields: [periode, emplId], references: [period, emplId])
   periodeRef  Periode   @relation(fields: [periode], references: [periodeId])
 
   @@unique([transId, periode, jnsSumber, tglBayar], name: "pinjam_det_unique")
@@ -1157,6 +1233,7 @@ model SysUser {
   lastLogin            DateTime?         @map("Last_login") @db.Timestamp(6)
   lastIp               String?           @map("last_ip") @db.VarChar(45)
   isOnline             Boolean?          @default(false) @map("is_online")
+  fcmToken             String?           @map("fcm_token") @db.Text
   createdAt            DateTime          @default(now()) @map("Created_date") @db.Timestamp(6)
   updatedAt            DateTime          @updatedAt @map("updated_at") @db.Timestamp(6)
   eventHistory         SysEventHistory[]
@@ -1364,45 +1441,49 @@ model JnsKary {
   isActive  Boolean? @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
+  gajiRef   Gaji[]   @relation("GajiJnsKaryUUID")
 
   @@index([isActive])
   @@map("jnskary")
 }
 
 model JnsPotongan {
-  id        String     @id @default(uuid()) @db.Uuid
-  transCode Int        @unique @default(0) @map("TRANS_CODE")
-  jenis     String     @default("") @map("JENIS") @db.VarChar(30)
-  isActive  Boolean?   @default(true) @map("is_active")
-  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt DateTime   @updatedAt @map("updated_at") @db.Timestamp(6)
-  potongan  Potongan[]
+  id              String     @id @default(uuid()) @db.Uuid
+  transCode       Int        @unique @default(0) @map("TRANS_CODE")
+  jenis           String     @default("") @map("JENIS") @db.VarChar(30)
+  isActive        Boolean?   @default(true) @map("is_active")
+  createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt       DateTime   @updatedAt @map("updated_at") @db.Timestamp(6)
+  potongansByCode Potongan[] @relation("PotonganJenisCode")
+  potongansByUUID Potongan[] @relation("PotonganJenisUUID")
 
   @@index([isActive])
   @@map("jnspotongan")
 }
 
 model JnsRapel {
-  id        String   @id @default(uuid()) @db.Uuid
-  transCode Int      @unique @default(0) @map("TRANS_CODE")
-  jenis     String   @default("") @map("JENIS") @db.VarChar(30)
-  isActive  Boolean? @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
-  rapel     Rapel[]
+  id           String   @id @default(uuid()) @db.Uuid
+  transCode    Int      @unique @default(0) @map("TRANS_CODE")
+  jenis        String   @default("") @map("JENIS") @db.VarChar(30)
+  isActive     Boolean? @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
+  rapelsByCode Rapel[]  @relation("RapelJenisCode")
+  rapelsByUUID Rapel[]  @relation("RapelJenisUUID")
 
   @@index([isActive])
   @@map("jnsrapel")
 }
 
 model JnsTunjangan {
-  id        String      @id @default(uuid()) @db.Uuid
-  transCode Int         @unique @default(0) @map("TRANS_CODE")
-  jenis     String      @default("") @map("JENIS") @db.VarChar(30)
-  isActive  Boolean?    @default(true) @map("is_active")
-  createdAt DateTime    @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt DateTime    @updatedAt @map("updated_at") @db.Timestamp(6)
-  tunjangan Tunjangan[]
+  id               String      @id @default(uuid()) @db.Uuid
+  transCode        Int         @unique @default(0) @map("TRANS_CODE")
+  jenis            String      @default("") @map("JENIS") @db.VarChar(30)
+  isActive         Boolean?    @default(true) @map("is_active")
+  createdAt        DateTime    @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt        DateTime    @updatedAt @map("updated_at") @db.Timestamp(6)
+  tunjangansByCode Tunjangan[] @relation("TunjanganJenisCode")
+  tunjangansByUUID Tunjangan[] @relation("TunjanganJenisUUID")
 
   @@index([isActive])
   @@map("jnstunjangan")
@@ -1459,7 +1540,8 @@ model Dshift {
 }
 
 model GroupShift {
-  groupShift String     @id @map("GROUP_SHIFT") @db.VarChar(2)
+  id         String     @id @default(uuid()) @db.Uuid
+  groupShift String     @unique @map("GROUP_SHIFT") @db.VarChar(2)
   groupName  String     @default("") @map("GROUP_NAME") @db.VarChar(30)
   isActive   Boolean?   @default(true) @map("is_active")
   createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
@@ -1528,6 +1610,7 @@ model Grphift {
   groupShift String   @map("GROUPSHIFT") @db.VarChar(5)
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp(6)
 
+  @@unique([nik, groupShift], name: "grphift_unique")
   @@map("grphift")
 }
 
@@ -1535,7 +1618,7 @@ model Rekening {
   id        String   @id @default(uuid()) @db.Uuid
   nik       String?  @map("NIK") @db.VarChar(9)
   nama      String?  @map("Nama") @db.VarChar(30)
-  rekNo     String?  @map("rekno") @db.VarChar(20)
+  rekNo     String?  @unique @map("rekno") @db.VarChar(20)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
 
   @@map("rekening")
@@ -1566,6 +1649,68 @@ model MysqlConfig {
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
 
   @@map("mysql_config")
+}
+
+model Pengajuan {
+  id          String        @id @default(uuid()) @db.Uuid
+  emplId      String        @map("EMPL_ID") @db.VarChar(9)
+  type        RequestType   @map("TYPE")
+  startDate   DateTime      @map("START_DATE")
+  endDate     DateTime?     @map("END_DATE")
+  reason      String        @map("REASON")
+  status      RequestStatus @default(PENDING)
+  currentStep Int           @default(1)
+  attachments String?       @map("ATTACHMENTS")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  approvals   ApprovalLog[]
+  karyawan    Karyawan      @relation(fields: [emplId], references: [emplId])
+
+  @@map("pengajuan")
+}
+
+model ApprovalLog {
+  id          String        @id @default(uuid()) @db.Uuid
+  pengajuanId String        @db.Uuid
+  approverId  String        @map("APPROVER_ID") @db.VarChar(9)
+  level       Int
+  status      RequestStatus
+  remarks     String?
+  actionDate  DateTime      @default(now()) @map("action_date")
+  approver    Karyawan      @relation(fields: [approverId], references: [emplId])
+  pengajuan   Pengajuan     @relation(fields: [pengajuanId], references: [id])
+
+  @@map("approval_log")
+}
+
+model Menu {
+  id         String     @id @default(uuid()) @db.Uuid
+  label      String     @db.VarChar(50)
+  href       String     @db.VarChar(100)
+  icon       String?    @db.VarChar(50)
+  parentId   String?    @map("parent_id") @db.Uuid
+  order      Int        @default(0)
+  groupLabel String?    @map("group_label") @db.VarChar(50)
+  isActive   Boolean    @default(true) @map("is_active")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+  parent     Menu?      @relation("SubMenus", fields: [parentId], references: [id])
+  children   Menu[]     @relation("SubMenus")
+  roleMenus  RoleMenu[]
+
+  @@map("menus")
+}
+
+model RoleMenu {
+  id        String   @id @default(uuid()) @db.Uuid
+  role      UserRole
+  menuId    String   @map("menu_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  menu      Menu     @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  @@unique([role, menuId])
+  @@map("role_menus")
 }
 
 enum UserRole {
@@ -1641,72 +1786,6 @@ enum ShiftType {
   LIBUR
 }
 
-model Pengajuan {
-  id          String        @id @default(uuid()) @db.Uuid
-  emplId      String        @map("EMPL_ID") @db.VarChar(9)
-  type        RequestType   @map("TYPE")
-  startDate   DateTime      @map("START_DATE")
-  endDate     DateTime?     @map("END_DATE")
-  reason      String        @map("REASON") @db.Text
-  status      RequestStatus @default(PENDING)
-  currentStep Int           @default(1)
-  attachments String?       @map("ATTACHMENTS")
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
-
-  approvals ApprovalLog[]
-  karyawan  Karyawan      @relation(fields: [emplId], references: [emplId])
-
-  @@map("pengajuan")
-}
-
-model ApprovalLog {
-  id          String        @id @default(uuid()) @db.Uuid
-  pengajuanId String        @db.Uuid
-  approverId  String        @map("APPROVER_ID") @db.VarChar(9)
-  level       Int
-  status      RequestStatus
-  remarks     String?       @db.Text
-  actionDate  DateTime      @default(now()) @map("action_date")
-
-  pengajuan Pengajuan @relation(fields: [pengajuanId], references: [id])
-  approver  Karyawan  @relation(fields: [approverId], references: [emplId])
-
-  @@map("approval_log")
-}
-
-model Menu {
-  id         String   @id @default(uuid()) @db.Uuid
-  label      String   @db.VarChar(50)
-  href       String   @db.VarChar(100)
-  icon       String?  @db.VarChar(50)
-  parentId   String?  @map("parent_id") @db.Uuid
-  order      Int      @default(0)
-  groupLabel String?  @map("group_label") @db.VarChar(50)
-  isActive   Boolean  @default(true) @map("is_active")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-
-  parent    Menu?      @relation("SubMenus", fields: [parentId], references: [id])
-  children  Menu[]     @relation("SubMenus")
-  roleMenus RoleMenu[]
-
-  @@map("menus")
-}
-
-model RoleMenu {
-  id        String   @id @default(uuid()) @db.Uuid
-  role      UserRole
-  menuId    String   @map("menu_id") @db.Uuid
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  menu Menu @relation(fields: [menuId], references: [id], onDelete: Cascade)
-
-  @@unique([role, menuId])
-  @@map("role_menus")
-}
-
 enum RequestType {
   CUTI
   IJIN
@@ -1721,4 +1800,30 @@ enum RequestStatus {
   APPROVED
   REJECTED
   CANCELLED
+}
+
+model AttLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  emplId    String   @default("") @map("empl_id") @db.VarChar(11)
+  nik       String   @default("") @map("nik") @db.VarChar(20)
+  idAbsen   String   @default("") @map("id_absen") @db.VarChar(9)
+  tanggal   DateTime @default(now()) @map("tanggal") @db.Date
+  jam       String   @default("") @map("jam") @db.Char(5)
+  attTime   DateTime @default(now()) @map("att_time") @db.Timestamp(6)
+  status    String?  @default("0") @map("status") @db.Char(1)
+  lat       String?  @map("lat") @db.VarChar(50)
+  long      String?  @map("long") @db.VarChar(50)
+  distance  Int?     @default(0) @map("distance")
+  photo     String?  @map("photo") @db.VarChar(100)
+  device    String?  @map("device") @db.VarChar(100)
+  cflag     String   @default("") @map("cflag") @db.Char(1)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  karyawan  Karyawan @relation(fields: [nik], references: [nik])
+
+  @@unique([nik, tanggal, jam, cflag], name: "att_log_unique")
+  @@index([nik])
+  @@index([emplId])
+  @@index([tanggal])
+  @@index([attTime])
+  @@map("att_log")
 }

@@ -2,13 +2,16 @@
 import express from 'express';
 import passport from 'passport';
 import { prisma } from '../../config/prisma.js';
-import { getProfile } from "../../controllers/auth/userController.js";
+import { getProfile, updateFcmToken } from "../../controllers/auth/userController.js";
 import { protect  } from '../../middleware/auth.middleware.js';
 
 const router = express.Router();
 
 // Apply JWT authentication to all user routes
 router.use(passport.authenticate('jwt', { session: false }));
+
+// FCM Token Update
+router.post('/fcm-token', protect, updateFcmToken);
 
 // Get current user profile (Must be above /:id to avoid shadowing)
 router.get('/me', protect, getProfile);
