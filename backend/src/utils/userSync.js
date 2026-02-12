@@ -61,18 +61,48 @@ export const ensureSysUser = async (identifier) => {
 
         // 3. Create new SysUser record
         const legacyId = Math.floor(Math.random() * 1000000);
-        const finalEmplId = karyawan?.emplId || `USR_${user?.id?.substring(0, 5) || 'GUEST'}`;
-        const finalUsername = karyawan?.nik || user?.email?.split('@')[0] || `user_${finalEmplId}`;
+        let finalEmplId = karyawan?.emplId || `USR_${user?.id?.substring(0, 5) || 'GUEST'}`;
+        
+        // CRITICAL: Check if Karyawan exists for the finalEmplId to avoid FK violation
+        // SysUser.emplId references Karyawan.emplId
+        // If we are using a generated ID like USR_..., it won't exist in Karyawan, so we can't link it.
+        // However, SysUser.emplId is a foreign key. 
+        // We must check if `finalEmplId` actually exists in Karyawan table.
+        
+        let validEmplId = finalEmplId;
+        
+        if (karyawan) {
+            validEmplId = karyawan.emplId;
+        } else {
+            // If no Karyawan found, we CANNOT create a SysUser if the schema requires emplId to exist in Karyawan.
+            // Let's check the schema again. 
+            //   emplId String @default("") @map("Empl_id") @db.VarChar(11)
+            //   karyawan Karyawan @relation(fields: [emplId], references: [emplId])
+            // This implies ANY value in SysUser.emplId MUST exist in Karyawan.emplId.
+            // So if `karyawan` is null, we literally CANNOT create a connected SysUser.
+            // But we might need SysUser for system notifications even for non-employees.
+            // Wait, does Karyawan have a default entry for guests? Unlikely.
+            
+            // If the foreign key is strict, we can only create SysUser if we have a Karyawan.
+            // If we have a User but no Karyawan, we can't create SysUser unless we create a dummy Karyawan too?
+            // Or maybe SysUser.emplId is optional? In schema it looks like String @default("") which acts as FK?
+            // Usually empty string won't match unless there is a Karyawan with empty string ID.
+            
+            console.warn(`⚠️ [ensureSysUser] Cannot create SysUser for ${identifier} because no linked Karyawan record found. FK constraint would fail.`);
+            return null;
+        }
+
+        const finalUsername = karyawan?.nik || user?.email?.split('@')[0] || `user_${validEmplId}`;
         
         sysUser = await prisma.sysUser.create({
             data: {
                 legacyId,
                 username: finalUsername,
-                email: user?.email || karyawan?.email || `${finalEmplId}@local.host`,
+                email: user?.email || karyawan?.email || `${validEmplId}@local.host`,
                 password: 'linked_account',
                 name: karyawan?.nama || user?.name || 'Unknown User',
-                nik: karyawan?.nik || finalEmplId,
-                emplId: finalEmplId,
+                nik: karyawan?.nik || validEmplId,
+                emplId: validEmplId, // Must exist in Karyawan
                 positionId: 0,
                 active: true,
                 fcmToken: user?.fcmToken || null

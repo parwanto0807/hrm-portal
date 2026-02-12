@@ -27,7 +27,7 @@ export default function CheckInPage() {
     // Face Detection State
     const [faceDetector, setFaceDetector] = useState<FaceDetector | null>(null);
     const [isFaceDetected, setIsFaceDetected] = useState(false);
-    const requestRef = useRef<number>();
+    const requestRef = useRef<number | null>(null);
 
     // 1. Initialize Face Detector
     useEffect(() => {

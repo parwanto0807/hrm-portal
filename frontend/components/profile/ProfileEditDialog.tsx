@@ -182,7 +182,7 @@ export function ProfileEditDialog({
                                     <Label htmlFor="kdSex" className="text-xs font-semibold">Jenis Kelamin</Label>
                                     <Select
                                         defaultValue={employeeData.kdSex}
-                                        onValueChange={(value) => setValue("kdSex", value)}
+                                        onValueChange={(value) => setValue("kdSex", value as 'LAKILAKI' | 'PEREMPUAN')}
                                     >
                                         <SelectTrigger className="text-sm">
                                             <SelectValue />
