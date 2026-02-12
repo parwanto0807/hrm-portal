@@ -2,7 +2,7 @@
 import axios from "axios";
 
 // Ganti dengan URL backend Express Anda
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5002/api";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://solusiit.id/api";
 
 export const api = axios.create({
     baseURL: BASE_URL,

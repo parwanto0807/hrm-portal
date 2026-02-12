@@ -88,6 +88,7 @@ export default function LoginForm({
 
             try {
                 // Gunakan URL dari ENV (wajib https untuk mobile)
+                // Gunakan URL dari ENV dengan fallback yang benar
                 const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://solusiit.id/api';
 
                 // Kirim Access Token ke Backend

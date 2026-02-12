@@ -3,10 +3,12 @@
 
 import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '@/app/hooks/useAuth';
 
 function AuthCallbackContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { login } = useAuth(); // hook usage
 
     useEffect(() => {
         const handleCallback = async () => {
@@ -46,34 +48,28 @@ function AuthCallbackContent() {
                 const decodedImage = image ? decodeURIComponent(image) : '';
                 const decodedRole = role ? decodeURIComponent(role) : 'EMPLOYEE';
 
-                // Simpan tokens
-                localStorage.setItem('access_token', accessToken);
-
-                if (refreshToken) {
-                    localStorage.setItem('refresh_token', refreshToken);
-                }
-
-                // Simpan user info
+                // Construct User object matching type
                 const userData = {
                     id: userId,
                     email: decodedEmail,
                     name: decodedName,
                     image: decodedImage,
-                    role: decodedRole
+                    role: decodedRole,
+                    isActive: true // Assume active if login succeeded
                 };
 
-                console.log('👤 Saving user data:', userData);
-                localStorage.setItem('user', JSON.stringify(userData));
+                // If refresh token exists, save it manually 
+                // (login function in useAuth only takes user and access token currently)
+                if (refreshToken) {
+                    localStorage.setItem('refresh_token', refreshToken);
+                    // Also set legacy key just in case
+                    localStorage.setItem('refreshToken', refreshToken);
+                }
 
-                // Set a flag to indicate user is logged in
-                localStorage.setItem('isAuthenticated', 'true');
+                console.log('👤 Logging in via useAuth:', userData);
 
-                console.log('✅ Authentication successful, redirecting to dashboard');
-
-                // Redirect ke dashboard setelah delay kecil
-                setTimeout(() => {
-                    router.push('/dashboard');
-                }, 500);
+                // Call login from useAuth which handles storage, state, and redirect
+                login(userData, accessToken);
 
             } catch (err) {
                 console.error('Callback processing error:', err);

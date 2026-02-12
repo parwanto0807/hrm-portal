@@ -71,12 +71,14 @@ export const useAuth = () => {
 
     const fetchProfile = async (token: string) => {
         try {
-            const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002/api';
+            const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://solusiit.id/api';
+            console.log('useAuth: Fetching profile from', `${backendUrl}/users/me`);
             const res = await fetch(`${backendUrl}/users/me`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
+            console.log('useAuth: Profile fetch status:', res.status);
             if (res.ok) {
                 const userData = await res.json();
 

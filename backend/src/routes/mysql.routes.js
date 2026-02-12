@@ -162,6 +162,7 @@ router.get('/test', async (req, res) => {
     if (result.success) {
         res.status(200).json(result);
     } else {
+        // Return 500 but with detailed payload
         res.status(500).json(result);
     }
 });

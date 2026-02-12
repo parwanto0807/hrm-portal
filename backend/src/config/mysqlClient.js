@@ -16,7 +16,7 @@ export const getMysqlPool = async (forceRefresh = false) => {
     }
 
     try {
-        // Try to get config from database first
+        // 1. Try to get config from database first (Highest Priority)
         const dbConfig = await prisma.mysqlConfig.findFirst({
             where: { isActive: true },
             orderBy: { updatedAt: 'desc' }
@@ -33,9 +33,24 @@ export const getMysqlPool = async (forceRefresh = false) => {
                 connectionLimit: 10,
                 waitForConnections: true,
                 queueLimit: 0,
-                dateStrings: true // Prevent driver from shifting dates based on TZ
+                dateStrings: true
             };
             console.log(`📡 Using MySQL config from DB: ${dbConfig.host}:${dbConfig.port}`);
+        } 
+        // 2. Fallback to ENV overrides if DB config fails or is missing
+        else if (process.env.MYSQL_HOST) {
+            console.log(`📡 Using MySQL config from ENV (Host: ${process.env.MYSQL_HOST})`);
+            config = {
+                host: process.env.MYSQL_HOST,
+                port: parseInt(process.env.MYSQL_PORT || 3306),
+                user: process.env.MYSQL_USER,
+                password: process.env.MYSQL_PASSWORD,
+                database: process.env.MYSQL_DATABASE,
+                connectionLimit: 10,
+                waitForConnections: true,
+                queueLimit: 0,
+                dateStrings: true
+            };
         } else if (process.env.MYSQL_URL) {
             config = {
                 uri: process.env.MYSQL_URL,
@@ -44,14 +59,13 @@ export const getMysqlPool = async (forceRefresh = false) => {
                 queueLimit: 0,
                 dateStrings: true
             };
-            console.log('📡 Using MySQL config from .env');
+            console.log('📡 Using MySQL config from .env (MYSQL_URL)');
         } else {
-            console.warn('⚠️ No MySQL configuration found (DB or .env)');
+            console.warn('⚠️ No MySQL configuration found (DB, ENV or MYSQL_URL)');
             return null;
         }
 
         pool = mysql.createPool(config);
-        console.log('✅ MySQL Pool created');
         return pool;
     } catch (error) {
         console.error('❌ Failed to create MySQL Pool:', error);
@@ -60,17 +74,62 @@ export const getMysqlPool = async (forceRefresh = false) => {
 };
 
 export const testMysqlConnection = async () => {
+    let currentConfig = null;
     try {
+        // 1. Get configuration that would be used
+        const dbConfig = await prisma.mysqlConfig.findFirst({
+            where: { isActive: true },
+            orderBy: { updatedAt: 'desc' }
+        });
+
+        if (dbConfig) {
+            currentConfig = {
+                source: 'database',
+                host: dbConfig.host,
+                port: dbConfig.port,
+                user: dbConfig.user,
+                database: dbConfig.database
+            };
+        } else if (process.env.MYSQL_HOST) {
+            currentConfig = {
+                source: 'env_vars',
+                host: process.env.MYSQL_HOST,
+                port: parseInt(process.env.MYSQL_PORT || 3306),
+                user: process.env.MYSQL_USER,
+                database: process.env.MYSQL_DATABASE
+            };
+        } else if (process.env.MYSQL_URL) {
+            currentConfig = {
+                source: 'env_url',
+                url: process.env.MYSQL_URL.replace(/:[^@:]*@/, ':****@') // Hide password in logs/response
+            };
+        }
+
         const pool = await getMysqlPool(true); // Always refresh for test
-        if (!pool) return { success: false, message: 'MySQL configuration missing' };
+        if (!pool) return { 
+            success: false, 
+            message: 'MySQL configuration missing',
+            config: currentConfig 
+        };
         
         const connection = await pool.getConnection();
         await connection.ping();
         connection.release();
-        return { success: true, message: 'MySQL Connected' };
+        
+        return { 
+            success: true, 
+            message: 'MySQL Connected',
+            config: currentConfig
+        };
     } catch (error) {
         console.error('❌ MySQL connection test failed:', error);
-        return { success: false, message: error.message };
+        return { 
+            success: false, 
+            message: error.message,
+            code: error.code,
+            errno: error.errno,
+            config: currentConfig
+        };
     }
 };
 
