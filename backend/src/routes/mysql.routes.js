@@ -1102,6 +1102,30 @@ router.post('/import/attendance', async (req, res) => {
     }
 });
 
+// --- NEW ENDPOINT: Raw AttLog Sync (For Cron) ---
+router.post('/import/att-log', async (req, res) => {
+    try {
+        console.log('🔄 Starting Scheduled AttLog Sync...');
+        const pool = await getMysqlPool();
+        if (!pool) return res.status(500).json({ success: false, message: 'MySQL not configured' });
+
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - 2); // Sync last 2 days
+        startDate.setHours(0, 0, 0, 0);
+
+        const stats = await syncAttLogsInternal(pool, startDate); // No auto-activation for background sync to save resources
+
+        res.status(200).json({
+            success: true,
+            stats: stats,
+            message: `AttLog sync completed. Imported: ${stats.imported}, Errors: ${stats.errors}`
+        });
+    } catch (error) {
+        console.error('❌ AttLog Sync Error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 
 // Import Company Data (MUST run before employees!)
 router.post('/import/companies', async (req, res) => {
