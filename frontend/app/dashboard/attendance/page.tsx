@@ -210,8 +210,8 @@ export default function AttendanceDashboardPage() {
 
             {/* Header Section - Edge to edge on mobile */}
             <HeaderCard
-                title="Manajemen Kehadiran"
-                description={isEmployee ? "Lihat riwayat kehadiran Anda." : "Pantau dan kelola data kehadiran karyawan, tangani absensi, dan lihat statistik."}
+                title="Data Kehadiran"
+                description={isEmployee ? "Default 7 Hari kebelakang. Lihat riwayat kehadiran Anda." : "Default 7 Hari kebelakang. Pantau dan kelola data kehadiran karyawan."}
                 icon={<Clock className="h-6 w-6 text-white" />}
                 gradientFrom="from-blue-600"
                 gradientTo="to-indigo-600"
@@ -225,6 +225,7 @@ export default function AttendanceDashboardPage() {
                     stats={statsData}
                     isLoading={isStatsLoading}
                     machineStatus={machineData}
+                    isEmployee={isEmployee}
                 />
             </div>
 

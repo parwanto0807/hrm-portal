@@ -223,37 +223,37 @@ export const getAttendanceStats = async (req, res) => {
             ]
         };
 
-        const totalRecords = await prisma.absent.count({ where });
+        // Denominator: Total potential working days (excluding 'O' - Off Schedule)
+        const workingDaysCount = await prisma.absent.count({ 
+            where: { ...where, NOT: { kdAbsen: 'O' } }
+        });
         
         // Count statuses
-        // Note: In this schema, kdAbsen 'H' usually means Present
         const presentCount = await prisma.absent.count({
             where: { ...where, kdAbsen: 'H' }
         });
 
-        // Late count (where lambat > 0)
         const lateCount = await prisma.absent.count({
             where: { ...where, lambat: { gt: 0 } }
         });
 
-        // Absent count (where kdAbsen is not 'H' and maybe not 'L' for leave?)
-        const absentCount = await prisma.absent.count({
-            where: { 
-                ...where, 
-                NOT: { kdAbsen: 'H' }
-            }
+        const alphaCount = await prisma.absent.count({
+            where: { ...where, kdAbsen: 'A' }
         });
+
+        // The denominator for all percentages should be working days
+        const denominator = workingDaysCount;
 
         res.status(200).json({
             success: true,
             stats: {
-                total: totalRecords,
+                total: denominator,
                 presentCount,
                 lateCount,
-                absentCount,
-                presentPercentage: totalRecords > 0 ? (presentCount / totalRecords) * 100 : 0,
-                latePercentage: totalRecords > 0 ? (lateCount / totalRecords) * 100 : 0,
-                absentPercentage: totalRecords > 0 ? (absentCount / totalRecords) * 100 : 0
+                absentCount: alphaCount,
+                presentPercentage: denominator > 0 ? (presentCount / denominator) * 100 : 0,
+                latePercentage: denominator > 0 ? (lateCount / denominator) * 100 : 0,
+                absentPercentage: denominator > 0 ? (alphaCount / denominator) * 100 : 0
             }
         });
     } catch (error) {

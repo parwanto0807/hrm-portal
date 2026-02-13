@@ -31,9 +31,10 @@ interface StatsCardsProps {
         success: boolean;
         message: string;
     } | null;
+    isEmployee?: boolean;
 }
 
-export const StatsCards = ({ stats, isLoading, machineStatus }: StatsCardsProps) => {
+export const StatsCards = ({ stats, isLoading, machineStatus, isEmployee }: StatsCardsProps) => {
     const cards = [
         {
             title: 'Total Kehadiran',
@@ -42,12 +43,12 @@ export const StatsCards = ({ stats, isLoading, machineStatus }: StatsCardsProps)
             color: 'text-blue-600 dark:text-blue-400',
             bgColor: 'bg-blue-50 dark:bg-blue-950/30',
             borderColor: 'border-blue-100 dark:border-blue-900/50',
-            description: 'Total data log'
+            description: isEmployee ? 'Total riwayat absensi' : 'Total data log'
         },
         {
             title: 'Hadir',
             value: `${stats?.presentPercentage.toFixed(1) || 0}%`,
-            subValue: `${stats?.presentCount || 0} karyawan`,
+            subValue: `${stats?.presentCount || 0} ${isEmployee ? 'Hari' : 'karyawan'}`,
             icon: UserCheck,
             color: 'text-emerald-600 dark:text-emerald-400',
             bgColor: 'bg-emerald-50 dark:bg-emerald-950/30',
@@ -57,7 +58,7 @@ export const StatsCards = ({ stats, isLoading, machineStatus }: StatsCardsProps)
         {
             title: 'Terlambat',
             value: `${stats?.latePercentage.toFixed(1) || 0}%`,
-            subValue: `${stats?.lateCount || 0} karyawan`,
+            subValue: `${stats?.lateCount || 0} ${isEmployee ? 'Hari' : 'karyawan'}`,
             icon: Clock,
             color: 'text-orange-600 dark:text-orange-400',
             bgColor: 'bg-orange-50 dark:bg-orange-950/30',
@@ -68,7 +69,7 @@ export const StatsCards = ({ stats, isLoading, machineStatus }: StatsCardsProps)
         {
             title: 'Alpha',
             value: `${stats?.absentPercentage.toFixed(1) || 0}%`,
-            subValue: `${stats?.absentCount || 0} karyawan`,
+            subValue: `${stats?.absentCount || 0} ${isEmployee ? 'Hari' : 'karyawan'}`,
             icon: UserX,
             color: 'text-red-600 dark:text-red-400',
             bgColor: 'bg-red-50 dark:bg-red-950/30',
@@ -105,44 +106,44 @@ export const StatsCards = ({ stats, isLoading, machineStatus }: StatsCardsProps)
                         card.isSpecial && "shadow-[0_0_15px_rgba(0,0,0,0.05)] dark:shadow-[0_0_15px_rgba(255,255,255,0.05)] scale-[1.02] ring-1 ring-inset ring-slate-200/50 dark:ring-slate-700/50"
                     )}
                 >
-                    <CardContent className="p-3 md:p-6">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-[11px] sm:text-xs font-bold text-muted-foreground whitespace-nowrap uppercase tracking-tight">
+                    <CardContent className="p-2.5 md:p-4">
+                        <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground whitespace-nowrap uppercase tracking-tight">
                                 {card.title}
                             </span>
-                            <div className="hidden sm:flex items-center gap-2">
+                            <div className="hidden sm:flex items-center gap-1.5">
                                 {card.title === 'Total Kehadiran' && machineStatus && (
                                     <Badge
                                         variant="outline"
                                         className={cn(
-                                            "text-[9px] px-1.5 py-0 border-none flex items-center gap-1",
+                                            "text-[8px] px-1.5 py-0 border-none flex items-center gap-1",
                                             machineStatus.success
                                                 ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 animate-pulse"
                                                 : "bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400"
                                         )}
                                     >
-                                        <div className={cn("h-1.5 w-1.5 rounded-full", machineStatus.success ? "bg-emerald-500" : "bg-rose-500")} />
-                                        X304 {machineStatus.success ? 'Online' : 'Offline'}
+                                        <div className={cn("h-1 w-1 rounded-full", machineStatus.success ? "bg-emerald-500" : "bg-rose-500")} />
+                                        X304 {machineStatus.success ? 'On' : 'Off'}
                                     </Badge>
                                 )}
-                                <div className={cn("p-1.5 rounded-lg", card.bgColor)}>
-                                    <card.icon className={cn("h-4 w-4", card.color)} />
+                                <div className={cn("p-1 rounded-lg", card.bgColor)}>
+                                    <card.icon className={cn("h-3.5 w-3.5", card.color)} />
                                 </div>
                             </div>
                         </div>
                         <div className="flex flex-col">
                             <div className="flex items-baseline gap-2">
-                                <span className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+                                <span className="text-lg sm:text-xl font-black tracking-tight text-slate-900 dark:text-white">
                                     {card.value}
                                 </span>
                             </div>
                             {card.subValue && (
-                                <span className="text-[10px] sm:text-xs text-muted-foreground mt-1 font-semibold">
+                                <span className="text-[9px] sm:text-[10px] text-muted-foreground mt-0.5 font-semibold">
                                     {card.subValue}
                                 </span>
                             )}
-                            <div className="mt-2 sm:mt-4 flex items-center gap-1">
-                                <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold">
+                            <div className="mt-1.5 sm:mt-2.5 flex items-center gap-1">
+                                <span className="text-[8px] text-muted-foreground uppercase tracking-widest font-extrabold leading-none">
                                     {card.description}
                                 </span>
                             </div>
