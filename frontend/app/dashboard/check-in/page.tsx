@@ -12,6 +12,7 @@ import { Loader2, MapPin, Camera, RefreshCw, Clock, AlertCircle, ScanFace } from
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { FaceDetector, FilesetResolver } from "@mediapipe/tasks-vision";
+import { AxonLoader } from "@/components/ui/AxonLoader";
 
 export default function CheckInPage() {
     const [loading, setLoading] = useState(true);
@@ -214,7 +215,7 @@ export default function CheckInPage() {
         }
     };
 
-    if (loading) return <div className="flex justify-center items-center h-[60vh]"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>;
+    if (loading) return <AxonLoader />;
 
     const isWithinRadius = distance !== null && statusData?.factory && distance <= statusData.factory.radius;
 

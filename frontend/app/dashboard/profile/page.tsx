@@ -23,6 +23,9 @@ import { ProfileEditDialog } from "@/components/profile/ProfileEditDialog";
 import { ProfilePasswordDialog } from "@/components/profile/ProfilePasswordDialog";
 import { AlertTriangle, Lock } from "lucide-react";
 
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { AxonLoader } from "@/components/ui/AxonLoader";
+
 // Info Item Component with smaller fonts
 function InfoItem({
     label,
@@ -103,15 +106,7 @@ export default function ProfilePage() {
     });
 
     if (!mounted || isLoading) {
-        return (
-            <div className="w-full p-3 md:p-6 space-y-4">
-                <Skeleton className="h-32 w-full rounded-2xl" />
-                <div className="grid grid-cols-1 gap-4">
-                    <Skeleton className="h-64 rounded-2xl" />
-                    <Skeleton className="h-64 rounded-2xl" />
-                </div>
-            </div>
-        );
+        return <AxonLoader />;
     }
 
     const formatDate = (date: string | Date | null | undefined) => {

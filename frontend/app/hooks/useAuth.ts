@@ -28,7 +28,7 @@ export const useAuth = () => {
     });
 
     const initializeAuth = useCallback(() => {
-        console.log('useAuth: Initializing...');
+
         try {
             // Coba format baru dulu, jika tidak ada coba format lama
             let token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
@@ -54,7 +54,7 @@ export const useAuth = () => {
 
             const user = userStr ? JSON.parse(userStr) : null;
 
-            console.log('useAuth: Initialization complete. Token:', !!token, 'User:', !!user);
+
             setAuthState({
                 user,
                 token,
@@ -72,7 +72,7 @@ export const useAuth = () => {
 
     const fetchProfile = async () => {
         try {
-            console.log('useAuth: Fetching profile from server using api client...');
+
             // PENTING: Gunakan 'api' instance agar interceptor jalan
             const { data: userData } = await api.get('/users/me');
 
@@ -89,7 +89,7 @@ export const useAuth = () => {
                 localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedUser));
 
                 if (JSON.stringify(currentUser) !== JSON.stringify(updatedUser)) {
-                    console.log('🔄 useAuth: User profile updated from server');
+
                     setAuthState(prev => ({
                         ...prev,
                         user: updatedUser

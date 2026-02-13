@@ -28,7 +28,7 @@ export { app };
 export const requestNotificationPermission = async () => {
   try {
     if (typeof window === 'undefined' || !('Notification' in window)) {
-        console.log('Push notifications not supported in this browser');
+
         return;
     }
 
@@ -48,7 +48,7 @@ export const requestNotificationPermission = async () => {
       });
       
       if (token) {
-        console.log('✅ FCM Token generated successfully');
+
         
         // Prevent 401 loop: Only send to backend if we have an access token
         const accessToken = localStorage.getItem('hrm_access_token');
@@ -56,7 +56,7 @@ export const requestNotificationPermission = async () => {
             // Send token to backend using our api helper
             await api.post('/users/fcm-token', { fcmToken: token });
         } else {
-            console.log('⚠️ User not authenticated, skipping FCM token sync');
+
         }
       }
     }
@@ -69,7 +69,7 @@ export const onMessageListener = (callback) => {
   if (typeof window !== 'undefined') {
     const messaging = getMessaging(app);
     return onMessage(messaging, (payload) => {
-      console.log('📬 Foreground message received:', payload);
+
       if (callback) callback(payload);
     });
   }

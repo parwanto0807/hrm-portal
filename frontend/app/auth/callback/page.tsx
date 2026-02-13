@@ -23,12 +23,8 @@ function AuthCallbackContent() {
                 const image = searchParams.get('image');
                 const role = searchParams.get('role');
 
-                console.log('🔗 Auth callback received:', {
-                    hasAccessToken: !!accessToken,
-                    hasUserId: !!userId,
-                    success,
-                    email: email ? decodeURIComponent(email) : null
-                });
+
+
 
                 if (error) {
                     console.error('Auth callback error:', error);
@@ -66,7 +62,7 @@ function AuthCallbackContent() {
                     localStorage.setItem('refreshToken', refreshToken);
                 }
 
-                console.log('👤 Logging in via useAuth:', userData);
+
 
                 // Call login from useAuth which handles storage, state, and redirect
                 login(userData, accessToken);

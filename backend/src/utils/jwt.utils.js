@@ -10,7 +10,7 @@ export const generateTokens = (user) => {
       throw new Error('User object is invalid for token generation');
     }
 
-    console.log('🔑 Generating tokens for user ID:', user.id);
+
 
     const accessToken = jwt.sign(
       { 
@@ -30,7 +30,7 @@ export const generateTokens = (user) => {
       { expiresIn: config.jwt.refreshExpiry }
     );
 
-    console.log('✅ Tokens generated successfully');
+
 
     // Helper to convert expiry string (e.g. '2h') to ms
     const ms = (val) => {

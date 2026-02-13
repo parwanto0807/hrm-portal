@@ -35,11 +35,10 @@ export const getMysqlPool = async (forceRefresh = false) => {
                 queueLimit: 0,
                 dateStrings: true
             };
-            console.log(`📡 Using MySQL config from DB: ${dbConfig.host}:${dbConfig.port}`);
+
         } 
         // 2. Fallback to ENV overrides if DB config fails or is missing
         else if (process.env.MYSQL_HOST) {
-            console.log(`📡 Using MySQL config from ENV (Host: ${process.env.MYSQL_HOST})`);
             config = {
                 host: process.env.MYSQL_HOST,
                 port: parseInt(process.env.MYSQL_PORT || 3306),
@@ -59,7 +58,7 @@ export const getMysqlPool = async (forceRefresh = false) => {
                 queueLimit: 0,
                 dateStrings: true
             };
-            console.log('📡 Using MySQL config from .env (MYSQL_URL)');
+
         } else {
             console.warn('⚠️ No MySQL configuration found (DB, ENV or MYSQL_URL)');
             return null;

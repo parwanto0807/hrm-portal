@@ -48,7 +48,7 @@ export const getProfile = async (req, res) => {
         });
 
         if (!employee && user.email) {
-            console.log(`[getProfile] Fallback to email search for: ${user.email}`);
+
             employee = await prisma.karyawan.findFirst({
                 where: { 
                     email: { equals: user.email, mode: 'insensitive' }
@@ -58,7 +58,7 @@ export const getProfile = async (req, res) => {
 
             // Auto-heal: If found by email, update userId
             if (employee && !employee.userId) {
-                console.log(`[getProfile] Auto-healing linkage for: ${employee.nama}`);
+
                 await prisma.karyawan.update({
                     where: { id: employee.id },
                     data: { userId: user.id }

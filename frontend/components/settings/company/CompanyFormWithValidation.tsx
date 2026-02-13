@@ -118,19 +118,19 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
         if (isSubmitting) return;
 
         setIsSubmitting(true);
-        console.log("Submitting form data:", data);
+
 
         try {
             let result;
             if (isEditMode && initialData?.id) {
-                console.log("Mode: Update", initialData.id);
+
                 result = await updateCompanyAction(initialData.id, data);
             } else {
-                console.log("Mode: Create");
+
                 result = await createCompanyAction(data);
             }
 
-            console.log("Action result:", result);
+
 
             if (result.success) {
                 toast.success(isEditMode ? "Data Perusahaan berhasil diperbarui" : "Perusahaan berhasil didaftarkan");
@@ -930,7 +930,7 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                                                                 throw new Error(errorData.message || `Upload failed with status ${res.status}`);
                                                                                             }
                                                                                             const data = await res.json();
-                                                                                            console.log("Upload response:", data); // Debug log
+
                                                                                             if (!data.url) throw new Error("Server did not return a URL");
 
                                                                                             field.onChange(data.url);
@@ -984,7 +984,7 @@ export default function CompanyForm({ initialData }: CompanyFormProps) {
                                                                                 }
                                                                             }}
                                                                             onLoad={() => {
-                                                                                console.log("Image loaded successfully");
+
                                                                             }}
                                                                         />
                                                                     </div>

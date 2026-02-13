@@ -80,7 +80,7 @@ const syncAttLogsInternal = async (pool, startDate, activeEmplIdsParam = null) =
 
     // BULK ACTIVATE EMPLOYEES
     if (activeEmplIds.size > 0) {
-        console.log(`🔄 Auto-activating ${activeEmplIds.size} employees based on attendance logs...`);
+
         const updateResult = await prisma.karyawan.updateMany({
             where: {
                 emplId: { in: Array.from(activeEmplIds) },
@@ -94,7 +94,7 @@ const syncAttLogsInternal = async (pool, startDate, activeEmplIdsParam = null) =
             }
         });
         stats.autoActivated = updateResult.count;
-        console.log(`✅ Activated ${updateResult.count} employees.`);
+
     }
 
     return stats;
@@ -293,10 +293,10 @@ router.post('/import/payroll', async (req, res) => {
     };
 
     try {
-        console.log('🏁 Starting Payroll Import...');
+
 
         // 0. IMPORT PERIODS (Required for Foreign Key)
-        console.log('⏳ Importing Periods...');
+
         const [mysqlPeriods] = await pool.query('SELECT * FROM periode');
         let importedPeriods = 0;
         
@@ -335,10 +335,10 @@ router.post('/import/payroll', async (req, res) => {
                 console.error(`❌ Failed to import Period ${row.PERIODE_ID}:`, err.message);
             }
         }
-        console.log(`✅ Imported ${importedPeriods} periods.`);
+
 
         // Pre-fetch all master data for UUID mapping to optimize performance
-        console.log('⏳ Pre-fetching master data for UUID mapping...');
+
         const [companies, facts, bags, depts, sies, jabatan, ptkps, jnsKarys, jnsPots, jnsTunjs, jnsRapels] = await Promise.all([
             prisma.company.findMany(),
             prisma.mstFact.findMany(),
@@ -364,12 +364,12 @@ router.post('/import/payroll', async (req, res) => {
         const jnsPotMap = new Map(jnsPots.map(jp => [jp.transCode, jp.id]));
         const jnsTunjMap = new Map(jnsTunjs.map(jt => [jt.transCode, jt.id]));
         const jnsRapelMap = new Map(jnsRapels.map(jr => [jr.transCode, jr.id]));
-        console.log('✅ Master data pre-fetched.');
+
 
         // 1. IMPORT MASTER REFERENCE TABLES (Required for Foreign Keys)
         
         // 1a. Import JnsPotongan (Deduction Types)
-        console.log('⏳ Importing JnsPotongan (Deduction Types)...');
+
         const [mysqlJnsPotongan] = await pool.query('SELECT * FROM jnspotongan');
         stats.jnsPotongan.total = mysqlJnsPotongan.length;
         let importedJnsPotongan = 0;
@@ -395,10 +395,10 @@ router.post('/import/payroll', async (req, res) => {
                 console.error(`❌ Failed to import JnsPotongan ${row.TRANS_CODE}:`, err.message);
             }
         }
-        console.log(`✅ Imported ${importedJnsPotongan} deduction types.`);
+
 
         // 1b. Import JnsTunjangan (Allowance Types)
-        console.log('⏳ Importing JnsTunjangan (Allowance Types)...');
+
         const [mysqlJnsTunjangan] = await pool.query('SELECT * FROM jnstunjangan');
         stats.jnsTunjangan.total = mysqlJnsTunjangan.length;
         let importedJnsTunjangan = 0;
@@ -424,10 +424,10 @@ router.post('/import/payroll', async (req, res) => {
                 console.error(`❌ Failed to import JnsTunjangan ${row.TRANS_CODE}:`, err.message);
             }
         }
-        console.log(`✅ Imported ${importedJnsTunjangan} allowance types.`);
+
 
         // 1c. Import JnsRapel (Rapel Types)
-        console.log('⏳ Importing JnsRapel (Rapel Types)...');
+
         const [mysqlJnsRapel] = await pool.query('SELECT * FROM jnsrapel');
         stats.jnsRapel.total = mysqlJnsRapel.length;
         let importedJnsRapel = 0;
@@ -453,12 +453,12 @@ router.post('/import/payroll', async (req, res) => {
                 console.error(`❌ Failed to import JnsRapel ${row.TRANS_CODE}:`, err.message);
             }
         }
-        console.log(`✅ Imported ${importedJnsRapel} rapel types.`);
+
 
         // 2. IMPORT POTONGAN - MOVED AFTER GAJI
 
         // 3. IMPORT PINJAMHDR (Loans Header)
-        console.log('⏳ Importing PinjamHdr...');
+
         const [mysqlPinjamHdr] = await pool.query('SELECT * FROM pinjamhdr');
         stats.pinjamHdr.total = mysqlPinjamHdr.length;
         for (const row of mysqlPinjamHdr) {
@@ -491,12 +491,12 @@ router.post('/import/payroll', async (req, res) => {
                 stats.pinjamHdr.errors++;
             }
         }
-        console.log(`✅ Imported ${stats.pinjamHdr.imported} loan header records.`);
+
 
         // 4. IMPORT PINJAMDET - MOVED AFTER GAJI
 
         // 5. IMPORT GAJI (Imported AFTER Potongan & Pinjaman as requested)
-        console.log('⏳ Importing Gaji...');
+
         const [mysqlGaji] = await pool.query('SELECT * FROM gaji');
         stats.gaji.total = mysqlGaji.length;
         
@@ -669,10 +669,10 @@ router.post('/import/payroll', async (req, res) => {
                 console.error(`❌ Gaji ${row.EMPL_ID} error:`, err.message);
             }
         }
-        console.log(`✅ Imported ${stats.gaji.imported} gaji records.`);
+
 
         // 2. IMPORT POTONGAN (Moved here to satisfy FK constraint to Gaji)
-        console.log('⏳ Importing Potongan (Post-Gaji)...');
+
         const [mysqlPotongan] = await pool.query('SELECT * FROM potongan');
         stats.potongan.total = mysqlPotongan.length;
         for (const row of mysqlPotongan) {
@@ -702,10 +702,10 @@ router.post('/import/payroll', async (req, res) => {
                 console.error(`❌ Potongan Error ${row.TRANS_ID} (Code: ${row.TRANS_CODE}):`, err.message);
             }
         }
-        console.log(`✅ Imported ${stats.potongan.imported} potongan records.`);
+
 
         // 4. IMPORT PINJAMDET (Moved here to satisfy FK constraint to Gaji)
-        console.log('⏳ Importing PinjamDet (Post-Gaji)...');
+
         const [mysqlPinjamDet] = await pool.query('SELECT * FROM pinjamdet');
         stats.pinjamDet.total = mysqlPinjamDet.length;
         for (const row of mysqlPinjamDet) {
@@ -736,10 +736,10 @@ router.post('/import/payroll', async (req, res) => {
                 stats.pinjamDet.errors++;
             }
         }
-        console.log(`✅ Imported ${stats.pinjamDet.imported} loan detail records.`);
+
 
         // 6. IMPORT TUNJANGAN (Allowance Details)
-        console.log('⏳ Importing Tunjangan...');
+
         const [mysqlTunjangan] = await pool.query('SELECT * FROM tunjangan');
         stats.tunjangan.total = mysqlTunjangan.length;
         for (const row of mysqlTunjangan) {
@@ -768,10 +768,10 @@ router.post('/import/payroll', async (req, res) => {
                 stats.tunjangan.errors++;
             }
         }
-        console.log(`✅ Imported ${stats.tunjangan.imported} tunjangan records.`);
+
 
         // 7. IMPORT RAPEL
-        console.log('⏳ Importing Rapel...');
+
         const [mysqlRapel] = await pool.query('SELECT * FROM rapel');
         stats.rapel.total = mysqlRapel.length;
         for (const row of mysqlRapel) {
@@ -832,10 +832,10 @@ router.post('/import/attendance', async (req, res) => {
     const activeEmplIds = new Set(); // Track employees with activity
 
     try {
-        console.log('🏁 Starting Attendance Import with dependencies...');
+
 
         // 1. IMPORT PERIODS
-        console.log('⏳ Importing Periods...');
+
         const [mysqlPeriods] = await pool.query('SELECT * FROM periode');
         stats.dependencies.periods.total = mysqlPeriods.length;
         for (const row of mysqlPeriods) {
@@ -871,7 +871,7 @@ router.post('/import/attendance', async (req, res) => {
         }
 
         // 2. IMPORT ATTENDANCE DESCRIPTIONS (DescAbsen)
-        console.log('⏳ Importing Attendance Descriptions...');
+
         const [mysqlDesc] = await pool.query('SELECT * FROM desc_absen');
         stats.dependencies.descriptions.total = mysqlDesc.length;
         for (const row of mysqlDesc) {
@@ -886,7 +886,7 @@ router.post('/import/attendance', async (req, res) => {
         }
 
         // 3. IMPORT WORK HOURS TYPES (JnsJam)
-        console.log('⏳ Importing Work Hour Types...');
+
         const [mysqlJnsJam] = await pool.query('SELECT * FROM jnsjam');
         stats.dependencies.workHours.total = mysqlJnsJam.length;
         for (const row of mysqlJnsJam) {
@@ -904,7 +904,7 @@ router.post('/import/attendance', async (req, res) => {
         const startDate = new Date('2026-01-01');
         startDate.setHours(0, 0, 0, 0);
 
-        console.log(`📅 Importing attendance since ${startDate.toISOString()}...`);
+
 
         const [mysqlAbsent] = await pool.query(
             'SELECT * FROM absent WHERE TGL_ABSEN >= ?',
@@ -912,7 +912,7 @@ router.post('/import/attendance', async (req, res) => {
         );
 
         stats.total = mysqlAbsent.length;
-        console.log(`📊 Found ${stats.total} attendance records to process.`);
+
 
         // Cache for validation to speed up
         const employeeCache = new Set();
@@ -969,7 +969,7 @@ router.post('/import/attendance', async (req, res) => {
                 if (tglAbsen && kdJam === 'JK1') {
                     const dayOfWeek = tglAbsen.getDay(); // 0 = Sunday
                     if (dayOfWeek === 0) {
-                        console.log(`⚠️  Overriding Sunday 'JK1' for ${row.EMPL_ID} on ${row.TGL_ABSEN} -> Set to NULL (Off)`);
+
                         kdJam = null; 
                     }
                 }
@@ -1087,7 +1087,7 @@ router.post('/import/attendance', async (req, res) => {
         }
 
         // 5. AUTO-SYNC RAW LOGS (att_log) for the same period
-        console.log('🔄 Syncing raw tap logs (att_log)...');
+
         const logStats = await syncAttLogsInternal(pool, startDate, activeEmplIds);
 
         res.status(200).json({ 
@@ -1108,7 +1108,7 @@ router.post('/import/attendance', async (req, res) => {
 // --- NEW ENDPOINT: Raw AttLog Sync (For Cron) ---
 router.post('/import/att-log', async (req, res) => {
     try {
-        console.log('🔄 Starting Scheduled AttLog Sync...');
+
         const pool = await getMysqlPool();
         if (!pool) return res.status(500).json({ success: false, message: 'MySQL not configured' });
 
@@ -1194,7 +1194,7 @@ router.post('/import/companies', async (req, res) => {
             }
         }
         
-        console.log('✅ Company Import Complete:', stats);
+
         res.status(200).json({ 
             success: stats.errors === 0, 
             stats, 
@@ -1355,10 +1355,10 @@ router.post('/import/employees', async (req, res) => {
     const stats = { total: 0, imported: 0, updated: 0, errors: 0, errorDetails: [] };
 
     try {
-        console.log('🏁 Starting Employee Import (with Master Data dependencies)...');
+
         
         // --- 1. SEQUENTIAL MASTER DATA IMPORT ---
-        console.log('🏢 Importing Companies...');
+
         const [mysqlCompanies] = await pool.query('SELECT * FROM company');
         for (const row of mysqlCompanies) {
             try {
@@ -1405,7 +1405,7 @@ router.post('/import/employees', async (req, res) => {
             } catch (err) { console.error(`Failed to import Company ${row.KODE_CMPY}:`, err.message); }
         }
 
-        console.log('📚 Importing Religions...');
+
         const [mysqlAgm] = await pool.query('SELECT * FROM mstagm');
         for (const row of mysqlAgm) {
             try {
@@ -1417,7 +1417,7 @@ router.post('/import/employees', async (req, res) => {
             } catch (err) { console.error(`Failed to import Religion ${row.CKD_AGM}:`, err.message); }
         }
 
-        console.log('🎓 Importing Education Levels...');
+
         const [mysqlSkl] = await pool.query('SELECT * FROM mstskl');
         for (const row of mysqlSkl) {
             try {
@@ -1429,7 +1429,7 @@ router.post('/import/employees', async (req, res) => {
             } catch (err) { console.error(`Failed to import Education ${row.CKD_SKL}:`, err.message); }
         }
 
-        console.log('🏦 Importing Banks...');
+
         const [mysqlBanks] = await pool.query('SELECT * FROM bank');
         for (const row of mysqlBanks) {
             try {
@@ -1441,7 +1441,7 @@ router.post('/import/employees', async (req, res) => {
             } catch (err) { console.error(`Failed to import Bank ${row.BANK_CODE}:`, err.message); }
         }
 
-        console.log('🏭 Importing Factories...');
+
         const [mysqlFact] = await pool.query('SELECT * FROM mstfact');
         for (const row of mysqlFact) {
             try {
@@ -1453,7 +1453,7 @@ router.post('/import/employees', async (req, res) => {
             } catch (err) { console.error(`Failed to import Factory ${row.CKD_FACT}:`, err.message); }
         }
 
-        console.log('🏢 Importing Divisions...');
+
         const [mysqlBag] = await pool.query('SELECT * FROM mstbag');
         for (const row of mysqlBag) {
             try {
@@ -1465,7 +1465,7 @@ router.post('/import/employees', async (req, res) => {
             } catch (err) { console.error(`Failed to import Division ${row.CKD_BAG}:`, err.message); }
         }
 
-        console.log('📂 Importing Departments...');
+
         const [mysqlDept] = await pool.query('SELECT * FROM mstdept');
         for (const row of mysqlDept) {
             try {
@@ -1477,7 +1477,7 @@ router.post('/import/employees', async (req, res) => {
             } catch (err) { console.error(`Failed to import Department ${row.CKD_DEPT}:`, err.message); }
         }
 
-        console.log('📑 Importing Sections...');
+
         const [mysqlSie] = await pool.query('SELECT * FROM mstsie');
         for (const row of mysqlSie) {
             try {
@@ -1489,7 +1489,7 @@ router.post('/import/employees', async (req, res) => {
             } catch (err) { console.error(`Failed to import Section ${row.CKD_SIE}:`, err.message); }
         }
 
-        console.log('💼 Importing Positions...');
+
         const [mysqlJab] = await pool.query('SELECT * FROM mstjab');
         for (const row of mysqlJab) {
             try {
@@ -1516,7 +1516,7 @@ router.post('/import/employees', async (req, res) => {
             } catch (err) { console.error(`Failed to import Position ${row.CKD_JAB}:`, err.message); }
         }
 
-        console.log('📊 Importing Employee Levels...');
+
         const [mysqlPkt] = await pool.query('SELECT * FROM mstpkt');
         for (const row of mysqlPkt) {
             try {
@@ -1528,7 +1528,7 @@ router.post('/import/employees', async (req, res) => {
             } catch (err) { console.error(`Failed to import Level ${row.CKD_PKT}:`, err.message); }
         }
 
-        console.log('🔄 Importing Shift Groups...');
+
         const [mysqlShifts] = await pool.query('SELECT * FROM groupshift');
         for (const row of mysqlShifts) {
             try {
@@ -1540,7 +1540,7 @@ router.post('/import/employees', async (req, res) => {
             } catch (err) { console.error(`Failed to import Shift Group ${row.GROUP_SHIFT}:`, err.message); }
         }
 
-        console.log('⏳ Importing Work Hour Types (JnsJam)...');
+
         const [mysqlJnsJam] = await pool.query('SELECT * FROM jnsjam');
         for (const row of mysqlJnsJam) {
             try {
@@ -1552,10 +1552,10 @@ router.post('/import/employees', async (req, res) => {
             } catch (err) { console.error(`Failed to import JnsJam ${row.KD_JAM}:`, err.message); }
         }
 
-        console.log('✅ Master Data dependencies imported. Proceeding to employees...');
+
         
         // --- 1.5. FETCH MASTER DATA UUIDS FOR LOOKUP ---
-        console.log('🔍 Fetching Master Data UUIDs for mapping...');
+
         
         const [
             allAgm, allSkl, allBank, allFact, allBag, 
@@ -1585,7 +1585,7 @@ router.post('/import/employees', async (req, res) => {
         const mapPkt = new Map(allPkt.map(i => [i.kdPkt, i.id]));
         const mapCompany = new Map(allCompany.map(i => [i.kodeCmpy, i.id]));
 
-        console.log('✅ Lookup maps created.');
+
 
         // --- 2. EMPLOYEE IMPORT ---
         const [mysqlEmployees] = await pool.query('SELECT * FROM karyawan');
@@ -1809,13 +1809,13 @@ router.post('/import/employees', async (req, res) => {
             }
         }
 
-        console.log('✅ Employee Import Complete:', stats);
+
         
         // Log first few errors for debugging
         if (stats.errorDetails.length > 0) {
-            console.log('📋 Sample Errors (first 5):');
+
             stats.errorDetails.slice(0, 5).forEach(err => {
-                console.log(`  - ${err.emplId} (${err.nama}): ${err.error}`);
+
             });
         }
         

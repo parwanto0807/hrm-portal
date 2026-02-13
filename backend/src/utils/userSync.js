@@ -109,7 +109,7 @@ export const ensureSysUser = async (identifier) => {
             }
         });
 
-        console.log(`✅ [ensureSysUser] Created legacy SysUser for ${identifier} (LegacyId: ${legacyId})`);
+
         return sysUser;
     } catch (error) {
         console.error(`❌ [ensureSysUser] Error syncing user ${identifier}:`, error.message);

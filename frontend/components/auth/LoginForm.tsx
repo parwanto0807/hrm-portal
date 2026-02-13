@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGoogleLogin } from '@react-oauth/google'; // Import Wajib
 import Image from 'next/image';
+import { AxonLoader } from '@/components/ui/AxonLoader';
 
 interface LoginFormProps {
     onSuccess?: () => void;
@@ -46,6 +47,7 @@ export default function LoginForm({
         }
     }, [searchParams]);
 
+    // ... (rest of the hooks) ...
     // 2. Check Authentication Status
     useEffect(() => {
         const checkAuth = () => {
@@ -57,7 +59,7 @@ export default function LoginForm({
                 try {
                     // Validasi userStr adalah JSON yang valid
                     JSON.parse(userStr);
-                    console.log('✅ User already authenticated, redirecting...');
+
                     if (onSuccess) onSuccess();
                     router.push(redirectPath);
                 } catch (e) {
@@ -100,7 +102,7 @@ export default function LoginForm({
                 });
 
                 const data = await response.json();
-                console.log("❌ server response error full:", data); // DEBUG LOG
+
 
                 if (!response.ok) {
                     // Cek 'message' ATAU 'error' agar fallbacknya jalan
@@ -134,12 +136,6 @@ export default function LoginForm({
                 setGoogleLoading(false); // Only stop loading if there's an error
             }
             // Removed finally block to keep loading visible during redirect
-        },
-        onError: (errorResponse) => {
-            // MENANGANI PEMBATALAN (CANCEL)
-            console.log("Login Cancelled:", errorResponse);
-            setError("Login dibatalkan."); // Pesan error tanpa reload halaman
-            setGoogleLoading(false);
         },
         flow: 'implicit' // Penting untuk mendapatkan access_token langsung
     });
@@ -246,26 +242,7 @@ export default function LoginForm({
             {/* Loading Overlay */}
             <AnimatePresence>
                 {(loading || googleLoading || isRedirecting) && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/80 dark:bg-slate-950/80 backdrop-blur-md rounded-xl md:rounded-2xl"
-                    >
-                        <div className="relative flex flex-col items-center">
-                            {/* Inner pulsing core */}
-                            <div className="w-12 h-12 border-2 border-sky-500/20 border-t-sky-500 rounded-full animate-spin" />
-
-                            <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="mt-6 flex flex-col items-center gap-1"
-                            >
-                                <span className="text-slate-900 dark:text-white font-bold text-sm">Authenticating</span>
-                                <span className="text-[10px] text-slate-400 uppercase tracking-widest font-medium">Please wait...</span>
-                            </motion.div>
-                        </div>
-                    </motion.div>
+                    <AxonLoader />
                 )}
             </AnimatePresence>
 

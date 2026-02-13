@@ -47,11 +47,7 @@ export const getAttendance = async (req, res) => {
         const targetEmplId = isEmployee ? req.user.emplId : emplId;
         const employeeFilter = targetEmplId ? { emplId: targetEmplId } : {};
 
-        console.log('--- GET /absent Debug ---');
-        console.log('User Role:', userRole);
-        console.log('Req EmplId:', req.user.emplId);
-        console.log('Query EmplId:', emplId);
-        console.log('Target EmplId:', targetEmplId);
+
 
         // Build where clause
         const where = {
@@ -79,7 +75,7 @@ export const getAttendance = async (req, res) => {
             ]
         };
 
-        console.log('Constructed Where Clause:', JSON.stringify(where, null, 2));
+
 
 
         const [total, records] = await Promise.all([
@@ -177,8 +173,7 @@ export const getAttendanceStats = async (req, res) => {
     try {
         const { startDate, endDate, kdDept, kdSeksie, kdJab } = req.query;
 
-        console.log('--- GET /absent ---');
-        console.log('Query Params:', req.query);
+
 
         // Role-based data isolation for EMPLOYEE
         const userRole = req.user.role?.toUpperCase();
@@ -419,7 +414,7 @@ export const submitCheckIn = async (req, res) => {
                 };
 
                 firebaseAdmin.messaging().send(message)
-                    .then(() => console.log('✅ Push notification sent successfully'))
+                    .then(() => {})
                     .catch((error) => console.error('❌ Error sending push notification:', error));
             }
         }

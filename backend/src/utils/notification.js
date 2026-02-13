@@ -99,7 +99,7 @@ export const createNotification = async ({
             }
         });
         
-        console.log(`✅ [createNotification] Notification created for recipient ${recipientLegacyId} from creator ${finalCreatorId}: ${subject}`);
+
     } catch (error) {
         console.error('❌ [createNotification] Error:', error.message);
     }

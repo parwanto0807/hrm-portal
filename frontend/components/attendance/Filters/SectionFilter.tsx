@@ -37,7 +37,7 @@ export const SectionFilter = ({ kdDept, value, onValueChange }: SectionFilterPro
             disabled={isLoading || kdDept === 'all' || kdDept === ''}
         >
             <SelectTrigger className="w-full md:w-[200px] bg-slate-50 border-slate-200">
-                <SelectValue placeholder={isLoading ? "Loading..." : "All Sections"} />
+                <SelectValue placeholder={isLoading ? "Syncing..." : "All Sections"} />
             </SelectTrigger>
             <SelectContent>
                 <SelectItem value="all">All Sections</SelectItem>

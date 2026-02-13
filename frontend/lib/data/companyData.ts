@@ -35,7 +35,7 @@ async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Re
             });
 
             if (refreshRes.ok) {
-                console.log("Token refreshed successfully, retrying request...");
+
                 // Retry original request
                 response = await fetch(url, mergedOptions);
             } else {

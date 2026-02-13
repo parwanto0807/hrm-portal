@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import { requestNotificationPermission, onMessageListener } from "@/lib/firebase";
 import { toast } from "sonner";
+import { AxonLoader } from "@/components/ui/AxonLoader";
 
 interface ClientProvidersProps {
     children: React.ReactNode;
@@ -45,7 +46,7 @@ export default function ClientProviders({
 
             // Set up foreground listener
             const unsubscribe = onMessageListener((payload: any) => {
-                console.log('Foreground message received:', payload);
+
                 if (payload?.notification) {
                     toast(payload.notification.title || 'New Notification', {
                         description: payload.notification.body,
@@ -59,46 +60,31 @@ export default function ClientProviders({
         }
     }, [mounted]);
 
-    // Render minimal version sebelum mounted
-    // Ini mencegah blank screen
+    // Render AxonLoader sebelum mounted untuk mencegah blank screen/Generic Loading text
     if (!mounted) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-pulse">Loading...</div>
-            </div>
-        );
+        return <AxonLoader />;
     }
+
+    const content = (
+        <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+        >
+            {children}
+            <PWAInstallPrompt />
+        </ThemeProvider>
+    );
 
     // Setelah mounted, render full providers
-    if (!googleClientId) {
-        return (
-            <QueryClientProvider client={queryClient}>
-                <ThemeProvider
-                    attribute="class"
-                    defaultTheme="system"
-                    enableSystem
-                    disableTransitionOnChange
-                >
-                    {children}
-                    <PWAInstallPrompt />
-                </ThemeProvider>
-            </QueryClientProvider>
-        );
-    }
-
     return (
         <QueryClientProvider client={queryClient}>
-            <GoogleOAuthProvider clientId={googleClientId}>
-                <ThemeProvider
-                    attribute="class"
-                    defaultTheme="system"
-                    enableSystem
-                    disableTransitionOnChange
-                >
-                    {children}
-                    <PWAInstallPrompt />
-                </ThemeProvider>
-            </GoogleOAuthProvider>
+            {googleClientId ? (
+                <GoogleOAuthProvider clientId={googleClientId}>
+                    {content}
+                </GoogleOAuthProvider>
+            ) : content}
         </QueryClientProvider>
     );
 }

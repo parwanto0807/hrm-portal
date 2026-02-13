@@ -188,7 +188,7 @@ export default function EmployeeDashboard() {
                         <div>
                             <h2 className="text-sm font-bold leading-tight">{user?.name || "Karyawan"}</h2>
                             <p className="text-[10px] opacity-80 font-medium">
-                                {loadingStats ? "Loading..." : `${dashboardStats.employee.position} • ${dashboardStats.employee.department}`}
+                                {loadingStats ? "Synchronizing..." : `${dashboardStats.employee.position} • ${dashboardStats.employee.department}`}
                             </p>
                         </div>
                     </div>

@@ -402,7 +402,7 @@ export const generateProtectedPayslip = async (req, res, next) => {
         };
 
         // 3. Generate PDF using jsPDF (Server-side)
-        console.log(`Generating PDF for ${employeeId} period ${periodId}`);
+
         const doc = new jspdf.jsPDF({
             orientation: 'landscape',
             unit: 'mm',
@@ -539,7 +539,7 @@ export const generateProtectedPayslip = async (req, res, next) => {
         const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
 
         // 4. Encrypt using Muhammara (Recrypt)
-        console.log('PDF generated, encrypting with recrypt...');
+
         const inStream = new muhammara.PDFRStreamForBuffer(pdfBuffer);
         const outStream = new muhammara.PDFWStreamForBuffer();
         
@@ -549,11 +549,11 @@ export const generateProtectedPayslip = async (req, res, next) => {
             userProtectionFlag: 4 // Print only
         });
 
-        console.log('PDF encrypted successfully');
+
         const finalBuffer = outStream.buffer;
 
         // 5. Send result
-        console.log('Sending PDF to client...');
+
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename=Slip_Gaji_${periodId}_${employeeId}.pdf`);
         res.send(finalBuffer);

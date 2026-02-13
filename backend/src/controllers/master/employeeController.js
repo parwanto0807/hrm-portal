@@ -22,7 +22,7 @@ export const getEmployees = async (req, res) => {
         const skip = (parseInt(page) - 1) * parseInt(limit);
         const take = parseInt(limit);
 
-        console.log('GET EMPLOYEES QUERY:', req.query);
+
 
         // Build where clause
         const where = {
@@ -45,7 +45,7 @@ export const getEmployees = async (req, res) => {
             ]
         };
 
-        console.log('GET EMPLOYEES WHERE:', JSON.stringify(where, null, 2));
+
 
         // Get total count
         const total = await prisma.karyawan.count({ where });
@@ -77,7 +77,7 @@ export const getEmployees = async (req, res) => {
         });
 
         if (employees.length > 0) {
-            console.log('FIRST EMPLOYEE DATA:', JSON.stringify(employees[0], null, 2));
+
         }
 
         // Map relations for frontend compatibility
@@ -658,7 +658,7 @@ export const verifyDob = async (req, res) => {
         });
 
         if (!employee || !employee.tglLhr) {
-            console.log('VERIFY_DOB: Employee or tglLhr not found for emplId:', emplId);
+
             return res.status(404).json({
                 success: false,
                 message: 'Birth date not found in records'

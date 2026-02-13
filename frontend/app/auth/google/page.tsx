@@ -7,7 +7,7 @@ import Image from 'next/image';
 
 export default function LoginPage() {
     const handleLoginSuccess = () => {
-        console.log('Login successful!');
+
         // Router push sudah ditangani di dalam LoginForm, 
         // tapi jika butuh logic tambahan (misal tracking analytics), taruh di sini.
     };

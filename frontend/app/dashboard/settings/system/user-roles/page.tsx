@@ -39,6 +39,7 @@ import {
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { format } from 'date-fns';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export default function UserRolesPage() {
     const queryClient = useQueryClient();
@@ -250,7 +251,11 @@ export default function UserRolesPage() {
                                     </TableHeader>
                                     <TableBody>
                                         {historyLoading ? (
-                                            <TableRow><TableCell colSpan={5} className="text-center py-10">Loading logs...</TableCell></TableRow>
+                                            <TableRow>
+                                                <TableCell colSpan={5} className="py-10 text-center">
+                                                    <LoadingSpinner />
+                                                </TableCell>
+                                            </TableRow>
                                         ) : historyData?.history?.length === 0 ? (
                                             <TableRow><TableCell colSpan={5} className="text-center py-10">No logs found.</TableCell></TableRow>
                                         ) : (

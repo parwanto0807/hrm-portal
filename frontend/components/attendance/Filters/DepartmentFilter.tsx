@@ -28,7 +28,7 @@ export const DepartmentFilter = ({ value, onValueChange }: DepartmentFilterProps
     return (
         <Select value={value} onValueChange={onValueChange} disabled={isLoading}>
             <SelectTrigger className="w-full md:w-[200px] bg-slate-50 border-slate-200">
-                <SelectValue placeholder={isLoading ? "Loading..." : "All Departments"} />
+                <SelectValue placeholder={isLoading ? "Syncing..." : "All Departments"} />
             </SelectTrigger>
             <SelectContent>
                 <SelectItem value="all">All Departments</SelectItem>

@@ -102,14 +102,14 @@ export const syncHolidays = async (req, res) => {
         const { year } = req.body;
         const targetYear = parseInt(year) || new Date().getFullYear();
 
-        console.log(`🔄 Syncing holidays for year ${targetYear}...`);
+
 
         let data = [];
         let source = 'primary';
 
         // FORCE HARDCODED LIST FOR 2026 AS PER USER REQUEST
         if (targetYear === 2026) {
-            console.log('Using HARDCODED list for 2026');
+
             source = 'manual-override-2026';
             data = [
                 // Fixed Dates

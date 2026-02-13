@@ -33,7 +33,7 @@ export const PositionFilter = ({ kdSeksie, value, onValueChange }: PositionFilte
             disabled={isLoading}
         >
             <SelectTrigger className="w-full md:w-[200px] bg-slate-50 border-slate-200">
-                <SelectValue placeholder={isLoading ? "Loading..." : "All Positions"} />
+                <SelectValue placeholder={isLoading ? "Syncing..." : "All Positions"} />
             </SelectTrigger>
             <SelectContent>
                 <SelectItem value="all">All Positions</SelectItem>

@@ -121,7 +121,7 @@ export const updateCompany = async (req, res) => {
           const filePath = path.join('public/images/company', filename);
           if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
-            console.log(`Deleted old logo: ${filePath}`);
+
           }
         }
       } catch (err) {

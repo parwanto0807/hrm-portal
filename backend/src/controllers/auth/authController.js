@@ -114,7 +114,7 @@ export const googleLogin = async (req, res) => {
     // 🔍 DEEP SYNC: Forcing employee name override to ensure dashboard shows correct name
     if (employeeRecord && employeeRecord.nama) {
         if (user.name !== employeeRecord.nama) {
-            console.log(`🔄 Syncing name for ${user.email}: "${user.name}" -> "${employeeRecord.nama}"`);
+
             await prisma.user.update({
                 where: { id: user.id },
                 data: { name: employeeRecord.nama }
@@ -175,7 +175,7 @@ export const login = async (req, res) => {
                     name: (await prisma.karyawan.findFirst({ where: { userId: user.id } }))?.nama || user.name
                 }
             });
-            console.log(`✅ Automatically hashed legacy password and synced name for: ${user.email}`);
+
         }
     }
 

@@ -330,7 +330,7 @@ export const handleApproval = async (req, res) => {
         const isHR = userRole === 'HR_MANAGER';
 
         // Log context for debugging
-        console.log(`[Approval] User: ${req.user.email}, Role: ${userRole}, emplId: ${approverId}, Action: ${status}`);
+
 
         let request = await prisma.pengajuan.findUnique({
             where: { id },
@@ -350,7 +350,7 @@ export const handleApproval = async (req, res) => {
 
         // Feature: Allow HR_MANAGER to modify dates during approval
         if (isHR && (startDate || endDate)) {
-            console.log(`[Approval] HR Manager ${req.user.email} is modifying dates for request ${id}`);
+
             request = await prisma.pengajuan.update({
                 where: { id },
                 data: {
@@ -638,5 +638,5 @@ export const getAllRequests = async (req, res) => {
 async function syncToAbsent(request) {
     // Implement logic to insert into `Absent` table based on type
     // e.g., if CUTI, insert record into Absent with kdAbsen = 'C'
-    console.log(`Syncing request ${request.id} to Absent table...`);
+
 }

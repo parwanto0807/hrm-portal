@@ -22,7 +22,7 @@ export function useMenus() {
 
     const fetchMenus = async () => {
         if (!user || !user.role) return [];
-        // console.log("Fetching menus for role:", user.role);
+
         const { data } = await axios.get(`/menus/my-menus?role=${user.role}`);
         return data as MenuGroup[]; // Expected: [{ groupLabel: "...", menus: [...] }]
     };

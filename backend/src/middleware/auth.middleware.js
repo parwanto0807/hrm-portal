@@ -42,7 +42,7 @@ export const protect = async (req, res, next) => {
     const secret = process.env.JWT_SECRET || config.jwt.secret;
     const decoded = jwt.verify(token, secret);
     
-    // console.log('✅ Token decoded:', { userId: decoded.userId, id: decoded.id });
+
 
     // E. Cek User di Database
     const userIdToCheck = decoded.userId || decoded.id;

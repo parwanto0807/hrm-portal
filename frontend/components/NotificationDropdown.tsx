@@ -53,13 +53,13 @@ export default function NotificationBell({ isMobile = false }: NotificationBellP
 
         // Listen for real-time notifications (FCM)
         const unsubscribeFCM = onMessageListener((payload: any) => {
-            console.log('🔔 [RealTime] New notification received via FCM:', payload);
+
             fetchNotifications(); // Refresh list immediately
         });
 
         // Set up polling every 15 seconds as fallback (further reduced from 20s)
         const interval = setInterval(() => {
-            console.log('🔄 [Polling] Fetching notifications...');
+
             fetchNotifications();
         }, 15000);
 
@@ -75,7 +75,7 @@ export default function NotificationBell({ isMobile = false }: NotificationBellP
 
         // Refresh notifications when opening the dropdown
         if (nextState) {
-            console.log('📂 [Dropdown] Refreshing notifications on open');
+
             fetchNotifications();
         }
     };

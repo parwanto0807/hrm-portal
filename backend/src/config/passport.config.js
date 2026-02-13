@@ -10,7 +10,7 @@ const GoogleStrategy = packages['passport-google-oauth20']().Strategy;
 const JwtStrategy = packages['passport-jwt']().Strategy;
 const ExtractJwt = packages['passport-jwt']().ExtractJwt;
 
-console.log('🔄 Initializing Passport strategies...');
+
 
 // Google OAuth Strategy
 passport.use(new GoogleStrategy({
@@ -24,11 +24,8 @@ passport.use(new GoogleStrategy({
   },
   async (req, accessToken, refreshToken, profile, done) => {
     try {
-      console.log('📱 Google OAuth profile received:', {
-        id: profile.id,
-        email: profile.emails?.[0]?.value,
-        name: profile.displayName
-      });
+
+
 
       if (!profile.emails || !profile.emails[0]?.value) {
         console.error('❌ No email found in Google profile');
@@ -60,7 +57,7 @@ passport.use(new GoogleStrategy({
         });
 
         if (!user) {
-          console.log('👤 Creating new user for:', email);
+
           
           user = await tx.user.create({
             data: {
@@ -72,9 +69,9 @@ passport.use(new GoogleStrategy({
             }
           });
           
-          console.log('✅ New user created:', user.id);
+
         } else {
-          console.log('👤 Existing user found:', user.id);
+
           
           // Update user info jika ada perubahan
           user = await tx.user.update({
@@ -127,7 +124,7 @@ passport.use(new GoogleStrategy({
             where: { id: employee.id },
             data: { userId: user.id }
           });
-          console.log(`🔗 Auto-linked User ${email} to Employee ${employee.nama}`);
+
         }
 
         return user;
@@ -145,8 +142,7 @@ passport.use(new GoogleStrategy({
       // Generate tokens
       const tokens = generateTokens(userResponse);
       
-      console.log('✅ Authentication successful for:', userResponse.email);
-      console.log('🎟️ Tokens generated for user ID:', userResponse.id);
+
       
       // PENTING: Return object dengan structure yang benar
       return done(null, { 
@@ -224,6 +220,6 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
-console.log('✅ Passport strategies initialized successfully');
+
 
 export default passport;

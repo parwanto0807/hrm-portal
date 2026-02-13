@@ -93,14 +93,14 @@ const ensureSystemUser = async () => {
           active: true
         }
       });
-      console.log('✅ System user initialized');
+
     } else if (systemUser.legacyId === null || systemUser.legacyId === undefined) {
       // Ensure existing system user has legacyId: 0
       await prisma.sysUser.update({
         where: { id: systemUser.id },
         data: { legacyId: 0 }
       });
-      console.log('✅ System user legacyId updated');
+
     }
   } catch (error) {
     console.warn('⚠️ Could not initialize system user:', error.message);
@@ -110,12 +110,8 @@ const ensureSystemUser = async () => {
 ensureSystemUser();
 
 const server = app.listen(PORT, () => {
-  console.log(`
-🚀 Server running in ${config.env} mode
-📡 Listening on: ${config.serverUrl}
-🔗 Frontend: ${config.frontendUrl}
-💾 Database: Connected
-  `);
+  // Server started
+
 });
 
 // Graceful shutdown
@@ -124,10 +120,10 @@ const shutdown = async () => {
   
   try {
     await prisma.$disconnect();
-    console.log('✅ Database disconnected');
+
     
     server.close(() => {
-      console.log('✅ Server closed');
+
       process.exit(0);
     });
     

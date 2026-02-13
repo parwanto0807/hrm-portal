@@ -12,6 +12,8 @@ import { PayrollDetailTable } from '@/components/payroll/PayrollDetailTable';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { PayrollDetail } from '@/types/payroll';
+import { AxonLoader } from '@/components/ui/AxonLoader';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -111,12 +113,7 @@ export default function PayrollDetailPage({ params }: { params: Promise<{ id: st
     };
 
     if (isLoading) {
-        return (
-            <div className="p-6 space-y-6 animate-pulse">
-                <div className="h-40 bg-slate-100 rounded-xl w-full" />
-                <div className="h-64 bg-slate-100 rounded-xl w-full" />
-            </div>
-        );
+        return <AxonLoader />;
     }
 
     if (error || !detailData) {

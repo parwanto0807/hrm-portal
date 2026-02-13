@@ -69,8 +69,7 @@ app.use(cors({
     if (allowedOrigins.indexOf(origin) !== -1 || config.env !== 'production') {
       callback(null, true);
     } else {
-      console.log('🚫 CORS Blocked Origin:', origin);
-      console.log('Allowed Origins:', allowedOrigins);
+
       callback(new Error('Not allowed by CORS'));
     }
   },

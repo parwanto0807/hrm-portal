@@ -41,15 +41,6 @@ const config = {
 };
 
 // Debug log
-console.log('\n⚙️  CONFIGURATION LOADED:');
-console.log('=========================');
-console.log('Environment:', config.env);
-console.log('Server URL:', config.serverUrl);
-console.log('Frontend URL:', config.frontendUrl);
-console.log('CORS Origin:', config.cors.origin);
-console.log('Google Client ID:', config.google.clientId ? '✅ Set' : '❌ NOT SET');
-console.log('JWT Secret:', config.jwt.secret ? '✅ Set' : '⚠️  Using default');
-console.log('Session Secret:', config.session.secret ? '✅ Set' : '⚠️  Using default');
-console.log('=========================\n');
+
 
 export default config;
