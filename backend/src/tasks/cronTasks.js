@@ -6,7 +6,7 @@ import { prisma } from '../config/prisma.js';
 export const initCronTasks = () => {
     // 1. Schedule AttLog Sync every 10 minutes
     // This calls our own internal API to perform the sync
-    cron.schedule('*/10 * * * *', async () => {
+    cron.schedule('0 1,10,18 * * *', async () => {
         console.log('🕒 Running Scheduled AttLog Sync...');
         try {
             const response = await fetch('http://localhost:5002/api/mysql/import/att-log', {

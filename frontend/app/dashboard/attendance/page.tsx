@@ -239,7 +239,7 @@ export default function AttendanceDashboardPage() {
                                     <Search className="h-4 w-4 text-slate-600" />
                                     <span className="text-sm font-semibold text-slate-700">Filter Kehadiran</span>
                                     <Badge variant="outline" className="ml-2 text-[10px] px-1.5 py-0">
-                                        {[department !== 'all', section !== 'all', position !== 'all', startDate, endDate, search].filter(Boolean).length} aktif
+                                        {[department !== 'all', section !== 'all', position !== 'all', startDate, endDate, !isEmployee && search].filter(Boolean).length} aktif
                                     </Badge>
                                 </div>
                             </AccordionTrigger>
@@ -331,21 +331,22 @@ export default function AttendanceDashboardPage() {
                                         </div>
                                     </div>
 
-                                    {/* ROW 2: Search (50% Width) */}
-                                    <div className="w-full md:w-1/2">
-                                        <div className="space-y-1.5 container-filter">
-                                            <label className="text-[10px] uppercase font-bold text-slate-500 px-1">Cari</label>
-                                            <div className="relative">
-                                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                                <Input
-                                                    placeholder="Nama atau ID..."
-                                                    className="pl-9 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:bg-white dark:focus:bg-slate-750 transition-all text-xs w-full"
-                                                    value={search}
-                                                    onChange={(e) => setSearch(e.target.value)}
-                                                />
+                                    {!isEmployee && (
+                                        <div className="w-full md:w-1/2">
+                                            <div className="space-y-1.5 container-filter">
+                                                <label className="text-[10px] uppercase font-bold text-slate-500 px-1">Cari</label>
+                                                <div className="relative">
+                                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                                    <Input
+                                                        placeholder="Nama atau ID..."
+                                                        className="pl-9 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:bg-white dark:focus:bg-slate-750 transition-all text-xs w-full"
+                                                        value={search}
+                                                        onChange={(e) => setSearch(e.target.value)}
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    )}
                                 </div>
                             </AccordionContent>
                         </AccordionItem>

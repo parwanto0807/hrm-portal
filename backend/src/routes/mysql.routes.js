@@ -30,8 +30,10 @@ const parseDate = (mysqlDate) => {
 };
 
 // --- INTERNAL HELPERS ---
-const syncAttLogsInternal = async (pool, startDate, activeEmplIds = null) => {
-    const stats = { total: 0, imported: 0, errors: 0 };
+const syncAttLogsInternal = async (pool, startDate, activeEmplIdsParam = null) => {
+    const stats = { total: 0, imported: 0, errors: 0, autoActivated: 0 };
+    const activeEmplIds = activeEmplIdsParam || new Set();
+
     const [mysqlLogs] = await pool.query(
         'SELECT * FROM att_log WHERE tanggal >= ?',
         [startDate]
@@ -45,9 +47,7 @@ const syncAttLogsInternal = async (pool, startDate, activeEmplIds = null) => {
             if (!karyawan) continue;
 
             // TRACK ACTIVITY FOR AUTO-ACTIVATION
-            if (activeEmplIds) {
-                activeEmplIds.add(karyawan.emplId);
-            }
+            activeEmplIds.add(karyawan.emplId);
 
             await prisma.attLog.upsert({
                 where: {
@@ -77,6 +77,26 @@ const syncAttLogsInternal = async (pool, startDate, activeEmplIds = null) => {
             stats.errors++;
         }
     }
+
+    // BULK ACTIVATE EMPLOYEES
+    if (activeEmplIds.size > 0) {
+        console.log(`🔄 Auto-activating ${activeEmplIds.size} employees based on attendance logs...`);
+        const updateResult = await prisma.karyawan.updateMany({
+            where: {
+                emplId: { in: Array.from(activeEmplIds) },
+                OR: [
+                    { kdSts: { not: 'AKTIF' } },
+                    { kdSts: null }
+                ]
+            },
+            data: {
+                kdSts: 'AKTIF'
+            }
+        });
+        stats.autoActivated = updateResult.count;
+        console.log(`✅ Activated ${updateResult.count} employees.`);
+    }
+
     return stats;
 };
 
@@ -1070,32 +1090,14 @@ router.post('/import/attendance', async (req, res) => {
         console.log('🔄 Syncing raw tap logs (att_log)...');
         const logStats = await syncAttLogsInternal(pool, startDate, activeEmplIds);
 
-        // 6. BULK ACTIVATE EMPLOYEES
-        if (activeEmplIds.size > 0) {
-            console.log(`🔄 Auto-activating ${activeEmplIds.size} employees based on attendance...`);
-            const updateResult = await prisma.karyawan.updateMany({
-                where: {
-                    emplId: { in: Array.from(activeEmplIds) },
-                    OR: [
-                        { kdSts: { not: 'AKTIF' } }, // Only update if not already active
-                        { kdSts: null }
-                    ]
-                },
-                data: {
-                    kdSts: 'AKTIF'
-                }
-            });
-            stats.autoActivated = updateResult.count;
-            console.log(`✅ Activated ${updateResult.count} employees.`);
-        }
-
         res.status(200).json({ 
             success: true, 
             stats: {
                 ...stats,
-                attLog: logStats
+                attLog: logStats,
+                autoActivated: logStats.autoActivated
             }, 
-            message: `Import absensi selesai: ${stats.imported} baru, ${stats.updated} diupdate. Raw logs: ${logStats.imported} synced. Auto-Activated: ${stats.autoActivated} employees.` 
+            message: `Import absensi selesai: ${stats.imported} baru, ${stats.updated} diupdate. Raw logs: ${logStats.imported} synced. Auto-Activated: ${logStats.autoActivated} employees.` 
         });
     } catch (error) {
         console.error('🔥 Attendance Import Error:', error);

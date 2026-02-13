@@ -266,7 +266,7 @@ export default function CheckInPage() {
                         <h3 className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-tighter">Ketentuan Foto Absensi</h3>
                     </div>
                     <ul className="space-y-1.5 list-disc list-inside text-[0.6rem] font-medium text-slate-600 dark:text-slate-400">
-                        <li><span className="font-bold text-slate-800 dark:text-slate-200">Wajib Background Area Kantor/Perusahaan.</span> Foto di luar area (parkiran luar/jalan) dianggap <span className="text-rose-600 font-bold">TIDAK VALID</span>.</li>
+                        <li><span className="font-bold text-slate-800 dark:text-slate-200">Wajib Background Area dan berada di Radius Area Kantor/Perusahaan.</span></li>
                         <li>Wajah harus terlihat jelas, <span className="font-bold">Lepas Masker</span>, Kacamata Hitam, atau Topi yang menutupi wajah.</li>
                         <li>Pastikan pencahayaan cukup terang agar wajah terdeteksi sistem.</li>
                         <li>Gunakan pakaian rapi / seragam sesuai ketentuan perusahaan.</li>
