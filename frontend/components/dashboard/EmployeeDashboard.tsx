@@ -100,7 +100,7 @@ export default function EmployeeDashboard() {
     };
 
     const quickActions = [
-        { label: "Absensi", icon: Clock, color: "bg-blue-500", href: "/dashboard/check-in" },
+        { label: "Absensi", icon: Clock, color: "bg-blue-500", href: "/dashboard/attendance" },
         { label: "Ajukan Cuti", icon: CalendarCheck, color: "bg-emerald-500", href: "/dashboard/leaves" },
         { label: "Slip Gaji", icon: FileText, color: "bg-amber-500", href: "/dashboard/payroll" },
         { label: "Profil", icon: User, color: "bg-purple-500", href: "/dashboard/profile" },

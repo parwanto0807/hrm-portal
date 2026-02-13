@@ -79,7 +79,13 @@ api.interceptors.response.use(
 
             try {
                 // Call Refresh Token Endpoint
-                await api.post('/auth/refresh');
+                const { data } = await api.post('/auth/refresh');
+
+                // Update Storage dengan token baru jika ada
+                const newAccessToken = data.tokens?.accessToken || data.accessToken;
+                if (newAccessToken && typeof window !== 'undefined') {
+                    localStorage.setItem('hrm_access_token', newAccessToken);
+                }
 
                 isRefreshing = false;
                 processQueue(null, 'success');

@@ -131,15 +131,23 @@ export function PayrollHistoryRow({ period, showAmount, isEmployee }: PayrollHis
                             <Calendar className={cn(isEmployee ? "h-5 w-5" : "h-4.5 w-4.5")} />
                         </div>
                         <div className="flex flex-col min-w-0">
-                            <div className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate uppercase">
+                            <div className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 truncate">
                                 {(() => {
-                                    const match = period.name?.match(/(\d{4})(\d{2})/);
+                                    const displayName = String(period.name || period.id || '');
+                                    if (!displayName) return '-';
+
+                                    const match = displayName.match(/(\d{4})(\d{2})/);
                                     if (match) {
                                         const year = parseInt(match[1]);
                                         const month = parseInt(match[2]);
-                                        return format(new Date(year, month - 1), 'MMMM yyyy', { locale: localeId });
+                                        return format(new Date(year, month - 1), 'MMM-yyyy', { locale: localeId });
                                     }
-                                    return period.name || '-';
+
+                                    const date = new Date(displayName);
+                                    if (!isNaN(date.getTime())) {
+                                        return format(date, 'MMM-yyyy', { locale: localeId });
+                                    }
+                                    return displayName;
                                 })()}
                             </div>
                             {!isEmployee && <div className="text-[10px] text-muted-foreground dark:text-slate-400 uppercase">ID: #{period.id}</div>}
@@ -199,7 +207,7 @@ export function PayrollHistoryRow({ period, showAmount, isEmployee }: PayrollHis
             {isExpanded && isEmployee && (
                 isLoading ? (
                     <TableRow>
-                        <TableCell colSpan={isEmployee ? 3 : 6} className="p-0 border-0">
+                        <TableCell colSpan={isEmployee ? 3 : 5} className="p-0 border-0">
                             <div className="p-8 text-center text-slate-500 animate-pulse bg-slate-50">
                                 <div className="flex flex-col items-center gap-2">
                                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600"></div>
@@ -209,10 +217,10 @@ export function PayrollHistoryRow({ period, showAmount, isEmployee }: PayrollHis
                         </TableCell>
                     </TableRow>
                 ) : myDetail ? (
-                    <PayrollSlipDetail detail={myDetail} colSpan={isEmployee ? 3 : 6} />
+                    <PayrollSlipDetail detail={myDetail} colSpan={isEmployee ? 3 : 5} />
                 ) : (
                     <TableRow>
-                        <TableCell colSpan={isEmployee ? 3 : 6} className="p-0 border-0">
+                        <TableCell colSpan={isEmployee ? 3 : 5} className="p-0 border-0">
                             <div className="p-8 text-center text-red-500 bg-red-50 text-xs">
                                 Gagal memuat detail data. Silakan coba lagi.
                             </div>
@@ -220,12 +228,7 @@ export function PayrollHistoryRow({ period, showAmount, isEmployee }: PayrollHis
                     </TableRow>
                 )
             )}
-            {/* 
-                CORRECTION: 
-                If `PayrollSlipDetail` renders a `TableRow`, I cannot wrap it in `TableCell`.
-                I should conditionally render it.
-                Also I need to fix the colSpan issue.
-            */}
+
         </>
     );
 }

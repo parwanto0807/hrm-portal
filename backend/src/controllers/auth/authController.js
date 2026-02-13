@@ -299,13 +299,16 @@ export const googleCallbackHandler = async (req, res) => {
           sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
       };
 
+      const accessTokenExpiry = 2 * 60 * 60 * 1000; // 2 hours
+      const refreshTokenExpiry = 7 * 24 * 60 * 60 * 1000; // 7 days
+
       res.cookie('accessToken', tokens.accessToken, { 
         ...cookieOptions, 
-        expires: new Date(Date.now() + 15 * 60 * 1000) 
+        expires: new Date(Date.now() + accessTokenExpiry) 
       });
       res.cookie('refreshToken', tokens.refreshToken, { 
         ...cookieOptions, 
-        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        expires: new Date(Date.now() + refreshTokenExpiry)
       });
 
       // Log the successful Google Login (Passport/Redirect Flow)

@@ -53,15 +53,21 @@ export function PayrollDetailHeader({
                                     Period ID: #{summary.period.id}
                                 </span>
                             </div>
-                            <h1 className="text-xl md:text-3xl font-bold mb-1 truncate text-white uppercase">
+                            <h1 className="text-lg md:text-3xl font-semibold md:font-bold mb-1 truncate text-white">
                                 {(() => {
-                                    const match = summary.period.name?.match(/(\d{4})(\d{2})/);
+                                    const displayName = String(summary.period.name || summary.period.id || '');
+                                    if (!displayName) return '-';
+
+                                    const match = displayName.match(/(\d{4})(\d{2})/);
                                     if (match) {
-                                        const year = parseInt(match[1]);
-                                        const month = parseInt(match[2]);
-                                        return format(new Date(year, month - 1), 'MMMM yyyy', { locale: localeId });
+                                        return format(new Date(parseInt(match[1]), parseInt(match[2]) - 1), 'MMM-yyyy', { locale: localeId });
                                     }
-                                    return summary.period.name || '-';
+
+                                    const date = new Date(displayName);
+                                    if (!isNaN(date.getTime())) {
+                                        return format(date, 'MMM-yyyy', { locale: localeId });
+                                    }
+                                    return displayName;
                                 })()}
                             </h1>
                         </div>

@@ -59,20 +59,22 @@ export const StatsCards = ({ stats, isLoading, machineStatus }: StatsCardsProps)
             value: `${stats?.latePercentage.toFixed(1) || 0}%`,
             subValue: `${stats?.lateCount || 0} karyawan`,
             icon: Clock,
-            color: 'text-amber-600 dark:text-amber-400',
-            bgColor: 'bg-amber-50 dark:bg-amber-950/30',
-            borderColor: 'border-amber-100 dark:border-amber-900/50',
-            description: 'Masuk setelah jadwal'
+            color: 'text-orange-600 dark:text-orange-400',
+            bgColor: 'bg-orange-50 dark:bg-orange-950/30',
+            borderColor: 'border-orange-200 dark:border-orange-900/50',
+            description: 'Masuk setelah jadwal',
+            isSpecial: (stats?.lateCount || 0) > 0
         },
         {
             title: 'Alpha',
             value: `${stats?.absentPercentage.toFixed(1) || 0}%`,
             subValue: `${stats?.absentCount || 0} karyawan`,
             icon: UserX,
-            color: 'text-rose-600 dark:text-rose-400',
-            bgColor: 'bg-rose-50 dark:bg-rose-950/30',
-            borderColor: 'border-rose-100 dark:border-rose-900/50',
-            description: 'Tanpa keterangan'
+            color: 'text-red-600 dark:text-red-400',
+            bgColor: 'bg-red-50 dark:bg-red-950/30',
+            borderColor: 'border-red-200 dark:border-red-900/50',
+            description: 'Tanpa keterangan',
+            isSpecial: (stats?.absentCount || 0) > 0
         }
     ];
 
@@ -98,8 +100,9 @@ export const StatsCards = ({ stats, isLoading, machineStatus }: StatsCardsProps)
                 <Card
                     key={card.title}
                     className={cn(
-                        "overflow-hidden transition-all hover:shadow-md border-l-4",
-                        card.borderColor
+                        "overflow-hidden transition-all duration-500 border-l-4",
+                        card.borderColor,
+                        card.isSpecial && "shadow-[0_0_15px_rgba(0,0,0,0.05)] dark:shadow-[0_0_15px_rgba(255,255,255,0.05)] scale-[1.02] ring-1 ring-inset ring-slate-200/50 dark:ring-slate-700/50"
                     )}
                 >
                     <CardContent className="p-3 md:p-6">

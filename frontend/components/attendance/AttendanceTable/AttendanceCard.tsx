@@ -65,7 +65,7 @@ export const AttendanceCard = ({ record, onEdit, onView, isEmployee }: Attendanc
                         )}>
                             {currentStatus.fullName}
                         </Badge>
-                        <AttendanceActions record={record} onEdit={onEdit} onView={onView} />
+                        <AttendanceActions record={record} onEdit={onEdit} onView={onView} isEmployee={isEmployee} />
                     </div>
                 </div>
 
@@ -111,29 +111,38 @@ export const AttendanceCard = ({ record, onEdit, onView, isEmployee }: Attendanc
                     <div className="space-y-1.5">
                         <div className="flex items-center gap-1">
                             <Calendar size={10} className="text-sky-500" />
-                            <span className="text-[9px] font-bold text-sky-600 uppercase tracking-wider">AKTUAL (LOG)</span>
+                            <span className="text-[9px] font-bold text-sky-600 uppercase tracking-wider text-[8px]">AKTUAL (LOG)</span>
                         </div>
                         <div className={cn(
-                            "border rounded-lg p-2 flex items-center justify-between",
+                            "border rounded-xl p-2 flex items-center justify-between shadow-sm transition-all duration-300",
                             isLate
-                                ? "bg-rose-50/50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50"
-                                : "bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/50"
+                                ? "bg-red-600 border-red-500 shadow-red-100 dark:shadow-red-950/20"
+                                : "bg-emerald-600 border-emerald-500 shadow-emerald-100 dark:shadow-emerald-950/20"
                         )}>
-                            <div className="flex flex-col">
-                                <span className={cn(
-                                    "text-[10px] font-bold",
-                                    isLate ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"
-                                )}>
+                            <div className="flex flex-col relative">
+                                <span className="text-[11px] font-black text-white">
                                     {record.realMasuk || '--:--'}
                                 </span>
-                                <span className="text-[8px] text-slate-400 dark:text-slate-500 font-medium">MASUK</span>
+                                <span className="text-[7px] text-white/80 font-bold uppercase tracking-tighter">MASUK</span>
+                                {isLate && (
+                                    <span className="absolute -top-1 -right-2 flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-white shadow-[0_0_8px_white]"></span>
+                                    </span>
+                                )}
                             </div>
-                            <div className="h-4 w-[1px] bg-slate-200 dark:bg-slate-800 mx-1" />
-                            <div className="flex flex-col items-end">
-                                <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">
+                            <div className="h-5 w-[1px] bg-white/20 mx-1" />
+                            <div className="flex flex-col items-end relative">
+                                <span className="text-[11px] font-black text-white">
                                     {record.realKeluar || '--:--'}
                                 </span>
-                                <span className="text-[8px] text-slate-400 dark:text-slate-500 font-medium">KELUAR</span>
+                                <span className="text-[7px] text-white/80 font-bold uppercase tracking-tighter">KELUAR</span>
+                                {isEarly && (
+                                    <span className="absolute -top-1 -right-2 flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-white shadow-[0_0_8px_white]"></span>
+                                    </span>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -141,24 +150,24 @@ export const AttendanceCard = ({ record, onEdit, onView, isEmployee }: Attendanc
 
                 {/* Status Badges - Late/Early Leave */}
                 {(isLate || isEarly || record.totLmb > 0) && (
-                    <div className="px-3 pb-3 flex flex-wrap gap-2">
+                    <div className="px-3 pb-3 flex flex-wrap gap-1.5">
                         {isLate && (
-                            <div className="flex items-center gap-1 bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 text-[9px] font-bold px-1.5 py-0.5 rounded border border-rose-100 dark:border-rose-900/50">
-                                <AlertCircle size={10} />
-                                Terlambat {record.lambat}m
-                            </div>
+                            <Badge className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-[9px] font-black px-2 py-0.5 border border-red-200 dark:border-red-800 rounded-full flex items-center gap-1 animate-pulse shadow-sm">
+                                <AlertCircle size={10} className="animate-bounce" />
+                                TERLAMBAT {record.lambat}M
+                            </Badge>
                         )}
                         {isEarly && (
-                            <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 text-[9px] font-bold px-1.5 py-0.5 rounded border border-amber-100 dark:border-amber-900/50">
+                            <Badge className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-[9px] font-black px-2 py-0.5 border border-orange-200 dark:border-orange-800 rounded-full flex items-center gap-1 shadow-sm">
                                 <Info size={10} />
-                                Pulang Cepat {record.cepat}m
-                            </div>
+                                PULANG CEPAT {record.cepat}M
+                            </Badge>
                         )}
                         {parseFloat(record.totLmb || "0") > 0 && (
-                            <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 text-[9px] font-bold px-1.5 py-0.5 rounded border border-blue-100 dark:border-blue-900/50">
+                            <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[9px] font-black px-2 py-0.5 border border-blue-200 dark:border-blue-800 rounded-full flex items-center gap-1 shadow-sm">
                                 <Clock size={10} />
-                                Lembur {record.totLmb}m
-                            </div>
+                                LEMBUR {record.totLmb}M
+                            </Badge>
                         )}
                     </div>
                 )}

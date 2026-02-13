@@ -158,7 +158,7 @@ export function PayrollHistoryTable({ data, isLoading, showAllStatus = true, sho
                                     setCurrentPage(1);
                                 }}
                             >
-                                <SelectTrigger className="h-9 md:h-10 w-full sm:w-[140px] bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-xs">
+                                <SelectTrigger className="h-9 md:h-10 w-full sm:w-[140px] bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-xs text-blue-800 dark:text-blue-100">
                                     <SelectValue placeholder="Status" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -226,7 +226,7 @@ export function PayrollHistoryTable({ data, isLoading, showAllStatus = true, sho
                         <div
                             key={period.id}
                             className={cn(
-                                "bg-white rounded-xl border border-slate-200 shadow-sm active:bg-slate-50 transition-colors overflow-hidden",
+                                "bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm active:bg-slate-50 transition-colors overflow-hidden",
                                 isEmployee ? "p-3" : "p-4 space-y-4"
                             )}
                             onClick={() => handleMobileDetailClick(String(period.id))}
@@ -239,80 +239,91 @@ export function PayrollHistoryTable({ data, isLoading, showAllStatus = true, sho
                                             <Calendar className="h-5 w-5" />
                                         </div>
                                         <div className="flex flex-col min-w-0">
-                                            <div className="text-sm font-bold text-slate-900 leading-tight truncate uppercase">
+                                            <div className="text-[13px] font-semibold text-slate-900 dark:text-white leading-tight truncate">
                                                 {(() => {
-                                                    const match = period.name?.match(/(\d{4})(\d{2})/);
+                                                    const displayName = String(period.name || period.id || '');
+                                                    if (!displayName) return '-';
+                                                    const match = displayName.match(/(\d{4})(\d{2})/);
                                                     if (match) {
-                                                        const year = parseInt(match[1]);
-                                                        const month = parseInt(match[2]);
-                                                        return format(new Date(year, month - 1), 'MMMM yyyy', { locale: localeId });
+                                                        return format(new Date(parseInt(match[1]), parseInt(match[2]) - 1), 'MMM-yyyy', { locale: localeId });
                                                     }
-                                                    return period.name || '-';
+                                                    const date = new Date(displayName);
+                                                    if (!isNaN(date.getTime())) {
+                                                        return format(date, 'MMM-yyyy', { locale: localeId });
+                                                    }
+                                                    return displayName;
                                                 })()}
+                                            </div>
+                                            <div className="flex items-center gap-2 mt-0.5">
+                                                <Badge variant="secondary" className={cn("text-[8px] font-bold px-1.5 h-4 border-none shadow-sm", getStatusColor(period.status))}>
+                                                    {getStatusText(period.status)}
+                                                </Badge>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-2 shrink-0">
-                                        <Badge variant="secondary" className="text-[8px] font-bold px-1.5 h-4 bg-slate-50 border-slate-200">
-                                            {getStatusText(period.status)}
-                                        </Badge>
-                                        <Button
-                                            size="sm"
-                                            className="h-8 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-3 flex items-center gap-1 shadow-sm"
-                                        >
-                                            <span className="text-[11px]">Detail</span>
-                                            <ArrowRight className="h-3 w-3" />
-                                        </Button>
-                                    </div>
+                                    <Button
+                                        size="sm"
+                                        className="h-8 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-lg px-3 flex items-center gap-1 shadow-md border-none"
+                                    >
+                                        <span className="text-[11px]">Slip</span>
+                                        <ArrowRight className="h-3 w-3" />
+                                    </Button>
                                 </div>
                             ) : (
                                 /* Standard Card Style for Admin */
                                 <>
                                     <div className="flex justify-between items-start">
                                         <div className="flex gap-3">
-                                            <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                                            <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-100/20">
                                                 <Calendar className="h-5 w-5" />
                                             </div>
                                             <div>
-                                                <div className="text-sm font-bold text-slate-900 dark:text-slate-100 leading-tight uppercase">
+                                                <div className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 leading-tight">
                                                     {(() => {
-                                                        const match = period.name?.match(/(\d{4})(\d{2})/);
+                                                        const displayName = String(period.name || period.id || '');
+                                                        if (!displayName) return '-';
+                                                        const match = displayName.match(/(\d{4})(\d{2})/);
                                                         if (match) {
-                                                            const year = parseInt(match[1]);
-                                                            const month = parseInt(match[2]);
-                                                            return format(new Date(year, month - 1), 'MMMM yyyy', { locale: localeId });
+                                                            return format(new Date(parseInt(match[1]), parseInt(match[2]) - 1), 'MMM-yyyy', { locale: localeId });
                                                         }
-                                                        return period.name || '-';
+                                                        const date = new Date(displayName);
+                                                        if (!isNaN(date.getTime())) {
+                                                            return format(date, 'MMM-yyyy', { locale: localeId });
+                                                        }
+                                                        return displayName;
                                                     })()}
                                                 </div>
                                                 <div className="text-[10px] text-muted-foreground dark:text-slate-400 uppercase mt-0.5 tracking-wider">ID: #{period.id}</div>
                                             </div>
                                         </div>
-                                        <Badge variant="secondary" className={`text-[9px] font-bold px-1.5 h-5 ${getStatusColor(period.status)}`}>
+                                        <Badge variant="secondary" className={cn("text-[9px] font-bold px-1.5 h-5 border-none shadow-sm", getStatusColor(period.status))}>
                                             {getStatusText(period.status)}
                                         </Badge>
                                     </div>
 
+                                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+                                        <div className="flex flex-col">
+                                            <div className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase">Karyawan</div>
+                                            <div className="text-sm font-bold text-slate-900 dark:text-white uppercase">{period.totalEmployees} Orang</div>
+                                        </div>
 
-                                    <div className="flex items-center justify-between pt-2">
-                                        {!isEmployee ? (
-                                            <div className="flex flex-col">
-                                                <div className="text-[9px] text-slate-400 dark:text-slate-400 font-bold uppercase">Total Gaji</div>
-                                                <div className="text-sm font-black text-slate-900 dark:text-white">
-                                                    {showAmount ? formatCurrency(period.totalAmount) : 'Rp XX.XXX.XXX'}
-                                                </div>
+                                        <div className="flex flex-col items-end">
+                                            <div className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase">Total Gaji</div>
+                                            <div className="text-sm font-black text-slate-900 dark:text-white">
+                                                {showAmount ? formatCurrency(period.totalAmount) : 'Rp XX.XXX.XXX'}
                                             </div>
-                                        ) : null}
-                                        <Button
-                                            size="sm"
-                                            variant="secondary"
-                                            className="h-8 text-xs bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-950/50 text-blue-700 dark:text-blue-400 font-bold border-none rounded-lg px-4"
-                                        >
-                                            {isEmployee ? 'Pdc' : 'Detail'}
-                                            <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-                                        </Button>
+                                        </div>
                                     </div>
+
+                                    <Button
+                                        size="sm"
+                                        variant="secondary"
+                                        className="w-full h-9 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold border-none rounded-lg mt-1"
+                                    >
+                                        Detail Periode
+                                        <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                                    </Button>
                                 </>
                             )}
                         </div>
@@ -322,7 +333,7 @@ export function PayrollHistoryTable({ data, isLoading, showAllStatus = true, sho
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-2">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-2 pt-4 border-t border-slate-100 dark:border-slate-800">
                     <div className="text-[10px] md:text-xs text-muted-foreground order-2 md:order-1">
                         Menampilkan {((currentPage - 1) * itemsPerPage) + 1} sampai{' '}
                         {Math.min(currentPage * itemsPerPage, displayData.length)} dari{' '}
@@ -332,7 +343,10 @@ export function PayrollHistoryTable({ data, isLoading, showAllStatus = true, sho
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setCurrentPage(prev => Math.max(prev - 1, 1));
+                            }}
                             disabled={currentPage === 1}
                             className="h-8 md:h-9 text-[10px] md:text-xs px-2"
                         >
@@ -351,8 +365,14 @@ export function PayrollHistoryTable({ data, isLoading, showAllStatus = true, sho
                                         <Button
                                             variant={p === currentPage ? 'default' : 'outline'}
                                             size="sm"
-                                            onClick={() => setCurrentPage(p)}
-                                            className={`h-8 w-8 md:h-9 md:w-9 text-[10px] md:text-xs p-0 ${p === currentPage ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setCurrentPage(p);
+                                            }}
+                                            className={cn(
+                                                "h-8 w-8 md:h-9 md:w-9 text-[10px] md:text-xs p-0 border-none",
+                                                p === currentPage ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-md" : "hover:bg-slate-100 dark:hover:bg-slate-800"
+                                            )}
                                         >
                                             {p}
                                         </Button>
@@ -363,7 +383,10 @@ export function PayrollHistoryTable({ data, isLoading, showAllStatus = true, sho
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setCurrentPage(prev => Math.min(prev + 1, totalPages));
+                            }}
                             disabled={currentPage === totalPages}
                             className="h-8 md:h-9 text-[10px] md:text-xs px-2"
                         >
@@ -373,6 +396,7 @@ export function PayrollHistoryTable({ data, isLoading, showAllStatus = true, sho
                     </div>
                 </div>
             )}
+
             {isEmployee && (
                 <PayrollPasswordDialog
                     isOpen={isPasswordOpen}

@@ -121,15 +121,20 @@ export default function PayrollPage() {
                                 <Badge variant="outline" className="text-blue-100 border-blue-400/30 bg-blue-500/20 text-[10px] uppercase tracking-wider">
                                     Periode Terkini
                                 </Badge>
-                                <span className="text-sm font-medium text-blue-100 uppercase">
+                                <span className="text-[13px] font-semibold text-blue-100">
                                     {(() => {
-                                        const match = latestPeriod.name?.match(/(\d{4})(\d{2})/);
+                                        const displayName = String(latestPeriod.name || latestPeriod.id || '');
+                                        if (!displayName) return '-';
+
+                                        const match = displayName.match(/(\d{4})(\d{2})/);
                                         if (match) {
-                                            const year = parseInt(match[1]);
-                                            const month = parseInt(match[2]);
-                                            return format(new Date(year, month - 1), 'MMMM yyyy', { locale: localeId });
+                                            return format(new Date(parseInt(match[1]), parseInt(match[2]) - 1), 'MMM-yyyy', { locale: localeId });
                                         }
-                                        return latestPeriod.name || '-';
+                                        const date = new Date(displayName);
+                                        if (!isNaN(date.getTime())) {
+                                            return format(date, 'MMM-yyyy', { locale: localeId });
+                                        }
+                                        return displayName;
                                     })()}
                                 </span>
                             </div>

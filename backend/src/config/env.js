@@ -24,12 +24,12 @@ const config = {
     maxAge: 24 * 60 * 60 * 1000
   },
   
-  // JWT Configuration (TAMBAHKAN INI)
+  // JWT Configuration
   jwt: {
     secret: process.env.JWT_SECRET || 'development-jwt-secret-key-456',
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+    accessExpiry: process.env.JWT_EXPIRE || '2h', // Matches JWT_EXPIRE in .env
     refreshSecret: process.env.JWT_REFRESH_SECRET || 'development-refresh-secret-789',
-    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d'
+    refreshExpiry: process.env.JWT_REFRESH_EXPIRE || '7d'
   },
   
   // Google OAuth

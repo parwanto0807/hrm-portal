@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { User } from '@/types/auth';
+import { api } from '@/lib/api';
 
 export const STORAGE_KEYS = {
     // New format
@@ -61,36 +62,28 @@ export const useAuth = () => {
             });
             if (token) {
                 // Background fetch to update user data from server
-                fetchProfile(token);
+                fetchProfile();
             }
         } catch (error) {
             console.error('Error initializing auth:', error);
-            // ... (rest of error handling)
+            setAuthState(prev => ({ ...prev, isLoading: false }));
         }
     }, []);
 
-    const fetchProfile = async (token: string) => {
+    const fetchProfile = async () => {
         try {
-            const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://solusiit.id/api';
-            console.log('useAuth: Fetching profile from', `${backendUrl}/users/me`);
-            const res = await fetch(`${backendUrl}/users/me`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            console.log('useAuth: Profile fetch status:', res.status);
-            if (res.ok) {
-                const userData = await res.json();
+            console.log('useAuth: Fetching profile from server using api client...');
+            // PENTING: Gunakan 'api' instance agar interceptor jalan
+            const { data: userData } = await api.get('/users/me');
 
-                // Exclude employee object from storage to keep it light, or keep it if needed
-                // For now, just ensuring the name is updated
+            if (userData) {
                 const currentUserStr = localStorage.getItem(STORAGE_KEYS.USER);
                 const currentUser = currentUserStr ? JSON.parse(currentUserStr) : {};
 
                 const updatedUser = {
                     ...currentUser,
                     ...userData,
-                    name: userData.name // Explicitly ensure name is updated
+                    name: userData.name
                 };
 
                 localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedUser));
@@ -102,14 +95,12 @@ export const useAuth = () => {
                         user: updatedUser
                     }));
                 }
-            } else {
-                if (res.status === 401) {
-                    // Token expired or invalid
-                    logout();
-                }
             }
-        } catch (e) {
+        } catch (e: any) {
             console.error('Failed to fetch profile:', e);
+            if (e.response?.status === 401) {
+                logout();
+            }
         }
     };
 

@@ -45,7 +45,7 @@ export const getPayrollPeriods = async (req, res) => {
             const detail = periodDetails.find(d => d.periodeId === p.period);
             return {
                 id: p.period,
-                name: detail ? detail.nama : p.period,
+                name: (detail && detail.nama) ? detail.nama : p.period,
                 year: detail ? detail.tahun : null,
                 month: detail ? detail.bulan : null,
                 startDate: detail ? detail.awal : null,
