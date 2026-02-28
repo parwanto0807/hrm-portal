@@ -192,78 +192,85 @@ const shortcutItems = [
 
     // System Items
     {
-        title: 'Performance',
-        description: 'Optimize system speed',
+        title: 'Performa',
+        description: 'Optimasi kecepatan sistem',
         icon: Zap,
         color: 'bg-yellow-500 text-white',
         bgColor: 'bg-yellow-50 dark:bg-yellow-900/20',
         borderColor: 'border-yellow-200 dark:border-yellow-800',
         category: 'system',
-        href: '/dashboard/settings/system/performance'
+        href: '/dashboard/settings/system/performance',
+        isUnderDevelopment: true
     },
     {
-        title: 'Security',
-        description: 'Firewall & protection',
+        title: 'Keamanan',
+        description: 'Firewall & perlindungan',
         icon: Shield,
         color: 'bg-red-500 text-white',
         bgColor: 'bg-red-50 dark:bg-red-900/20',
         borderColor: 'border-red-200 dark:border-red-800',
         category: 'system',
-        href: '/dashboard/settings/system/security'
+        href: '/dashboard/settings/system/security',
+        isUnderDevelopment: true
     },
     {
         title: 'Database',
-        description: 'Backup & restore',
+        description: 'Backup & restore data',
         icon: Database,
         color: 'bg-green-500 text-white',
         bgColor: 'bg-green-50 dark:bg-green-900/20',
         borderColor: 'border-green-200 dark:border-green-800',
         category: 'system',
-        href: '/dashboard/settings/system/database'
+        href: '/dashboard/settings/system/database',
+        isUnderDevelopment: true
     },
     {
-        title: 'Network',
-        description: 'Connectivity settings',
+        title: 'Jaringan',
+        description: 'Pengaturan konektivitas',
         icon: Globe,
         color: 'bg-cyan-500 text-white',
         bgColor: 'bg-cyan-50 dark:bg-cyan-900/20',
         borderColor: 'border-cyan-200 dark:border-cyan-800',
         category: 'system',
-        href: '/dashboard/settings/system/network'
+        href: '/dashboard/settings/system/network',
+        isUnderDevelopment: true
     },
     {
-        title: 'Notifications',
-        description: 'Alerts & reminders',
+        title: 'Notifikasi',
+        description: 'Alert & pengingat sistem',
         icon: Bell,
         color: 'bg-pink-500 text-white',
         bgColor: 'bg-pink-50 dark:bg-pink-900/20',
         borderColor: 'border-pink-200 dark:border-pink-800',
         category: 'system',
-        href: '/dashboard/settings/system/notifications'
+        href: '/dashboard/settings/system/notifications',
+        isUnderDevelopment: true
     },
     {
         title: 'API Keys',
-        description: 'Integration tokens',
+        description: 'Token integrasi sistem',
         icon: Key,
         color: 'bg-violet-500 text-white',
         bgColor: 'bg-violet-50 dark:bg-violet-900/20',
         borderColor: 'border-violet-200 dark:border-violet-800',
         category: 'system',
-        href: '/dashboard/settings/system/api-keys'
+        href: '/dashboard/settings/system/api-keys',
+        isUnderDevelopment: true
     },
     {
         title: 'Email',
-        description: 'SMTP configuration',
+        description: 'Konfigurasi SMTP',
         icon: Mail,
         color: 'bg-orange-500 text-white',
         bgColor: 'bg-orange-50 dark:bg-orange-900/20',
         borderColor: 'border-orange-200 dark:border-orange-800',
         category: 'system',
-        href: '/dashboard/settings/system/email'
+        href: '/dashboard/settings/system/email',
+        isUnderDevelopment: true
     },
     {
-        title: 'User Roles',
-        description: 'Permissions & access',
+        title: 'Role User',
+        description: 'Izin & akses pengguna',
         icon: Users2,
         color: 'bg-slate-500 text-white',
         bgColor: 'bg-slate-50 dark:bg-slate-900/20',
@@ -329,6 +336,125 @@ export default function SettingsPage() {
     const [isMysqlOldOpen, setIsMysqlOldOpen] = React.useState(false);
     const [isWorkflowOpen, setIsWorkflowOpen] = React.useState(false);
     const [isAttendanceImportOpen, setIsAttendanceImportOpen] = React.useState(false);
+
+    // Component helper untuk render item secara konsisten
+    const SettingItem = ({ item }: { item: any }) => {
+        const handleClick = (e: React.MouseEvent) => {
+            if (item.isUnderDevelopment) {
+                e.preventDefault();
+                toast.info("Fitur Dalam Pengembangan", {
+                    description: "Modul ini sedang dalam tahap pengembangan.",
+                });
+                return;
+            }
+
+            if (item.isModal) {
+                e.preventDefault();
+                if (item.href === '#mysql-old') {
+                    setIsMysqlOldOpen(true);
+                } else if (item.href === '#workflow') {
+                    setIsWorkflowOpen(true);
+                } else if (item.href === '#attendance-import') {
+                    setIsAttendanceImportOpen(true);
+                }
+                return;
+            }
+        };
+
+        const CardUI = (
+            <Card
+                className={`${item.bgColor} border ${item.borderColor} hover:shadow-md transition-all duration-300 hover:scale-[1.02] cursor-pointer group`}
+            >
+                <CardContent className="p-4">
+                    <div className="flex items-start gap-4">
+                        <div className={`p-2.5 rounded-lg ${item.color} flex-shrink-0 transition-transform duration-300 group-hover:scale-110`}>
+                            <item.icon className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-sm truncate group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors">
+                                {item.title}
+                            </h3>
+                            <p className="text-xs text-muted-foreground truncate">
+                                {item.description}
+                            </p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors shrink-0 mt-1" />
+                    </div>
+                </CardContent>
+            </Card>
+        );
+
+        if (item.isUnderDevelopment || item.isModal) {
+            return (
+                <div onClick={handleClick} className="block">
+                    {CardUI}
+                </div>
+            );
+        }
+
+        return (
+            <Link href={item.href} className="block">
+                {CardUI}
+            </Link>
+        );
+    };
+
+    // Component helper untuk render item di Tab (Style Grid Vertikal)
+    const TabSettingItem = ({ item }: { item: any }) => {
+        const handleClick = (e: React.MouseEvent) => {
+            if (item.isUnderDevelopment) {
+                e.preventDefault();
+                toast.info("Fitur Dalam Pengembangan", {
+                    description: "Modul ini sedang dalam tahap pengembangan.",
+                });
+                return;
+            }
+
+            if (item.isModal) {
+                e.preventDefault();
+                if (item.href === '#mysql-old') {
+                    setIsMysqlOldOpen(true);
+                } else if (item.href === '#workflow') {
+                    setIsWorkflowOpen(true);
+                } else if (item.href === '#attendance-import') {
+                    setIsAttendanceImportOpen(true);
+                }
+                return;
+            }
+        };
+
+        const CardUI = (
+            <Card
+                className={`${item.bgColor} border ${item.borderColor} hover:shadow-md transition-all duration-300 hover:scale-[1.02] cursor-pointer group`}
+            >
+                <CardContent className="p-4">
+                    <div className="flex flex-col items-center text-center gap-3">
+                        <div className={`p-3 rounded-lg ${item.color} transition-transform duration-300 group-hover:scale-110`}>
+                            <item.icon className="h-6 w-6" />
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-sm">{item.title}</h3>
+                            <p className="text-xs text-muted-foreground mt-1">{item.description}</p>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+        );
+
+        if (item.isUnderDevelopment || item.isModal) {
+            return (
+                <div onClick={handleClick} className="block cursor-pointer">
+                    {CardUI}
+                </div>
+            );
+        }
+
+        return (
+            <Link href={item.href} className="block">
+                {CardUI}
+            </Link>
+        );
+    };
 
     return (
         <div className="min-h-screen w-full bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950">
@@ -403,79 +529,9 @@ export default function SettingsPage() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 w-full">
-                                        {group.items.map((item, itemIdx) => {
-                                            if (item.isModal) {
-                                                return (
-                                                    <div
-                                                        key={itemIdx}
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            if (item.href === '#mysql-old') {
-                                                                setIsMysqlOldOpen(true);
-                                                            } else if (item.href === '#workflow') {
-                                                                setIsWorkflowOpen(true);
-                                                            } else if (item.href === '#attendance-import') {
-                                                                setIsAttendanceImportOpen(true);
-                                                            } else {
-                                                                toast.info("Fitur Dalam Pengembangan", {
-                                                                    description: "Modul ini sedang dalam tahap pengembangan.",
-                                                                });
-                                                            }
-                                                        }}
-                                                        className="block cursor-pointer"
-                                                    >
-                                                        <Card
-                                                            className={`${item.bgColor} border ${item.borderColor} hover:shadow-md transition-all duration-300 hover:scale-[1.02] group`}
-                                                        >
-                                                            <CardContent className="p-4">
-                                                                <div className="flex items-start gap-4">
-                                                                    <div className={`p-2.5 rounded-lg ${item.color} flex-shrink-0 transition-transform duration-300 group-hover:scale-110`}>
-                                                                        <item.icon className="h-5 w-5" />
-                                                                    </div>
-                                                                    <div className="flex-1 min-w-0">
-                                                                        <h3 className="font-semibold text-sm truncate group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors">
-                                                                            {item.title}
-                                                                        </h3>
-                                                                        <p className="text-xs text-muted-foreground truncate">
-                                                                            {item.description}
-                                                                        </p>
-                                                                    </div>
-                                                                    <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors shrink-0 mt-1" />
-                                                                </div>
-                                                            </CardContent>
-                                                        </Card>
-                                                    </div>
-                                                );
-                                            }
-                                            return (
-                                                <Link
-                                                    key={itemIdx}
-                                                    href={item.href}
-                                                    className="block"
-                                                >
-                                                    <Card
-                                                        className={`${item.bgColor} border ${item.borderColor} hover:shadow-md transition-all duration-300 hover:scale-[1.02] cursor-pointer group`}
-                                                    >
-                                                        <CardContent className="p-4">
-                                                            <div className="flex items-start gap-4">
-                                                                <div className={`p-2.5 rounded-lg ${item.color} flex-shrink-0 transition-transform duration-300 group-hover:scale-110`}>
-                                                                    <item.icon className="h-5 w-5" />
-                                                                </div>
-                                                                <div className="flex-1 min-w-0">
-                                                                    <h3 className="font-semibold text-sm truncate group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors">
-                                                                        {item.title}
-                                                                    </h3>
-                                                                    <p className="text-xs text-muted-foreground truncate">
-                                                                        {item.description}
-                                                                    </p>
-                                                                </div>
-                                                                <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors shrink-0 mt-1" />
-                                                            </div>
-                                                        </CardContent>
-                                                    </Card>
-                                                </Link>
-                                            );
-                                        })}
+                                        {group.items.map((item, itemIdx) => (
+                                            <SettingItem key={itemIdx} item={item} />
+                                        ))}
                                     </div>
                                 </CardContent>
                             </Card>
@@ -494,27 +550,7 @@ export default function SettingsPage() {
                                     {shortcutItems
                                         .filter(item => item.category === 'master')
                                         .map((item, idx) => (
-                                            <Link
-                                                key={idx}
-                                                href={item.href}
-                                                className="block"
-                                            >
-                                                <Card
-                                                    className={`${item.bgColor} border ${item.borderColor} hover:shadow-md transition-all duration-300 hover:scale-[1.02] cursor-pointer group`}
-                                                >
-                                                    <CardContent className="p-4">
-                                                        <div className="flex flex-col items-center text-center gap-3">
-                                                            <div className={`p-3 rounded-lg ${item.color} transition-transform duration-300 group-hover:scale-110`}>
-                                                                <item.icon className="h-6 w-6" />
-                                                            </div>
-                                                            <div>
-                                                                <h3 className="font-semibold text-sm">{item.title}</h3>
-                                                                <p className="text-xs text-muted-foreground mt-1">{item.description}</p>
-                                                            </div>
-                                                        </div>
-                                                    </CardContent>
-                                                </Card>
-                                            </Link>
+                                            <TabSettingItem key={idx} item={item} />
                                         ))}
                                 </div>
                             </CardContent>
@@ -533,36 +569,7 @@ export default function SettingsPage() {
                                     {shortcutItems
                                         .filter(item => item.category === 'system')
                                         .map((item, idx) => (
-                                            <div
-                                                key={idx}
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    if (item.isModal && item.href === '#mysql-old') {
-                                                        setIsMysqlOldOpen(true);
-                                                        return;
-                                                    }
-                                                    toast.info("Fitur Dalam Pengembangan", {
-                                                        description: "Modul ini sedang dalam tahap pengembangan.",
-                                                    });
-                                                }}
-                                                className="block cursor-pointer"
-                                            >
-                                                <Card
-                                                    className={`${item.bgColor} border ${item.borderColor} hover:shadow-md transition-all duration-300 hover:scale-[1.02] group`}
-                                                >
-                                                    <CardContent className="p-4">
-                                                        <div className="flex flex-col items-center text-center gap-3">
-                                                            <div className={`p-3 rounded-lg ${item.color} transition-transform duration-300 group-hover:scale-110`}>
-                                                                <item.icon className="h-6 w-6" />
-                                                            </div>
-                                                            <div>
-                                                                <h3 className="font-semibold text-sm">{item.title}</h3>
-                                                                <p className="text-xs text-muted-foreground mt-1">{item.description}</p>
-                                                            </div>
-                                                        </div>
-                                                    </CardContent>
-                                                </Card>
-                                            </div>
+                                            <TabSettingItem key={idx} item={item} />
                                         ))}
                                 </div>
                             </CardContent>
