@@ -1222,7 +1222,7 @@ model Bulan {
 model SysUser {
   id         String    @id @default(uuid()) @db.Uuid
   legacyId   Int?      @unique @map("Id")
-  nik        String    @unique @default("") @map("Nik") @db.VarChar(11)
+  nik        String?   @unique @default("") @map("Nik") @db.VarChar(11)
   email      String    @unique @default("") @map("Email") @db.VarChar(60)
   username   String    @unique @default("") @map("Username") @db.VarChar(32)
   password   String    @default("") @map("Password") @db.VarChar(64)

@@ -87,7 +87,7 @@ export const ensureSysUser = async (identifier) => {
                 email: user?.email || karyawan?.email || `${validEmplId}@local.host`,
                 password: 'linked_account',
                 name: karyawan?.nama || user?.name || 'Unknown User',
-                nik: karyawan?.nik || validEmplId,
+                nik: karyawan?.nik || validEmplId || "",
                 emplId: validEmplId, // Must exist in Karyawan
                 positionId: 0,
                 active: true,
