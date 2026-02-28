@@ -74,23 +74,9 @@ export const ensureSysUser = async (identifier) => {
         if (karyawan) {
             validEmplId = karyawan.emplId;
         } else {
-            // If no Karyawan found, we CANNOT create a SysUser if the schema requires emplId to exist in Karyawan.
-            // Let's check the schema again. 
-            //   emplId String @default("") @map("Empl_id") @db.VarChar(11)
-            //   karyawan Karyawan @relation(fields: [emplId], references: [emplId])
-            // This implies ANY value in SysUser.emplId MUST exist in Karyawan.emplId.
-            // So if `karyawan` is null, we literally CANNOT create a connected SysUser.
-            // But we might need SysUser for system notifications even for non-employees.
-            // Wait, does Karyawan have a default entry for guests? Unlikely.
-            
-            // If the foreign key is strict, we can only create SysUser if we have a Karyawan.
-            // If we have a User but no Karyawan, we can't create SysUser unless we create a dummy Karyawan too?
-            // Or maybe SysUser.emplId is optional? In schema it looks like String @default("") which acts as FK?
-            // Usually empty string won't match unless there is a Karyawan with empty string ID.
-            
-            console.warn(`⚠️ [ensureSysUser] Cannot create SysUser for ${identifier} because no linked Karyawan record found. FK constraint would fail.`);
-            return null;
+            validEmplId = null;
         }
+
 
         const finalUsername = karyawan?.nik || user?.email?.split('@')[0] || `user_${validEmplId}`;
         

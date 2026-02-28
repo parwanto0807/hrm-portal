@@ -1220,17 +1220,18 @@ model Bulan {
 }
 
 model SysUser {
-  id                   String            @id @default(uuid()) @db.Uuid
-  legacyId             Int?              @unique @map("Id")
-  nik                  String            @unique @default("") @map("Nik") @db.VarChar(11)
-  email                String            @unique @default("") @map("Email") @db.VarChar(60)
-  username             String            @unique @default("") @map("Username") @db.VarChar(32)
-  password             String            @default("") @map("Password") @db.VarChar(64)
-  name                 String            @default("") @map("Name") @db.VarChar(64)
-  positionId           Int               @default(0) @map("PositionId")
-  active               Boolean?          @default(true) @map("Active")
-  emplId               String            @default("") @map("Empl_id") @db.VarChar(11)
-  lastLogin            DateTime?         @map("Last_login") @db.Timestamp(6)
+  id         String    @id @default(uuid()) @db.Uuid
+  legacyId   Int?      @unique @map("Id")
+  nik        String    @unique @default("") @map("Nik") @db.VarChar(11)
+  email      String    @unique @default("") @map("Email") @db.VarChar(60)
+  username   String    @unique @default("") @map("Username") @db.VarChar(32)
+  password   String    @default("") @map("Password") @db.VarChar(64)
+  name       String    @default("") @map("Name") @db.VarChar(64)
+  positionId Int       @default(0) @map("PositionId")
+  active     Boolean?  @default(true) @map("Active")
+  emplId     String?   @map("Empl_id") @db.VarChar(11)
+  lastLogin  DateTime? @map("Last_login") @db.Timestamp(6)
+
   lastIp               String?           @map("last_ip") @db.VarChar(45)
   isOnline             Boolean?          @default(false) @map("is_online")
   fcmToken             String?           @map("fcm_token") @db.Text
@@ -1240,7 +1241,7 @@ model SysUser {
   createdNotifications SysNotification[] @relation("CreatedNotifications")
   notifications        SysNotification[] @relation("ReceivedNotifications")
   privileges           SysPrivilege[]
-  karyawan             Karyawan          @relation(fields: [emplId], references: [emplId])
+  karyawan             Karyawan?         @relation(fields: [emplId], references: [emplId])
   position             SysUserPosition   @relation(fields: [positionId], references: [legacyId])
 
   @@index([username])
@@ -1540,17 +1541,33 @@ model Dshift {
 }
 
 model GroupShift {
-  id         String     @id @default(uuid()) @db.Uuid
-  groupShift String     @unique @map("GROUP_SHIFT") @db.VarChar(2)
-  groupName  String     @default("") @map("GROUP_NAME") @db.VarChar(30)
-  isActive   Boolean?   @default(true) @map("is_active")
-  createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt  DateTime   @updatedAt @map("updated_at") @db.Timestamp(6)
-  dshift     Dshift[]
-  karyawan   Karyawan[]
+  id             String        @id @default(uuid()) @db.Uuid
+  groupShift     String        @unique @map("GROUP_SHIFT") @db.VarChar(2)
+  groupName      String        @default("") @map("GROUP_NAME") @db.VarChar(30)
+  isActive       Boolean?      @default(true) @map("is_active")
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt      DateTime      @updatedAt @map("updated_at") @db.Timestamp(6)
+  patternId      String?       @map("pattern_id") @db.Uuid
+  patternRefDate DateTime?     @map("pattern_ref_date") @db.Timestamp(6)
+  dshift         Dshift[]
+  karyawan       Karyawan[]
+  patternRef     ShiftPattern? @relation(fields: [patternId], references: [id])
 
   @@index([isActive])
   @@map("groupshift")
+}
+
+model ShiftPattern {
+  id          String       @id @default(uuid()) @db.Uuid
+  name        String       @unique @db.VarChar(50)
+  description String?      @db.Text
+  pattern     String       @db.Text // Comma separated kdJam: "A,A,B,B,L,L"
+  isActive    Boolean      @default(true) @map("is_active")
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamp(6)
+  groups      GroupShift[]
+
+  @@map("shift_pattern")
 }
 
 model ShiftAllw {

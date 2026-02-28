@@ -1,0 +1,16 @@
+
+# Ignore temporary debug files
+check-parwanto.js
+check-parwanto-pg.js
+check-data.js
+search-conn.js
+deep-audit.js
+parwanto_result.txt
+schema-check.js
+schema_output.txt
+raw_routes.txt
+error_out.json
+*.txt
+*.json
+*.js
+!src/**/*.js

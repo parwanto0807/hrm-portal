@@ -21,7 +21,15 @@ import {
     AlertCircle,
     History
 } from "lucide-react";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
+
 
 interface PayrollImportDialogProps {
     open: boolean;
@@ -44,7 +52,9 @@ export function PayrollImportDialog({ open, onOpenChange }: PayrollImportDialogP
     const [stats, setStats] = useState<ImportStats | null>(null);
     const [isConnecting, setIsConnecting] = useState(false);
     const [mysqlStatus, setMysqlStatus] = useState<"online" | "offline">("offline");
+    const [months, setMonths] = useState("6");
     const [abortController, setAbortController] = useState<AbortController | null>(null);
+
 
     const checkMysqlConnection = async () => {
         setIsConnecting(true);
@@ -89,10 +99,11 @@ export function PayrollImportDialog({ open, onOpenChange }: PayrollImportDialogP
         }, 500);
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002/api'}/mysql/import/payroll`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002/api'}/mysql/import/payroll?months=${months}`, {
                 method: 'POST',
                 signal: controller.signal
             });
+
 
             clearInterval(progressInterval);
 
@@ -180,6 +191,26 @@ export function PayrollImportDialog({ open, onOpenChange }: PayrollImportDialogP
                             {isConnecting ? <Loader2 className="h-3 w-3 animate-spin" /> : mysqlStatus.toUpperCase()}
                         </Badge>
                     </div>
+
+                    {/* Month Selection */}
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Rentang Data (Bulan Terakhir)</label>
+                        <Select value={months} onValueChange={setMonths} disabled={status === "loading"}>
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Pilih rentang bulan" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="1">1 Bulan Terakhir</SelectItem>
+                                <SelectItem value="3">3 Bulan Terakhir</SelectItem>
+                                <SelectItem value="6">6 Bulan Terakhir</SelectItem>
+                                <SelectItem value="12">12 Bulan Terakhir (1 Tahun)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <p className="text-[10px] text-muted-foreground italic">
+                            Semakin sedikit bulan yang dipilih, proses import akan semakin cepat dan stabil.
+                        </p>
+                    </div>
+
 
                     {/* Action Section */}
                     {status === "idle" && (

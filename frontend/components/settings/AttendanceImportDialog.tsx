@@ -22,7 +22,15 @@ import {
     History,
     Calendar
 } from "lucide-react";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
+
 
 interface AttendanceImportDialogProps {
     open: boolean;
@@ -42,7 +50,9 @@ export function AttendanceImportDialog({ open, onOpenChange }: AttendanceImportD
     const [stats, setStats] = useState<ImportStats | null>(null);
     const [isConnecting, setIsConnecting] = useState(false);
     const [mysqlStatus, setMysqlStatus] = useState<"online" | "offline">("offline");
+    const [months, setMonths] = useState("6");
     const [abortController, setAbortController] = useState<AbortController | null>(null);
+
 
     const checkMysqlConnection = async () => {
         setIsConnecting(true);
@@ -87,10 +97,11 @@ export function AttendanceImportDialog({ open, onOpenChange }: AttendanceImportD
         }, 800);
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002/api'}/mysql/import/attendance`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002/api'}/mysql/import/attendance?months=${months}`, {
                 method: 'POST',
                 signal: controller.signal
             });
+
 
             clearInterval(progressInterval);
 
@@ -157,9 +168,10 @@ export function AttendanceImportDialog({ open, onOpenChange }: AttendanceImportD
                         <div>
                             <DialogTitle>Workflow: Import Attendance Log</DialogTitle>
                             <DialogDescription>
-                                Migrasi data absensi harian dari MySQL ke Postgres (Limit 6 Bulan Terakhir).
+                                Migrasi data absensi harian dari MySQL ke Postgres.
                             </DialogDescription>
                         </div>
+
                     </div>
                 </DialogHeader>
 
@@ -178,6 +190,26 @@ export function AttendanceImportDialog({ open, onOpenChange }: AttendanceImportD
                         </Badge>
                     </div>
 
+                    {/* Month Selection */}
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Rentang Data (Bulan Terakhir)</label>
+                        <Select value={months} onValueChange={setMonths} disabled={status === "loading"}>
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Pilih rentang bulan" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="1">1 Bulan Terakhir</SelectItem>
+                                <SelectItem value="3">3 Bulan Terakhir</SelectItem>
+                                <SelectItem value="6">6 Bulan Terakhir</SelectItem>
+                                <SelectItem value="12">12 Bulan Terakhir (1 Tahun)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <p className="text-[10px] text-muted-foreground italic">
+                            Semakin sedikit bulan yang dipilih, proses import akan semakin cepat dan stabil.
+                        </p>
+                    </div>
+
+
                     {/* Warning Section */}
                     {status === "idle" && (
                         <div className="space-y-4">
@@ -186,7 +218,8 @@ export function AttendanceImportDialog({ open, onOpenChange }: AttendanceImportD
                                 <div className="text-xs text-blue-800 dark:text-blue-400 leading-relaxed">
                                     <p className="font-semibold mb-1">Informasi Import Absensi:</p>
                                     <ul className="list-disc pl-4 space-y-1">
-                                        <li>Data yang diimport dibatasi hanya <strong>6 bulan terakhir</strong> untuk optimalisasi performa.</li>
+                                        <li>Data yang diimport dibatasi berdasarkan rentang bulan yang dipilih.</li>
+
                                         <li>Pastikan data <strong>Karyawan</strong> sudah diimport terlebih dahulu.</li>
                                         <li>Data yang sudah ada (berdasarkan Empl ID & Tanggal) akan di-update (Upsert).</li>
                                     </ul>
@@ -205,7 +238,8 @@ export function AttendanceImportDialog({ open, onOpenChange }: AttendanceImportD
                             <div className="space-y-2">
                                 <p className="font-medium">Sedang memproses data absensi...</p>
                                 <Progress value={progress} className="h-2" />
-                                <p className="text-xs text-muted-foreground">Mengecek data 6 bulan terakhir...</p>
+                                <p className="text-xs text-muted-foreground">Mengecek data {months} bulan terakhir...</p>
+
                             </div>
                             <Button
                                 variant="outline"

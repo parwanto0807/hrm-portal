@@ -110,8 +110,8 @@ const ensureSystemUser = async () => {
 ensureSystemUser();
 
 const server = app.listen(PORT, () => {
-  // Server started
-
+  console.log(`🚀 Server running in ${config.env} mode on port ${PORT}`);
+  console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
 });
 
 // Graceful shutdown

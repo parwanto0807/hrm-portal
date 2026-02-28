@@ -5,6 +5,25 @@ import { calculateLate, calculateEarly, sanitizeAttendanceStatus } from '../util
 
 const router = express.Router();
 
+// Temporary debug route
+router.get('/debug/schema', async (req, res) => {
+    try {
+        const pool = await getMysqlPool();
+        if (!pool) return res.status(500).json({ error: 'No pool' });
+        const tables = ['potongan', 'tunjangan', 'rapel', 'pinjamhdr', 'pinjamdet', 'gaji', 'periode', 'jnspotongan', 'jnstunjangan', 'jnsrapel'];
+
+        const results = {};
+        for (const table of tables) {
+            const [cols] = await pool.query(`SHOW COLUMNS FROM ${table}`);
+            results[table] = cols.map(c => c.Field);
+        }
+        res.json(results);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
 // Helper to parse MySQL dates safely in local timezone
 const parseDate = (mysqlDate) => {
     if (!mysqlDate || mysqlDate === '0000-00-00' || mysqlDate === '0000-00-00 00:00:00') {
@@ -277,9 +296,11 @@ router.get('/tables/:name', async (req, res) => {
 
 // Import Payroll Data (MySQL to Postgres)
 router.post('/import/payroll', async (req, res) => {
-    const pool = await getMysqlPool();
-    if (!pool) return res.status(500).json({ success: false, message: 'MySQL not configured' });
+    const connection = await getMysqlPool();
+    if (!connection) return res.status(500).json({ success: false, message: 'MySQL not configured' });
 
+
+    const months = parseInt(req.query.months) || 6;
     const stats = {
         jnsPotongan: { total: 0, imported: 0, errors: 0 },
         jnsTunjangan: { total: 0, imported: 0, errors: 0 },
@@ -293,19 +314,14 @@ router.post('/import/payroll', async (req, res) => {
     };
 
     try {
-
-
         // 0. IMPORT PERIODS (Required for Foreign Key)
-
-        const [mysqlPeriods] = await pool.query('SELECT * FROM periode');
-        let importedPeriods = 0;
+        const [mysqlPeriods] = await connection.query('SELECT * FROM periode WHERE AWAL >= DATE_SUB(NOW(), INTERVAL ? MONTH)', [months]);
         
         for (const row of mysqlPeriods) {
+
             try {
-                // Ensure dates are valid
                 const awal = new Date(row.AWAL);
                 const akhir = new Date(row.AKHIR);
-                
                 await prisma.periode.upsert({
                     where: { periodeId: row.PERIODE_ID },
                     update: {
@@ -330,27 +346,17 @@ router.post('/import/payroll', async (req, res) => {
                         kdCmpy: row.KD_CMPY
                     }
                 });
-                importedPeriods++;
             } catch (err) {
                 console.error(`❌ Failed to import Period ${row.PERIODE_ID}:`, err.message);
             }
         }
 
-
-        // Pre-fetch all master data for UUID mapping to optimize performance
-
+        // Fetch master data for mapping
         const [companies, facts, bags, depts, sies, jabatan, ptkps, jnsKarys, jnsPots, jnsTunjs, jnsRapels] = await Promise.all([
-            prisma.company.findMany(),
-            prisma.mstFact.findMany(),
-            prisma.mstBag.findMany(),
-            prisma.mstDept.findMany(),
-            prisma.mstSie.findMany(),
-            prisma.mstJab.findMany(),
-            prisma.ptkp.findMany(),
-            prisma.jnsKary.findMany(),
-            prisma.jnsPotongan.findMany(),
-            prisma.jnsTunjangan.findMany(),
-            prisma.jnsRapel.findMany()
+            prisma.company.findMany(), prisma.mstFact.findMany(), prisma.mstBag.findMany(),
+            prisma.mstDept.findMany(), prisma.mstSie.findMany(), prisma.mstJab.findMany(),
+            prisma.ptkp.findMany(), prisma.jnsKary.findMany(), prisma.jnsPotongan.findMany(),
+            prisma.jnsTunjangan.findMany(), prisma.jnsRapel.findMany()
         ]);
 
         const companyMap = new Map(companies.map(c => [c.kodeCmpy, c.id]));
@@ -365,739 +371,416 @@ router.post('/import/payroll', async (req, res) => {
         const jnsTunjMap = new Map(jnsTunjs.map(jt => [jt.transCode, jt.id]));
         const jnsRapelMap = new Map(jnsRapels.map(jr => [jr.transCode, jr.id]));
 
+        // 1. IMPORT REFERENCE TABLES IN PARALLEL
+        await Promise.all([
+            (async () => {
+                const [rows] = await connection.query('SELECT * FROM jnspotongan');
+                stats.jnsPotongan.total = rows.length;
+                for (const row of rows) {
+                    try {
+                        await prisma.jnsPotongan.upsert({
+                            where: { transCode: parseInt(row.TRANS_CODE) || 0 },
+                            update: { jenis: row.JENIS || '', isActive: row.is_active !== undefined ? row.is_active === 1 : true },
+                            create: { transCode: parseInt(row.TRANS_CODE) || 0, jenis: row.JENIS || '', isActive: row.is_active !== undefined ? row.is_active === 1 : true }
+                        });
+                        stats.jnsPotongan.imported++;
+                    } catch (err) { stats.jnsPotongan.errors++; }
+                }
+            })(),
+            (async () => {
+                const [rows] = await connection.query('SELECT * FROM jnstunjangan');
+                stats.jnsTunjangan.total = rows.length;
+                for (const row of rows) {
+                    try {
+                        await prisma.jnsTunjangan.upsert({
+                            where: { transCode: parseInt(row.TRANS_CODE) || 0 },
+                            update: { jenis: row.JENIS || '', isActive: row.is_active !== undefined ? row.is_active === 1 : true },
+                            create: { transCode: parseInt(row.TRANS_CODE) || 0, jenis: row.JENIS || '', isActive: row.is_active !== undefined ? row.is_active === 1 : true }
+                        });
+                        stats.jnsTunjangan.imported++;
+                    } catch (err) { stats.jnsTunjangan.errors++; }
+                }
+            })(),
+            (async () => {
+                const [rows] = await connection.query('SELECT * FROM jnsrapel');
+                stats.jnsRapel.total = rows.length;
+                for (const row of rows) {
+                    try {
+                        await prisma.jnsRapel.upsert({
+                            where: { transCode: parseInt(row.TRANS_CODE) || 0 },
+                            update: { jenis: row.JENIS || '', isActive: row.is_active !== undefined ? row.is_active === 1 : true },
+                            create: { transCode: parseInt(row.TRANS_CODE) || 0, jenis: row.JENIS || '', isActive: row.is_active !== undefined ? row.is_active === 1 : true }
+                        });
+                        stats.jnsRapel.imported++;
+                    } catch (err) { stats.jnsRapel.errors++; }
+                }
+            })(),
+            (async () => {
+                const [rows] = await connection.query('SELECT * FROM pinjamhdr');
+                stats.pinjamHdr.total = rows.length;
+                for (const row of rows) {
+                    try {
+                        await prisma.pinjamHdr.upsert({
+                            where: { pinjam_hdr_unique: { emplId: row.EMPL_ID, tglPinjam: new Date(row.TGL_PINJAM), totPinjam: parseFloat(row.TOT_PINJAM) || 0, jnsSumber: parseInt(row.JNS_SUMBER) || 0 } },
+                            update: { saldoPinjam: parseFloat(row.SALDO_PINJAM) || 0, jmlCicil: parseInt(row.JML_CICIL) || 0, keterangan: row.KETERANGAN || "", status: row.STATUS === 1, approved: row.APPROVED === 1, approvedBy: row.APPROVED_BY },
+                            create: { emplId: row.EMPL_ID, tglPinjam: new Date(row.TGL_PINJAM), totPinjam: parseFloat(row.TOT_PINJAM) || 0, jnsSumber: parseInt(row.JNS_SUMBER) || 0, saldoPinjam: parseFloat(row.SALDO_PINJAM) || 0, jmlCicil: parseInt(row.JML_CICIL) || 0, keterangan: row.KETERANGAN || "", status: row.STATUS === 1, approved: row.APPROVED === 1, approvedBy: row.APPROVED_BY }
+                        });
+                        stats.pinjamHdr.imported++;
+                    } catch (err) { stats.pinjamHdr.errors++; }
+                }
+            })()
+        ]);
 
-        // 1. IMPORT MASTER REFERENCE TABLES (Required for Foreign Keys)
-        
-        // 1a. Import JnsPotongan (Deduction Types)
-
-        const [mysqlJnsPotongan] = await pool.query('SELECT * FROM jnspotongan');
-        stats.jnsPotongan.total = mysqlJnsPotongan.length;
-        let importedJnsPotongan = 0;
-        
-        for (const row of mysqlJnsPotongan) {
-            try {
-                await prisma.jnsPotongan.upsert({
-                    where: { transCode: parseInt(row.TRANS_CODE) || 0 },
-                    update: {
-                        jenis: row.JENIS || '',
-                        isActive: row.is_active !== undefined ? row.is_active === 1 : true
-                    },
-                    create: {
-                        transCode: parseInt(row.TRANS_CODE) || 0,
-                        jenis: row.JENIS || '',
-                        isActive: row.is_active !== undefined ? row.is_active === 1 : true
-                    }
-                });
-                importedJnsPotongan++;
-                stats.jnsPotongan.imported++;
-            } catch (err) {
-                stats.jnsPotongan.errors++;
-                console.error(`❌ Failed to import JnsPotongan ${row.TRANS_CODE}:`, err.message);
-            }
-        }
-
-
-        // 1b. Import JnsTunjangan (Allowance Types)
-
-        const [mysqlJnsTunjangan] = await pool.query('SELECT * FROM jnstunjangan');
-        stats.jnsTunjangan.total = mysqlJnsTunjangan.length;
-        let importedJnsTunjangan = 0;
-        
-        for (const row of mysqlJnsTunjangan) {
-            try {
-                await prisma.jnsTunjangan.upsert({
-                    where: { transCode: parseInt(row.TRANS_CODE) || 0 },
-                    update: {
-                        jenis: row.JENIS || '',
-                        isActive: row.is_active !== undefined ? row.is_active === 1 : true
-                    },
-                    create: {
-                        transCode: parseInt(row.TRANS_CODE) || 0,
-                        jenis: row.JENIS || '',
-                        isActive: row.is_active !== undefined ? row.is_active === 1 : true
-                    }
-                });
-                importedJnsTunjangan++;
-                stats.jnsTunjangan.imported++;
-            } catch (err) {
-                stats.jnsTunjangan.errors++;
-                console.error(`❌ Failed to import JnsTunjangan ${row.TRANS_CODE}:`, err.message);
-            }
-        }
-
-
-        // 1c. Import JnsRapel (Rapel Types)
-
-        const [mysqlJnsRapel] = await pool.query('SELECT * FROM jnsrapel');
-        stats.jnsRapel.total = mysqlJnsRapel.length;
-        let importedJnsRapel = 0;
-        
-        for (const row of mysqlJnsRapel) {
-            try {
-                await prisma.jnsRapel.upsert({
-                    where: { transCode: parseInt(row.TRANS_CODE) || 0 },
-                    update: {
-                        jenis: row.JENIS || '',
-                        isActive: row.is_active !== undefined ? row.is_active === 1 : true
-                    },
-                    create: {
-                        transCode: parseInt(row.TRANS_CODE) || 0,
-                        jenis: row.JENIS || '',
-                        isActive: row.is_active !== undefined ? row.is_active === 1 : true
-                    }
-                });
-                importedJnsRapel++;
-                stats.jnsRapel.imported++;
-            } catch (err) {
-                stats.jnsRapel.errors++;
-                console.error(`❌ Failed to import JnsRapel ${row.TRANS_CODE}:`, err.message);
-            }
-        }
-
-
-        // 2. IMPORT POTONGAN - MOVED AFTER GAJI
-
-        // 3. IMPORT PINJAMHDR (Loans Header)
-
-        const [mysqlPinjamHdr] = await pool.query('SELECT * FROM pinjamhdr');
-        stats.pinjamHdr.total = mysqlPinjamHdr.length;
-        for (const row of mysqlPinjamHdr) {
-            try {
-                await prisma.pinjamHdr.upsert({
-                    where: { pinjam_hdr_unique: { emplId: row.EMPL_ID, tglPinjam: new Date(row.TGL_PINJAM), totPinjam: parseFloat(row.TOT_PINJAM) || 0, jnsSumber: parseInt(row.JNS_SUMBER) || 0 } },
-                    update: {
-                        saldoPinjam: parseFloat(row.SALDO_PINJAM) || 0,
-                        jmlCicil: parseInt(row.JML_CICIL) || 0,
-                        keterangan: row.KETERANGAN || "",
-                        status: row.STATUS === 1,
-                        approved: row.APPROVED === 1,
-                        approvedBy: row.APPROVED_BY
-                    },
-                    create: {
-                        emplId: row.EMPL_ID,
-                        tglPinjam: new Date(row.TGL_PINJAM),
-                        totPinjam: parseFloat(row.TOT_PINJAM) || 0,
-                        jnsSumber: parseInt(row.JNS_SUMBER) || 0,
-                        saldoPinjam: parseFloat(row.SALDO_PINJAM) || 0,
-                        jmlCicil: parseInt(row.JML_CICIL) || 0,
-                        keterangan: row.KETERANGAN || "",
-                        status: row.STATUS === 1,
-                        approved: row.APPROVED === 1,
-                        approvedBy: row.APPROVED_BY
-                    }
-                });
-                stats.pinjamHdr.imported++;
-            } catch (err) {
-                stats.pinjamHdr.errors++;
-            }
-        }
-
-
-        // 4. IMPORT PINJAMDET - MOVED AFTER GAJI
-
-        // 5. IMPORT GAJI (Imported AFTER Potongan & Pinjaman as requested)
-
-        const [mysqlGaji] = await pool.query('SELECT * FROM gaji');
+        // 2. IMPORT GAJI IN BATCHES
+        const [mysqlGaji] = await connection.query('SELECT * FROM gaji WHERE TGL_PROSES >= DATE_SUB(NOW(), INTERVAL ? MONTH)', [months]);
         stats.gaji.total = mysqlGaji.length;
         
-        for (const row of mysqlGaji) {
-            try {
-                // Comprehensive field mapping (CORRECTED to match schema)
-                const gajiData = {
-                    // Basic Info
-                    nik: row.NIK || null,
-                    nama: row.NAMA || null,
-                    
-                    // Organization Structure
-                    kdFact: row.KD_FACT || null,
-                    kdBag: row.KD_BAG || null,
-                    kdDept: row.KD_DEPT || null,
-                    kdSeksie: row.KD_SEKSIE || null,
-                    kdJab: row.KD_JAB || null,
-                    kdCmpy: row.KD_CMPY || null,
-                    
-                    // Dates
-                    tglProses: parseDate(row.TGL_PROSES) || new Date(),
-                    tglMsk: parseDate(row.TGL_MSK) || new Date(),
-                    
-                    // Employee Metadata & Tenure (NEW)
-                    typeEmpl: parseInt(row.TYPE_EMPL) || 0,
-                    kdPjk: parseInt(row.KD_PJK) || 0,
-                    typePjk: parseInt(row.TYPE_PJK) || 0,
-                    kdBpjsTk: row.KD_BPJSTK === 1,
-                    kdBpjsKes: row.KD_BPJSKES === 1,
-                    kdOut: row.KD_OUT === 1,
-                    kdJns: parseInt(row.KD_JNS) || 0,
-                    thnKerja: parseInt(row.THN_KERJA) || 0,
-                    blnKerja: parseInt(row.BLN_KERJA) || 0,
-                    hrKerja: parseInt(row.HR_KERJA) || 0,
-                    persenMasa: parseFloat(row.PERSENMASA) || 0,
-                    persenRmh: parseFloat(row.PERSEN_RMH) || 0,
-                    hrKerja1: parseInt(row.HR_KERJA1) || 0,
-                    hrKerja2: parseInt(row.HR_KERJA2) || 0,
+        const BATCH_SIZE = 200;
+        for (let i = 0; i < mysqlGaji.length; i += BATCH_SIZE) {
+            const batch = mysqlGaji.slice(i, i + BATCH_SIZE);
+            await Promise.all(batch.map(async (row) => {
+                try {
+                    const gajiData = {
+                        nik: row.NIK || null,
+                        nama: row.NAMA || null,
+                        kdFact: row.KD_FACT || null,
+                        kdBag: row.KD_BAG || null,
+                        kdDept: row.KD_DEPT || null,
+                        kdSeksie: row.KD_SEKSIE || null,
+                        kdJab: row.KD_JAB || null,
+                        kdCmpy: row.KD_CMPY || null,
+                        tglProses: parseDate(row.TGL_PROSES) || new Date(),
+                        tglMsk: parseDate(row.TGL_MSK) || new Date(),
+                        typeEmpl: parseInt(row.TYPE_EMPL) || 0,
+                        kdPjk: parseInt(row.KD_PJK) || 0,
+                        typePjk: parseInt(row.TYPE_PJK) || 0,
+                        kdBpjsTk: row.KD_BPJSTK === 1,
+                        kdBpjsKes: row.KD_BPJSKES === 1,
+                        kdOut: row.KD_OUT === 1,
+                        kdJns: parseInt(row.KD_JNS) || 0,
+                        thnKerja: parseInt(row.THN_KERJA) || 0,
+                        blnKerja: parseInt(row.BLN_KERJA) || 0,
+                        hrKerja: parseInt(row.HR_KERJA) || 0,
+                        persenMasa: parseFloat(row.PERSENMASA) || 0,
+                        persenRmh: parseFloat(row.PERSEN_RMH) || 0,
+                        hrKerja1: parseInt(row.HR_KERJA1) || 0,
+                        hrKerja2: parseInt(row.HR_KERJA2) || 0,
+                        pokokBln: parseFloat(row.POKOK_BLN) || 0,
+                        pokokTrm: parseFloat(row.POKOK_TRM) || 0,
+                        tJabatan: parseFloat(row.TJABATAN) || 0,
+                        tTransport: parseFloat(row.TTRANSPORT) || 0,
+                        tMakan: parseFloat(row.TMAKAN) || 0,
+                        tKhusus: parseFloat(row.TKHUSUS) || 0,
+                        tLain: parseFloat(row.TLAIN) || 0,
+                        tunjLain: parseFloat(row.TUNJLAIN) || 0,
+                        tunjMedik: parseFloat(row.TUNJMEDIK) || 0,
+                        rapel: parseFloat(row.RAPEL) || 0,
+                        tunjRapel: parseFloat(row.TUNJRAPEL) || 0,
+                        totJLembur: parseFloat(row.TOTJLEMBUR) || 0,
+                        totULembur: parseFloat(row.TOTULEMBUR) || 0,
+                        jLembur1: parseFloat(row.JLEMBUR1) || 0,
+                        jLembur2: parseFloat(row.JLEMBUR2) || 0,
+                        jLembur3: parseFloat(row.JLEMBUR3) || 0,
+                        jLembur4: parseFloat(row.JLEMBUR4) || 0,
+                        lebihJam: parseFloat(row.LEBIHJAM) || 0,
+                        totLmbNerus: parseFloat(row.TOTLMBNERUS) || 0,
+                        hrShift1: parseInt(row.HR_SHIFT1) || 0,
+                        hrShift2: parseInt(row.HR_SHIFT2) || 0,
+                        hrShift3: parseInt(row.HR_SHIFT3) || 0,
+                        hrLShift: parseInt(row.HR_LSHIFT) || 0,
+                        hrShift4: parseInt(row.HR_SHIFT4) || 0,
+                        hrShift5: parseInt(row.HR_SHIFT5) || 0,
+                        hrShift6: parseInt(row.HR_SHIFT6) || 0,
+                        hrShift7: parseInt(row.HR_SHIFT7) || 0,
+                        hrShift8: parseInt(row.HR_SHIFT8) || 0,
+                        hrShift9: parseInt(row.HR_SHIFT9) || 0,
+                        hrShift10: parseInt(row.HR_SHIFT10) || 0,
+                        totUShift: parseFloat(row.TOTUSHIFT) || 0,
+                        mealOt: parseFloat(row.MEALOT) || 0,
+                        jhtEmpl: parseFloat(row.JHT_EMPL) || 0,
+                        jpnEmpl: parseFloat(row.JPN_EMPL) || 0,
+                        jknEmpl: parseFloat(row.JKN_EMPL) || 0,
+                        jhtComp: parseFloat(row.JHT_COMP) || 0,
+                        jpnComp: parseFloat(row.JPN_COMP) || 0,
+                        jknComp: parseFloat(row.JKN_COMP) || 0,
+                        tPph21: parseFloat(row.TPPH21) || 0,
+                        pphThr: parseFloat(row.PPH_THR) || 0,
+                        admBank: parseFloat(row.ADM_BANK) || 0,
+                        upahTetap: parseFloat(row.UPAHTETAP) || 0,
+                        dasarBpjsTk: parseFloat(row.DASAR_BPJSTK) || 0,
+                        dasarBpjsKes: parseFloat(row.DASAR_BPJSKES) || 0,
+                        dasarJpn: parseFloat(row.DASAR_JPN) || 0,
+                        jkk: parseFloat(row.JKK) || 0,
+                        jkm: parseFloat(row.JKM) || 0,
+                        jpk: parseFloat(row.JPK) || 0,
+                        ptkpAmount: parseFloat(row.PTKP) || 0,
+                        pphEmpl: parseFloat(row.PPH_EMPL) || 0,
+                        ptAbsen: parseFloat(row.PT_ABSEN) || 0,
+                        hrHadir: parseInt(row.HR_HADIR) || 0,
+                        hrMangkir: parseInt(row.HR_MANGKIR) || 0,
+                        hrSakit: parseInt(row.HR_SAKIT) || 0,
+                        hrTransp: parseInt(row.HR_TRANSP) || 0,
+                        hrMakan: parseInt(row.HR_MAKAN) || 0,
+                        hrIzin: parseInt(row.HR_IZIN) || 0,
+                        hrCuti1: parseInt(row.HR_CUTI1) || 0,
+                        hrCuti2: parseInt(row.HR_CUTI2) || 0,
+                        hrGantung: parseInt(row.HR_GANTUNG) || 0,
+                        hrLambat: parseInt(row.HR_LAMBAT) || 0,
+                        mnLambat: parseInt(row.MN_LAMBAT) || 0,
+                        hrPulang: parseInt(row.HR_PULANG) || 0,
+                        hrOff: parseInt(row.HR_OFF) || 0,
+                        hrExtMeal: parseInt(row.HR_EXTMEAL) || 0,
+                        hrExtSusu: parseInt(row.HR_EXTSUSU) || 0,
+                        hrExtShift: parseInt(row.HR_EXTSHIFT) || 0,
+                        thr: parseFloat(row.THR) || 0,
+                        gKotor: parseFloat(row.GKOTOR) || 0,
+                        gBersih: parseFloat(row.GBERSIH) || 0,
+                        pinjam: parseFloat(row.PINJAM) || 0,
+                        koperasi: parseFloat(row.KOPERASI) || 0,
+                        ptLain: parseFloat(row.PT_LAIN) || 0,
+                        totPotong: parseFloat(row.TOTPOTONG) || 0,
+                        companyId: companyMap.get(row.KD_CMPY) || null,
+                        factId: factMap.get(row.KD_FACT) || null,
+                        bagId: bagMap.get(row.KD_BAG) || null,
+                        deptId: deptMap.get(row.KD_DEPT) || null,
+                        sieId: sieMap.get(row.KD_SEKSIE) || null,
+                        jabatanId: jabatanMap.get(row.KD_JAB) || null,
+                        ptkpId: ptkpMap.get(parseInt(row.KD_PTKP)) || null,
+                        jnskaryId: jnsKaryMap.get(parseInt(row.KD_JNS)) || null,
+                        closing: row.CLOSING === 1,
+                        paidDate: parseDate(row.PAID_DATE),
+                        paidBy: row.PAID_BY || null
+                    };
 
-                    // Base Salary
-                    pokokBln: parseFloat(row.POKOK_BLN) || 0,
-                    pokokTrm: parseFloat(row.POKOK_TRM) || 0,
-                    
-                    // Allowances (Tunjangan) - Only fields that exist in schema
-                    tJabatan: parseFloat(row.TJABATAN) || 0,
-                    tTransport: parseFloat(row.TTRANSPORT) || 0,
-                    tMakan: parseFloat(row.TMAKAN) || 0,
-                    tKhusus: parseFloat(row.TKHUSUS) || 0,
-                    tLain: parseFloat(row.TLAIN) || 0,
-                    tunjLain: parseFloat(row.TUNJLAIN) || 0,
-                    tunjMedik: parseFloat(row.TUNJMEDIK) || 0,
-                    
-                    // Rapel
-                    rapel: parseFloat(row.RAPEL) || 0,
-                    tunjRapel: parseFloat(row.TUNJRAPEL) || 0,
-                    
-                    // Overtime (Lembur) - Correct field names
-                    totJLembur: parseFloat(row.TOTJLEMBUR) || 0,  // Hours
-                    totULembur: parseFloat(row.TOTULEMBUR) || 0,  // Amount
-                    jLembur1: parseFloat(row.JLEMBUR1) || 0,
-                    jLembur2: parseFloat(row.JLEMBUR2) || 0,
-                    jLembur3: parseFloat(row.JLEMBUR3) || 0,
-                    jLembur4: parseFloat(row.JLEMBUR4) || 0,
-                    lebihJam: parseFloat(row.LEBIHJAM) || 0,
-                    totLmbNerus: parseFloat(row.TOTLMBNERUS) || 0,
-                    
-                    // Shift & Meal Allowances - Correct field names from schema
-                    hrShift1: parseInt(row.HR_SHIFT1) || 0,
-                    hrShift2: parseInt(row.HR_SHIFT2) || 0,
-                    hrShift3: parseInt(row.HR_SHIFT3) || 0,
-                    hrLShift: parseInt(row.HR_LSHIFT) || 0,
-                    hrShift4: parseInt(row.HR_SHIFT4) || 0,
-                    hrShift5: parseInt(row.HR_SHIFT5) || 0,
-                    hrShift6: parseInt(row.HR_SHIFT6) || 0,
-                    hrShift7: parseInt(row.HR_SHIFT7) || 0,
-                    hrShift8: parseInt(row.HR_SHIFT8) || 0,
-                    hrShift9: parseInt(row.HR_SHIFT9) || 0,
-                    hrShift10: parseInt(row.HR_SHIFT10) || 0,
-                    totUShift: parseFloat(row.TOTUSHIFT) || 0,  // Schema: totUShift
-                    mealOt: parseFloat(row.MEALOT) || 0,        // Schema: mealOt
-                    
-                    // BPJS Employee Contributions - Correct field names
-                    jhtEmpl: parseFloat(row.JHT_EMPL) || 0,
-                    jpnEmpl: parseFloat(row.JPN_EMPL) || 0,
-                    jknEmpl: parseFloat(row.JKN_EMPL) || 0,
-                    
-                    // BPJS Company Contributions - Correct field names
-                    jhtComp: parseFloat(row.JHT_COMP) || 0,
-                    jpnComp: parseFloat(row.JPN_COMP) || 0,
-                    jknComp: parseFloat(row.JKN_COMP) || 0,
-                    
-                    // Tax
-                    tPph21: parseFloat(row.TPPH21) || 0,
-                    pphThr: parseFloat(row.PPH_THR) || 0,
-                    
-                    // Admin & Other
-                    admBank: parseFloat(row.ADM_BANK) || 0,
-                    upahTetap: parseFloat(row.UPAHTETAP) || 0,
-                    
-                    // BPJS Basis
-                    dasarBpjsTk: parseFloat(row.DASAR_BPJSTK) || 0,
-                    dasarBpjsKes: parseFloat(row.DASAR_BPJSKES) || 0,
-                    dasarJpn: parseFloat(row.DASAR_JPN) || 0,
-                    
-                    // Jaminan & Other Deductions (NEW)
-                    jkk: parseFloat(row.JKK) || 0,
-                    jkm: parseFloat(row.JKM) || 0,
-                    jpk: parseFloat(row.JPK) || 0,
-                    ptkpAmount: parseFloat(row.PTKP) || 0,
-                    pphEmpl: parseFloat(row.PPH_EMPL) || 0,
-                    ptAbsen: parseFloat(row.PT_ABSEN) || 0,
-
-                    // Attendance/HR Counters (NEW)
-                    hrHadir: parseInt(row.HR_HADIR) || 0,
-                    hrMangkir: parseInt(row.HR_MANGKIR) || 0,
-                    hrSakit: parseInt(row.HR_SAKIT) || 0,
-                    hrTransp: parseInt(row.HR_TRANSP) || 0,
-                    hrMakan: parseInt(row.HR_MAKAN) || 0,
-                    hrIzin: parseInt(row.HR_IZIN) || 0,
-                    hrCuti1: parseInt(row.HR_CUTI1) || 0,
-                    hrCuti2: parseInt(row.HR_CUTI2) || 0,
-                    hrGantung: parseInt(row.HR_GANTUNG) || 0,
-                    hrLambat: parseInt(row.HR_LAMBAT) || 0,
-                    mnLambat: parseInt(row.MN_LAMBAT) || 0,
-                    hrPulang: parseInt(row.HR_PULANG) || 0,
-                    hrOff: parseInt(row.HR_OFF) || 0,
-                    hrExtMeal: parseInt(row.HR_EXTMEAL) || 0,
-                    hrExtSusu: parseInt(row.HR_EXTSUSU) || 0,
-                    hrExtShift: parseInt(row.HR_EXTSHIFT) || 0,
-
-                    // THR (Holiday Allowance)
-                    thr: parseFloat(row.THR) || 0,
-                    
-                    // Totals
-                    gKotor: parseFloat(row.GKOTOR) || 0,
-                    gBersih: parseFloat(row.GBERSIH) || 0,
-                    pinjam: parseFloat(row.PINJAM) || 0,
-                    koperasi: parseFloat(row.KOPERASI) || 0,
-                    ptLain: parseFloat(row.PT_LAIN) || 0,
-                    totPotong: parseFloat(row.TOTPOTONG) || 0,
-
-                    // UUID Relations
-                    companyId: companyMap.get(row.KD_CMPY) || null,
-                    factId: factMap.get(row.KD_FACT) || null,
-                    bagId: bagMap.get(row.KD_BAG) || null,
-                    deptId: deptMap.get(row.KD_DEPT) || null,
-                    sieId: sieMap.get(row.KD_SEKSIE) || null,
-                    jabatanId: jabatanMap.get(row.KD_JAB) || null,
-                    ptkpId: ptkpMap.get(parseInt(row.KD_PTKP)) || null,
-                    jnskaryId: jnsKaryMap.get(parseInt(row.KD_JNS)) || null,
-                    
-                    // Status
-                    closing: row.CLOSING === 1,
-                    paidDate: parseDate(row.PAID_DATE),
-                    paidBy: row.PAID_BY || null
-                };
-
-                await prisma.gaji.upsert({
-                    where: { gaji_unique: { period: row.PERIOD, emplId: row.EMPL_ID } },
-                    update: gajiData,
-                    create: {
-                        period: row.PERIOD,
-                        emplId: row.EMPL_ID,
-                        ...gajiData
-                    }
-                });
-                stats.gaji.imported++;
-            } catch (err) {
-                stats.gaji.errors++;
-                console.error(`❌ Gaji ${row.EMPL_ID} error:`, err.message);
-            }
+                    await prisma.gaji.upsert({
+                        where: { gaji_unique: { period: row.PERIOD, emplId: row.EMPL_ID } },
+                        update: gajiData,
+                        create: { period: row.PERIOD, emplId: row.EMPL_ID, ...gajiData }
+                    });
+                    stats.gaji.imported++;
+                } catch (err) { stats.gaji.errors++; }
+            }));
         }
 
-
-        // 2. IMPORT POTONGAN (Moved here to satisfy FK constraint to Gaji)
-
-        const [mysqlPotongan] = await pool.query('SELECT * FROM potongan');
-        stats.potongan.total = mysqlPotongan.length;
-        for (const row of mysqlPotongan) {
-            try {
-                await prisma.potongan.upsert({
-                    where: { potongan_unique: { period: row.PERIOD, transId: row.TRANS_ID } },
-                    update: { 
-                        jumlah: parseFloat(row.JUMLAH) || 0, 
-                        keterangan: row.KETERANGAN,
-                        jenisPotId: jnsPotMap.get(parseInt(row.TRANS_CODE)) || null
-                    },
-                    create: {
-                        period: row.PERIOD,
-                        transId: row.TRANS_ID,
-                        transDate: new Date(row.TRANS_DATE),
-                        transCode: parseInt(row.TRANS_CODE) || 0,
-                        emplId: row.EMPL_ID,
-                        nik: row.NIK,
-                        jumlah: parseFloat(row.JUMLAH) || 0,
-                        keterangan: row.KETERANGAN,
-                        jenisPotId: jnsPotMap.get(parseInt(row.TRANS_CODE)) || null
-                    }
-                });
-                stats.potongan.imported++;
-            } catch (err) {
-                stats.potongan.errors++;
-                console.error(`❌ Potongan Error ${row.TRANS_ID} (Code: ${row.TRANS_CODE}):`, err.message);
-            }
-        }
-
-
-        // 4. IMPORT PINJAMDET (Moved here to satisfy FK constraint to Gaji)
-
-        const [mysqlPinjamDet] = await pool.query('SELECT * FROM pinjamdet');
-        stats.pinjamDet.total = mysqlPinjamDet.length;
-        for (const row of mysqlPinjamDet) {
-            try {
-                await prisma.pinjamDet.upsert({
-                    where: { pinjam_det_unique: { transId: row.TRANS_ID, periode: row.PERIODE, jnsSumber: parseInt(row.JNS_SUMBER) || 0, tglBayar: new Date(row.TGL_BAYAR) } },
-                    update: {
-                        jmlBayar: parseFloat(row.JML_BAYAR) || 0,
-                        saldoPinjam: parseFloat(row.SALDO_PINJAM) || 0,
-                        keterangan: row.KETERANGAN || "",
-                        flagLunas: row.FLAG_LUNAS === 1
-                    },
-                    create: {
-                        transId: row.TRANS_ID,
-                        periode: row.PERIODE,
-                        jnsSumber: parseInt(row.JNS_SUMBER) || 0,
-                        tglBayar: new Date(row.TGL_BAYAR),
-                        tglPinjam: new Date(row.TGL_PINJAM),
-                        emplId: row.EMPL_ID,
-                        jmlBayar: parseFloat(row.JML_BAYAR) || 0,
-                        saldoPinjam: parseFloat(row.SALDO_PINJAM) || 0,
-                        keterangan: row.KETERANGAN || "",
-                        flagLunas: row.FLAG_LUNAS === 1
-                    }
-                });
-                stats.pinjamDet.imported++;
-            } catch (err) {
-                stats.pinjamDet.errors++;
-            }
-        }
-
-
-        // 6. IMPORT TUNJANGAN (Allowance Details)
-
-        const [mysqlTunjangan] = await pool.query('SELECT * FROM tunjangan');
-        stats.tunjangan.total = mysqlTunjangan.length;
-        for (const row of mysqlTunjangan) {
-            try {
-                await prisma.tunjangan.upsert({
-                    where: { tunjangan_unique: { period: row.PERIOD, transId: row.TRANS_ID } },
-                    update: { 
-                        jumlah: parseFloat(row.JUMLAH) || 0, 
-                        keterangan: row.KETERANGAN,
-                        jenisTunjId: jnsTunjMap.get(parseInt(row.TRANS_CODE)) || null
-                    },
-                    create: {
-                        period: row.PERIOD,
-                        transId: row.TRANS_ID,
-                        transDate: new Date(row.TRANS_DATE),
-                        transCode: parseInt(row.TRANS_CODE) || 0,
-                        jenisTunjId: jnsTunjMap.get(parseInt(row.TRANS_CODE)) || null,
-                        emplId: row.EMPL_ID,
-                        nik: row.NIK,
-                        jumlah: parseFloat(row.JUMLAH) || 0,
-                        keterangan: row.KETERANGAN
-                    }
-                });
-                stats.tunjangan.imported++;
-            } catch (err) {
-                stats.tunjangan.errors++;
-            }
-        }
-
-
-        // 7. IMPORT RAPEL
-
-        const [mysqlRapel] = await pool.query('SELECT * FROM rapel');
-        stats.rapel.total = mysqlRapel.length;
-        for (const row of mysqlRapel) {
-            try {
-                await prisma.rapel.upsert({
-                    where: { rapel_unique: { period: row.PERIOD, transId: row.TRANS_ID } },
-                    update: { 
-                        jumlah: parseFloat(row.JUMLAH) || 0, 
-                        keterangan: row.KETERANGAN,
-                        jenisRapelId: jnsRapelMap.get(parseInt(row.TRANS_CODE)) || null
-                    },
-                    create: {
-                        period: row.PERIOD,
-                        transId: row.TRANS_ID,
-                        transDate: new Date(row.TRANS_DATE),
-                        transCode: parseInt(row.TRANS_CODE) || 0,
-                        jenisRapelId: jnsRapelMap.get(parseInt(row.TRANS_CODE)) || null,
-                        emplId: row.EMPL_ID,
-                        nik: row.NIK,
-                        jumlah: parseFloat(row.JUMLAH) || 0,
-                        keterangan: row.KETERANGAN
-                    }
-                });
-                stats.rapel.imported++;
-            } catch (err) {
-                stats.rapel.errors++;
-                console.error(`❌ Rapel ${row.TRANS_ID} (Period: ${row.PERIOD}, TransCode: ${row.TRANS_CODE}) error:`, err.message);
-            }
-        }
+        // 3. IMPORT POTONGAN, TUNJANGAN, RAPEL, PINJAMDET IN PARALLEL
+        await Promise.all([
+            (async () => {
+                const [rows] = await connection.query('SELECT * FROM potongan WHERE TRANS_DATE >= DATE_SUB(NOW(), INTERVAL ? MONTH)', [months]);
+                stats.potongan.total = rows.length;
+                for (const row of rows) {
+                    try {
+                        await prisma.potongan.upsert({
+                            where: { potongan_unique: { period: row.PERIOD, transId: row.TRANS_ID } },
+                            update: { jumlah: parseFloat(row.JUMLAH) || 0, keterangan: row.KETERANGAN, jenisPotId: jnsPotMap.get(parseInt(row.TRANS_CODE)) || null },
+                            create: { period: row.PERIOD, transId: row.TRANS_ID, transDate: new Date(row.TRANS_DATE), transCode: parseInt(row.TRANS_CODE) || 0, emplId: row.EMPL_ID, nik: row.NIK, jumlah: parseFloat(row.JUMLAH) || 0, keterangan: row.KETERANGAN, jenisPotId: jnsPotMap.get(parseInt(row.TRANS_CODE)) || null }
+                        });
+                        stats.potongan.imported++;
+                    } catch (err) { stats.potongan.errors++; }
+                }
+            })(),
+            (async () => {
+                const [rows] = await connection.query('SELECT * FROM tunjangan WHERE TRANS_DATE >= DATE_SUB(NOW(), INTERVAL ? MONTH)', [months]);
+                stats.tunjangan.total = rows.length;
+                for (const row of rows) {
+                    try {
+                        await prisma.tunjangan.upsert({
+                            where: { tunjangan_unique: { period: row.PERIOD, transId: row.TRANS_ID } },
+                            update: { jumlah: parseFloat(row.JUMLAH) || 0, keterangan: row.KETERANGAN, jenisTunjId: jnsTunjMap.get(parseInt(row.TRANS_CODE)) || null },
+                            create: { period: row.PERIOD, transId: row.TRANS_ID, transDate: new Date(row.TRANS_DATE), transCode: parseInt(row.TRANS_CODE) || 0, jenisTunjId: jnsTunjMap.get(parseInt(row.TRANS_CODE)) || null, emplId: row.EMPL_ID, nik: row.NIK, jumlah: parseFloat(row.JUMLAH) || 0, keterangan: row.KETERANGAN }
+                        });
+                        stats.tunjangan.imported++;
+                    } catch (err) { stats.tunjangan.errors++; }
+                }
+            })(),
+            (async () => {
+                const [rows] = await connection.query('SELECT * FROM rapel WHERE TRANS_DATE >= DATE_SUB(NOW(), INTERVAL ? MONTH)', [months]);
+                stats.rapel.total = rows.length;
+                for (const row of rows) {
+                    try {
+                        await prisma.rapel.upsert({
+                            where: { rapel_unique: { period: row.PERIOD, transId: row.TRANS_ID } },
+                            update: { jumlah: parseFloat(row.JUMLAH) || 0, keterangan: row.KETERANGAN, jenisRapelId: jnsRapelMap.get(parseInt(row.TRANS_CODE)) || null },
+                            create: { period: row.PERIOD, transId: row.TRANS_ID, transDate: new Date(row.TRANS_DATE), transCode: parseInt(row.TRANS_CODE) || 0, jenisRapelId: jnsRapelMap.get(parseInt(row.TRANS_CODE)) || null, emplId: row.EMPL_ID, nik: row.NIK, jumlah: parseFloat(row.JUMLAH) || 0, keterangan: row.KETERANGAN }
+                        });
+                        stats.rapel.imported++;
+                    } catch (err) { stats.rapel.errors++; }
+                }
+            })(),
+            (async () => {
+                const [rows] = await connection.query('SELECT * FROM pinjamdet WHERE TGL_BAYAR >= DATE_SUB(NOW(), INTERVAL ? MONTH)', [months]);
+                stats.pinjamDet.total = rows.length;
+                for (const row of rows) {
+                    try {
+                        await prisma.pinjamDet.upsert({
+                            where: { pinjam_det_unique: { transId: row.TRANS_ID, periode: row.PERIODE, jnsSumber: parseInt(row.JNS_SUMBER) || 0, tglBayar: new Date(row.TGL_BAYAR) } },
+                            update: { jmlBayar: parseFloat(row.JML_BAYAR) || 0, saldoPinjam: parseFloat(row.SALDO_PINJAM) || 0, keterangan: row.KETERANGAN || "", flagLunas: row.FLAG_LUNAS === 1 },
+                            create: { transId: row.TRANS_ID, periode: row.PERIODE, jnsSumber: parseInt(row.JNS_SUMBER) || 0, tglBayar: new Date(row.TGL_BAYAR), tglPinjam: new Date(row.TGL_PINJAM), emplId: row.EMPL_ID, jmlBayar: parseFloat(row.JML_BAYAR) || 0, saldoPinjam: parseFloat(row.SALDO_PINJAM) || 0, keterangan: row.KETERANGAN || "", flagLunas: row.FLAG_LUNAS === 1 }
+                        });
+                        stats.pinjamDet.imported++;
+                    } catch (err) { stats.pinjamDet.errors++; }
+                }
+            })()
+        ]);
 
         res.status(200).json({ success: true, stats, message: 'Import payroll selesai' });
     } catch (error) {
         console.error('🔥 Import Error:', error);
-        res.status(500).json({ success: false, message: error.message });
+        res.status(500).json({ 
+            success: false, 
+            message: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined 
+        });
     }
 });
 
 
-// Import Attendance Data (Limit to last 6 months)
+// Import Attendance Data
 router.post('/import/attendance', async (req, res) => {
     const pool = await getMysqlPool();
     if (!pool) return res.status(500).json({ success: false, message: 'MySQL not configured' });
 
+    const months = parseInt(req.query.months) || 6;
     const stats = { 
-        total: 0, 
-        imported: 0, 
-        updated: 0, 
-        errors: 0, 
-        errorDetails: [],
-        dependencies: {
-            periods: { total: 0, imported: 0 },
-            descriptions: { total: 0, imported: 0 },
-            workHours: { total: 0, imported: 0 }
-        },
+        total: 0, imported: 0, updated: 0, errors: 0, errorDetails: [],
+        dependencies: { periods: { total: 0, imported: 0 }, descriptions: { total: 0, imported: 0 }, workHours: { total: 0, imported: 0 } },
         autoActivated: 0
     };
 
-    const activeEmplIds = new Set(); // Track employees with activity
-
+    const activeEmplIds = new Set();
     try {
+        // 1. IMPORT DEPENDENCIES IN PARALLEL
+        await Promise.all([
+            (async () => {
+                const [rows] = await pool.query('SELECT * FROM periode WHERE AWAL >= DATE_SUB(NOW(), INTERVAL ? MONTH)', [months]);
+                stats.dependencies.periods.total = rows.length;
+                for (const row of rows) {
+                    try {
+                        const awal = new Date(row.AWAL);
+                        const akhir = new Date(row.AKHIR);
+                        await prisma.periode.upsert({
+                            where: { periodeId: row.PERIODE_ID },
+                            update: { awal: !isNaN(awal.getTime()) ? awal : new Date(), akhir: !isNaN(akhir.getTime()) ? akhir : new Date(), dataDefa: row.DATA_DEFA === 1, tutup: row.TUTUP === 1, tahun: parseInt(row.TAHUN) || 2024, bulan: parseInt(row.BULAN) || 1, nama: row.NAMA, kdCmpy: row.KD_CMPY },
+                            create: { periodeId: row.PERIODE_ID, awal: !isNaN(awal.getTime()) ? awal : new Date(), akhir: !isNaN(akhir.getTime()) ? akhir : new Date(), dataDefa: row.DATA_DEFA === 1, tutup: row.TUTUP === 1, tahun: parseInt(row.TAHUN) || 2024, bulan: parseInt(row.BULAN) || 1, nama: row.NAMA, kdCmpy: row.KD_CMPY }
+                        });
+                        stats.dependencies.periods.imported++;
+                    } catch (err) {}
+                }
+            })(),
+            (async () => {
+                const [rows] = await pool.query('SELECT * FROM desc_absen');
+                stats.dependencies.descriptions.total = rows.length;
+                for (const row of rows) {
+                    try {
+                        await prisma.descAbsen.upsert({ where: { kodeDesc: row.KODE_DESC }, update: { keterangan: row.KETERANGAN }, create: { kodeDesc: row.KODE_DESC, keterangan: row.KETERANGAN } });
+                        stats.dependencies.descriptions.imported++;
+                    } catch (err) {}
+                }
+            })(),
+            (async () => {
+                const [rows] = await pool.query('SELECT * FROM jnsjam');
+                stats.dependencies.workHours.total = rows.length;
+                for (const row of rows) {
+                    try {
+                        await prisma.jnsJam.upsert({ where: { kdJam: row.KD_JAM }, update: { jnsJam: row.JNS_JAM || null }, create: { kdJam: row.KD_JAM, jnsJam: row.JNS_JAM || null } });
+                        stats.dependencies.workHours.imported++;
+                    } catch (err) {}
+                }
+            })()
+        ]);
 
-
-        // 1. IMPORT PERIODS
-
-        const [mysqlPeriods] = await pool.query('SELECT * FROM periode');
-        stats.dependencies.periods.total = mysqlPeriods.length;
-        for (const row of mysqlPeriods) {
-            try {
-                const awal = new Date(row.AWAL);
-                const akhir = new Date(row.AKHIR);
-                await prisma.periode.upsert({
-                    where: { periodeId: row.PERIODE_ID },
-                    update: {
-                        awal: !isNaN(awal.getTime()) ? awal : new Date(),
-                        akhir: !isNaN(akhir.getTime()) ? akhir : new Date(),
-                        dataDefa: row.DATA_DEFA === 1,
-                        tutup: row.TUTUP === 1,
-                        tahun: parseInt(row.TAHUN) || 2024,
-                        bulan: parseInt(row.BULAN) || 1,
-                        nama: row.NAMA,
-                        kdCmpy: row.KD_CMPY
-                    },
-                    create: {
-                        periodeId: row.PERIODE_ID,
-                        awal: !isNaN(awal.getTime()) ? awal : new Date(),
-                        akhir: !isNaN(akhir.getTime()) ? akhir : new Date(),
-                        dataDefa: row.DATA_DEFA === 1,
-                        tutup: row.TUTUP === 1,
-                        tahun: parseInt(row.TAHUN) || 2024,
-                        bulan: parseInt(row.BULAN) || 1,
-                        nama: row.NAMA,
-                        kdCmpy: row.KD_CMPY
-                    }
-                });
-                stats.dependencies.periods.imported++;
-            } catch (err) { /* silent fail for deps */ }
-        }
-
-        // 2. IMPORT ATTENDANCE DESCRIPTIONS (DescAbsen)
-
-        const [mysqlDesc] = await pool.query('SELECT * FROM desc_absen');
-        stats.dependencies.descriptions.total = mysqlDesc.length;
-        for (const row of mysqlDesc) {
-            try {
-                await prisma.descAbsen.upsert({
-                    where: { kodeDesc: row.KODE_DESC },
-                    update: { keterangan: row.KETERANGAN },
-                    create: { kodeDesc: row.KODE_DESC, keterangan: row.KETERANGAN }
-                });
-                stats.dependencies.descriptions.imported++;
-            } catch (err) { /* silent fail for deps */ }
-        }
-
-        // 3. IMPORT WORK HOURS TYPES (JnsJam)
-
-        const [mysqlJnsJam] = await pool.query('SELECT * FROM jnsjam');
-        stats.dependencies.workHours.total = mysqlJnsJam.length;
-        for (const row of mysqlJnsJam) {
-            try {
-                await prisma.jnsJam.upsert({
-                    where: { kdJam: row.KD_JAM },
-                    update: { jnsJam: row.JNS_JAM || null },
-                    create: { kdJam: row.KD_JAM, jnsJam: row.JNS_JAM || null }
-                });
-                stats.dependencies.workHours.imported++;
-            } catch (err) { /* silent fail for deps */ }
-        }
-
-        // 4. IMPORT ATTENDANCE RECORDS (From January 1, 2026)
-        const startDate = new Date('2026-01-01');
-        startDate.setHours(0, 0, 0, 0);
-
-
-
-        const [mysqlAbsent] = await pool.query(
-            'SELECT * FROM absent WHERE TGL_ABSEN >= ?',
-            [startDate]
-        );
-
+        // 2. IMPORT ATTENDANCE RECORDS IN BATCHES
+        const [mysqlAbsent] = await pool.query('SELECT * FROM absent WHERE TGL_ABSEN >= DATE_SUB(NOW(), INTERVAL ? MONTH)', [months]);
         stats.total = mysqlAbsent.length;
 
-
-        // Cache for validation to speed up
         const employeeCache = new Set();
         const periodCache = new Set();
         const descCache = new Set();
         const jamCache = new Set();
 
-        for (const row of mysqlAbsent) {
-            try {
-                const tglAbsen = parseDate(row.TGL_ABSEN);
-                if (!tglAbsen) continue;
+        const BATCH_SIZE = 100;
+        for (let i = 0; i < mysqlAbsent.length; i += BATCH_SIZE) {
+            const batch = mysqlAbsent.slice(i, i + BATCH_SIZE);
+            await Promise.all(batch.map(async (row) => {
+                try {
+                    const tglAbsen = parseDate(row.TGL_ABSEN);
+                    if (!tglAbsen) return;
 
-                // --- VALIDATIONS ---
-                // 1. Employee Check
-                if (!employeeCache.has(row.EMPL_ID)) {
-                    const exists = await prisma.karyawan.findUnique({ where: { emplId: row.EMPL_ID } });
-                    if (!exists) {
-                        throw new Error(`Employee ${row.EMPL_ID} not found in PostgreSQL. Run Employee Import first.`);
+                    // Validations
+                    if (!employeeCache.has(row.EMPL_ID)) {
+                        const exists = await prisma.karyawan.findUnique({ where: { emplId: row.EMPL_ID } });
+                        if (!exists) throw new Error(`Employee ${row.EMPL_ID} not found.`);
+                        employeeCache.add(row.EMPL_ID);
                     }
-                    employeeCache.add(row.EMPL_ID);
-                }
 
-                // 2. Period Check
-                let periode = row.PERIODE?.trim() || null;
-                if (periode && !periodCache.has(periode)) {
-                    const exists = await prisma.periode.findUnique({ where: { periodeId: periode } });
-                    if (!exists) {
-                        console.warn(`⚠️  Period [${periode}] not found, using generic or erroring...`);
-                        throw new Error(`Period ${periode} not found. Fix: Dependency import failed.`);
+                    let periode = row.PERIODE?.trim() || null;
+                    if (periode && !periodCache.has(periode)) {
+                        const exists = await prisma.periode.findUnique({ where: { periodeId: periode } });
+                        if (!exists) throw new Error(`Period ${periode} not found.`);
+                        periodCache.add(periode);
                     }
-                    periodCache.add(periode);
-                } else if (!periode) {
-                    throw new Error(`Attendance record for ${row.EMPL_ID} missing Period ID.`);
-                }
 
-                // 3. Desc Check
-                let kodeDesc = row.KODE_DESC?.trim() || null;
-                if (kodeDesc && !descCache.has(kodeDesc)) {
-                    const exists = await prisma.descAbsen.findUnique({ where: { kodeDesc } });
-                    if (!exists) {
-                        console.warn(`⚠️  Desc [${kodeDesc}] not found, setting to null for ${row.EMPL_ID}`);
-                        kodeDesc = null;
-                    } else {
-                        descCache.add(kodeDesc);
+                    let kodeDesc = row.KODE_DESC?.trim() || null;
+                    if (kodeDesc && !descCache.has(kodeDesc)) {
+                        const exists = await prisma.descAbsen.findUnique({ where: { kodeDesc } });
+                        if (exists) descCache.add(kodeDesc); else kodeDesc = null;
                     }
-                }
 
-                // 4. Jam Check
-                let kdJam = row.KD_JAM?.trim() || null;
-
-                // --- HOTFIX: OVERRIDE SUNDAY 'JK1' ---
-                // MySQL Source has 'JK1' (Normal) for Sundays, which is incorrect.
-                // We force it to null (Off/Libur) relative to the specific date.
-                if (tglAbsen && kdJam === 'JK1') {
-                    const dayOfWeek = tglAbsen.getDay(); // 0 = Sunday
-                    if (dayOfWeek === 0) {
-
-                        kdJam = null; 
+                    let kdJam = row.KD_JAM?.trim() || null;
+                    if (tglAbsen && kdJam === 'JK1' && tglAbsen.getDay() === 0) kdJam = null;
+                    if (kdJam && !jamCache.has(kdJam)) {
+                        const exists = await prisma.jnsJam.findUnique({ where: { kdJam } });
+                        if (exists) jamCache.add(kdJam); else kdJam = null;
                     }
-                }
 
-                if (kdJam && !jamCache.has(kdJam)) {
-                    const exists = await prisma.jnsJam.findUnique({ where: { kdJam } });
-                    if (!exists) {
-                        console.warn(`⚠️  Jam [${kdJam}] not found, setting to null for ${row.EMPL_ID}`);
-                        kdJam = null;
-                    } else {
-                        jamCache.add(kdJam);
+                    const rawLogs = await findRealInOutFromLogs(pool, row.EMPL_ID, row.TGL_ABSEN);
+                    let finalRealMasuk = rawLogs.realMasuk || row.REALMASUK;
+                    let finalRealKeluar = rawLogs.realKeluar || row.REALKELUAR;
+
+                    if (tglAbsen && tglAbsen.getDay() === 0 && !rawLogs.realMasuk && !rawLogs.realKeluar) {
+                        finalRealMasuk = null; finalRealKeluar = null;
                     }
+
+                    const absentData = {
+                        periode, nik: row.NIK || null, idAbsen: row.ID_ABSEN || null, nama: row.NAMA || null,
+                        kdCmpy: row.KD_CMPY || null, kdFact: row.KD_FACT || null, kdBag: row.KD_BAG || null,
+                        kdDept: row.KD_DEPT || null, kdSeksie: row.KD_SEKSIE || null, kdJam,
+                        groupShift: row.GROUP_SHIFT || '', stdMasuk: row.STDMASUK || null, stdKeluar: row.STDKELUAR || null,
+                        realMasuk: finalRealMasuk, realKeluar: finalRealKeluar,
+                        jMasuk: row.JMASUK || null, jKeluar: row.JKELUAR || null,
+                        kdLmb: row.KD_LMB === 1, kdSpl: row.KD_SPL === 1,
+                        lembur1: parseFloat(row.LEMBUR1) || 0, lembur2: parseFloat(row.LEMBUR2) || 0,
+                        lembur3: parseFloat(row.LEMBUR3) || 0, lembur4: parseFloat(row.LEMBUR4) || 0,
+                        totKerja: parseFloat(row.TOTKERJA) || 0,
+                        lambat: calculateLate(row.STDMASUK, finalRealMasuk),
+                        cepat: calculateEarly(row.STDKELUAR, finalRealKeluar),
+                        kdHari: parseInt(row.KD_HARI) || 1,
+                        kdAbsen: sanitizeAttendanceStatus({ kdAbsen: row.KD_ABSEN || 'H', realMasuk: finalRealMasuk, realKeluar: finalRealKeluar }),
+                        kdShif: parseInt(row.KD_SHIF) || 1, mskLmb: row.MSK_LMB || null, klrLmb: row.KLR_LMB || null,
+                        totLmb: parseFloat(row.TOT_LMB) || 0, ketLmb: row.KET_LMB || null,
+                        flagShift: row.FLAG_SHIFT === 1, flagMeal: row.FLAG_MEAL === 1, flagSusu: row.FLAG_SUSU === 1, kodeDesc
+                    };
+
+                    if (finalRealMasuk || finalRealKeluar) activeEmplIds.add(row.EMPL_ID);
+
+                    const result = await prisma.absent.upsert({
+                        where: { absent_unique: { emplId: row.EMPL_ID, tglAbsen: tglAbsen } },
+                        update: absentData, create: { emplId: row.EMPL_ID, tglAbsen: tglAbsen, ...absentData }
+                    });
+
+                    if (result.createdAt.getTime() === result.updatedAt.getTime()) stats.imported++; else stats.updated++;
+                } catch (err) {
+                    stats.errors++;
+                    stats.errorDetails.push({ emplId: row.EMPL_ID, tglAbsen: row.TGL_ABSEN, error: err.message });
                 }
-
-                // --- 5. ATT_LOG PRIORITY OVERRIDE ---
-                // Override MySQL 'absent' data with RAW 'att_log' data to fix date shifting
-                // Use original row.TGL_ABSEN string (YYYY-MM-DD) for lookup
-                const rawLogs = await findRealInOutFromLogs(pool, row.EMPL_ID, row.TGL_ABSEN);
-                
-                // If we found raw logs, USE THEM as the truth
-                let finalRealMasuk = rawLogs.realMasuk || row.REALMASUK;
-                let finalRealKeluar = rawLogs.realKeluar || row.REALKELUAR;
-
-                // --- HOTFIX: SUNDAY STRICT LOG VALIDATION ---
-                // On Sundays, we don't trust the MySQL 'absent' table's clock times 
-                // if there are no raw entries in 'att_log'. This prevents phantom "Hadir" data.
-                if (tglAbsen && tglAbsen.getDay() === 0) {
-                    if (!rawLogs.realMasuk && !rawLogs.realKeluar) {
-                        finalRealMasuk = null;
-                        finalRealKeluar = null;
-                    }
-                }
-
-                // Recalculate lambat/cepat based on FINAL times
-                const lambatRecalc = calculateLate(row.STDMASUK, finalRealMasuk);
-                const cepatRecalc = calculateEarly(row.STDKELUAR, finalRealKeluar);
-
-                const absentData = {
-                    periode: periode,
-                    nik: row.NIK || null,
-                    idAbsen: row.ID_ABSEN || null,
-                    nama: row.NAMA || null,
-                    kdCmpy: row.KD_CMPY || null,
-                    kdFact: row.KD_FACT || null,
-                    kdBag: row.KD_BAG || null,
-                    kdDept: row.KD_DEPT || null,
-                    kdSeksie: row.KD_SEKSIE || null,
-                    kdJam: kdJam,
-                    groupShift: row.GROUP_SHIFT || '',
-                    stdMasuk: row.STDMASUK || null,
-                    stdKeluar: row.STDKELUAR || null,
-                    realMasuk: finalRealMasuk,    // Use Overridden/Original
-                    realKeluar: finalRealKeluar,  // Use Overridden/Original
-                    jMasuk: row.JMASUK || null,   // Keep original or recalc? Keep for now
-                    jKeluar: row.JKELUAR || null, // Keep original or recalc? Keep for now
-                    kdLmb: row.KD_LMB === 1,
-                    kdSpl: row.KD_SPL === 1,
-                    lembur1: parseFloat(row.LEMBUR1) || 0,
-                    lembur2: parseFloat(row.LEMBUR2) || 0,
-                    lembur3: parseFloat(row.LEMBUR3) || 0,
-                    lembur4: parseFloat(row.LEMBUR4) || 0,
-                    totKerja: parseFloat(row.TOTKERJA) || 0,
-                    lambat: lambatRecalc,
-                    cepat: cepatRecalc,
-                    kdHari: parseInt(row.KD_HARI) || 1,
-                    kdAbsen: sanitizeAttendanceStatus({
-                        kdAbsen: row.KD_ABSEN || 'H',
-                        realMasuk: finalRealMasuk,
-                        realKeluar: finalRealKeluar
-                    }),
-                    kdShif: parseInt(row.KD_SHIF) || 1,
-                    mskLmb: row.MSK_LMB || null,
-                    klrLmb: row.KLR_LMB || null,
-                    totLmb: parseFloat(row.TOT_LMB) || 0,
-                    ketLmb: row.KET_LMB || null,
-                    flagShift: row.FLAG_SHIFT === 1,
-                    flagMeal: row.FLAG_MEAL === 1,
-                    flagSusu: row.FLAG_SUSU === 1,
-                    kodeDesc: kodeDesc
-                };
-
-                // TRACK ACTIVITY FOR AUTO-ACTIVATION
-                if (finalRealMasuk || finalRealKeluar) {
-                    activeEmplIds.add(row.EMPL_ID);
-                }
-
-                const result = await prisma.absent.upsert({
-                    where: { 
-                        absent_unique: { 
-                            emplId: row.EMPL_ID, 
-                            tglAbsen: tglAbsen 
-                        } 
-                    },
-                    update: absentData,
-                    create: {
-                        emplId: row.EMPL_ID,
-                        tglAbsen: tglAbsen,
-                        ...absentData
-                    }
-                });
-
-                if (result.createdAt.getTime() === result.updatedAt.getTime()) {
-                    stats.imported++;
-                } else {
-                    stats.updated++;
-                }
-            } catch (err) {
-                stats.errors++;
-                stats.errorDetails.push({
-                    emplId: row.EMPL_ID,
-                    tglAbsen: row.TGL_ABSEN,
-                    error: err.message
-                });
-            }
+            }));
         }
 
-        // 5. AUTO-SYNC RAW LOGS (att_log) for the same period
-
-        const logStats = await syncAttLogsInternal(pool, startDate, activeEmplIds);
+        const logStats = await syncAttLogsInternal(pool, new Date(Date.now() - (months * 30 * 24 * 60 * 60 * 1000)), activeEmplIds);
 
         res.status(200).json({ 
             success: true, 
-            stats: {
-                ...stats,
-                attLog: logStats,
-                autoActivated: logStats.autoActivated
-            }, 
-            message: `Import absensi selesai: ${stats.imported} baru, ${stats.updated} diupdate. Raw logs: ${logStats.imported} synced. Auto-Activated: ${logStats.autoActivated} employees.` 
+            stats: { ...stats, attLog: logStats, autoActivated: logStats.autoActivated }, 
+            message: `Import absensi selesai. Raw logs: ${logStats.imported} synced.` 
         });
     } catch (error) {
         console.error('🔥 Attendance Import Error:', error);
