@@ -2,6 +2,12 @@ import { prisma } from '../config/prisma.js';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import * as jspdf from 'jspdf';
+import {
+    runPayrollForPeriode,
+    hitungGajiKaryawan,
+    closingPeriode,
+    reopenPeriode,
+} from '../services/payrollEngine.js';
 
 // Get aggregated payroll periods
 export const getPayrollPeriods = async (req, res) => {
@@ -70,77 +76,271 @@ export const getPayrollPeriods = async (req, res) => {
     }
 };
 
-// Create new payroll period and generate salaries
+// Buat periode payroll baru (hanya buat periode, belum kalkulasi)
 export const createPayrollPeriod = async (req, res) => {
     try {
-        const { name, startDate, endDate, notes } = req.body;
-        
-        // 1. Create Period
-        const periodId = format(new Date(startDate), 'yyyyMM'); // e.g. 202601
-        
-        // Check if period already exists
-        const existingPeriod = await prisma.periode.findUnique({
-            where: { periodeId: periodId }
-        });
+        const { name, startDate, endDate, notes, kdCmpy } = req.body;
 
-        if (existingPeriod) {
-            return res.status(400).json({
-                success: false,
-                message: `Period ${periodId} already exists`
-            });
+        if (!startDate || !endDate) {
+            return res.status(400).json({ success: false, message: 'startDate dan endDate wajib diisi' });
+        }
+
+        const periodId = format(new Date(startDate), 'yyyyMM');
+
+        const existing = await prisma.periode.findUnique({ where: { periodeId: periodId } });
+        if (existing) {
+            return res.status(400).json({ success: false, message: `Periode ${periodId} sudah ada` });
         }
 
         const newPeriod = await prisma.periode.create({
             data: {
                 periodeId: periodId,
-                nama: name,
+                nama: name || `Periode ${periodId}`,
                 tahun: new Date(startDate).getFullYear(),
                 bulan: new Date(startDate).getMonth() + 1,
                 awal: new Date(startDate),
                 akhir: new Date(endDate),
                 tutup: false,
-                keterangan: notes
+                kdCmpy: kdCmpy || null,
             }
         });
-
-        // 2. Get Active Employees from Karyawan table
-        const employees = await prisma.karyawan.findMany({
-            where: { 
-                kdSts: 'AKTIF'
-            }
-        });
-
-// 3. Generate Salary Entries (Basic implementation)
-        const salaryEntries = employees.map(emp => ({
-            id: `${periodId}-${emp.emplId}`, // Use emplId for uniqueness combination
-            period: periodId,
-            emplId: emp.emplId,
-            pokokBln: emp.pokokBln || 0,
-            gBersih: emp.pokokBln || 0, // Initial net = gross for now
-            gKotor: emp.pokokBln || 0,
-            tglInput: new Date(),
-            userInput: req.user?.id || 'SYSTEM' // Fallback if req.user is missing
-        }));
-
-        if (salaryEntries.length > 0) {
-            await prisma.gaji.createMany({
-                data: salaryEntries
-            });
-        }
 
         res.status(201).json({
             success: true,
             data: newPeriod,
-            message: `Generated payroll for ${employees.length} employees`
+            message: `Periode ${periodId} berhasil dibuat. Gunakan endpoint /calculate untuk menjalankan kalkulasi gaji.`,
         });
 
     } catch (error) {
         console.error('Error creating payroll period:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to create payroll period',
-            error: error.message
+        res.status(500).json({ success: false, message: 'Gagal membuat periode', error: error.message });
+    }
+};
+
+// ════════════════════════════════════════════════════════════════
+// KALKULASI PAYROLL — menggunakan Payroll Engine
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * POST /api/payroll/periods/:id/calculate
+ * Jalankan kalkulasi gaji untuk seluruh karyawan aktif
+ */
+export const calculatePayroll = async (req, res) => {
+    try {
+        const { id: periodeId } = req.params;
+        const { kdCmpy } = req.query;
+        const changedBy = req.user?.email || req.user?.id || 'SYSTEM';
+        const ipAddress = req.ip || req.headers['x-forwarded-for'];
+
+        // Cek akses — hanya HR_MANAGER ke atas
+        const allowedRoles = ['SUPER_ADMIN', 'ADMIN', 'HR_MANAGER'];
+        if (!allowedRoles.includes(req.user?.role)) {
+            return res.status(403).json({ success: false, message: 'Akses ditolak' });
+        }
+
+        const result = await runPayrollForPeriode(periodeId, kdCmpy || null, changedBy, ipAddress);
+
+        res.status(200).json({
+            success: true,
+            message: `Kalkulasi selesai: ${result.berhasil} berhasil, ${result.gagal} gagal`,
+            data: result,
         });
+
+    } catch (error) {
+        console.error('Error calculating payroll:', error);
+        res.status(500).json({ success: false, message: error.message || 'Gagal kalkulasi payroll' });
+    }
+};
+
+/**
+ * POST /api/payroll/periods/:id/close
+ * Closing periode — kunci data agar tidak bisa diubah
+ */
+export const closePeriod = async (req, res) => {
+    try {
+        const { id: periodeId } = req.params;
+        const changedBy = req.user?.email || req.user?.id || 'SYSTEM';
+        const ipAddress = req.ip || req.headers['x-forwarded-for'];
+
+        // Hanya SUPER_ADMIN dan ADMIN
+        if (!['SUPER_ADMIN', 'ADMIN'].includes(req.user?.role)) {
+            return res.status(403).json({ success: false, message: 'Hanya ADMIN yang dapat closing periode' });
+        }
+
+        const result = await closingPeriode(periodeId, changedBy, ipAddress);
+
+        res.status(200).json({
+            success: true,
+            message: `Periode ${periodeId} berhasil di-closing`,
+            data: result,
+        });
+
+    } catch (error) {
+        console.error('Error closing period:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+/**
+ * POST /api/payroll/periods/:id/reopen
+ * Buka kembali periode yang sudah di-closing (hanya SUPER_ADMIN)
+ */
+export const reopenPeriod = async (req, res) => {
+    try {
+        const { id: periodeId } = req.params;
+        const changedBy = req.user?.email || req.user?.id || 'SYSTEM';
+        const ipAddress = req.ip || req.headers['x-forwarded-for'];
+
+        if (req.user?.role !== 'SUPER_ADMIN') {
+            return res.status(403).json({ success: false, message: 'Hanya SUPER_ADMIN yang dapat reopen periode' });
+        }
+
+        const result = await reopenPeriode(periodeId, changedBy, ipAddress);
+
+        res.status(200).json({
+            success: true,
+            message: `Periode ${periodeId} berhasil dibuka kembali`,
+            data: result,
+        });
+
+    } catch (error) {
+        console.error('Error reopening period:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+/**
+ * GET /api/payroll/periods/:id/preview/:emplId
+ * Preview kalkulasi gaji untuk satu karyawan (tanpa menyimpan)
+ */
+export const previewPayrollEmployee = async (req, res) => {
+    try {
+        const { id: periodeId, emplId } = req.params;
+
+        // Karyawan hanya boleh preview gajinya sendiri
+        if (req.user?.role === 'EMPLOYEE' && req.user?.emplId !== emplId) {
+            return res.status(403).json({ success: false, message: 'Akses ditolak' });
+        }
+
+        const periode = await prisma.periode.findUnique({ where: { periodeId } });
+        if (!periode) return res.status(404).json({ success: false, message: 'Periode tidak ditemukan' });
+
+        const employee = await prisma.karyawan.findUnique({
+            where: { emplId },
+            include: { ptkpRef: { select: { type: true, wPajak: true } } },
+        });
+        if (!employee) return res.status(404).json({ success: false, message: 'Karyawan tidak ditemukan' });
+
+        const [absenRows, lemburRows, tunjanganRows, potonganRows, pinjamDetRows, tarifTERRows] = await Promise.all([
+            prisma.absent.findMany({ where: { periode: periodeId, emplId } }),
+            prisma.lembur.findMany({ where: { periode: periodeId, emplId, approved: true } }),
+            prisma.tunjangan.findMany({ where: { period: periodeId, emplId, status: true } }),
+            prisma.potongan.findMany({ where: { period: periodeId, emplId, status: true } }),
+            prisma.pinjamDet.findMany({ where: { periode: periodeId, emplId } }),
+            prisma.tarifTER.findMany({ where: { tahun: periode.tahun, isActive: true } }),
+        ]);
+
+        const konfigBpjs = await prisma.konfigBpjs.findFirst({
+            where: { kdCmpy: employee.kdCmpy, isActive: true },
+            orderBy: { validDate: 'desc' },
+        });
+
+        const parameter = await prisma.parameter.findFirst({
+            where: { kdCmpy: employee.kdCmpy, isActive: true },
+            orderBy: { validDate: 'desc' },
+        });
+
+        const payload = await hitungGajiKaryawan({
+            employee, periode, absenRows, lemburRows, tunjanganRows,
+            potonganRows, pinjamDetRows, tarifTERRows, konfigBpjs,
+            umk: Number(parameter?.umk || 0),
+        });
+
+        const { _validasi, tglProses, ...previewData } = payload;
+
+        res.status(200).json({
+            success: true,
+            data: {
+                ...previewData,
+                validasi: _validasi,
+                karyawan: { nama: employee.nama, nik: employee.nik },
+                periode:  { id: periode.periodeId, nama: periode.nama },
+            },
+        });
+
+    } catch (error) {
+        console.error('Error preview payroll:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+/**
+ * GET /api/payroll/config/bpjs
+ * Ambil konfigurasi BPJS aktif per perusahaan
+ */
+export const getKonfigBpjs = async (req, res) => {
+    try {
+        const { kdCmpy } = req.query;
+        const data = await prisma.konfigBpjs.findMany({
+            where: { ...(kdCmpy ? { kdCmpy } : {}), isActive: true },
+            orderBy: [{ kdCmpy: 'asc' }, { validDate: 'desc' }],
+            include: { company: { select: { company: true } } },
+        });
+        res.status(200).json({ success: true, data });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+/**
+ * POST /api/payroll/config/bpjs
+ * Simpan konfigurasi BPJS baru
+ */
+export const saveKonfigBpjs = async (req, res) => {
+    try {
+        if (!['SUPER_ADMIN', 'ADMIN', 'HR_MANAGER'].includes(req.user?.role)) {
+            return res.status(403).json({ success: false, message: 'Akses ditolak' });
+        }
+        const data = await prisma.konfigBpjs.create({ data: req.body });
+        res.status(201).json({ success: true, data, message: 'Konfigurasi BPJS berhasil disimpan' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+/**
+ * GET /api/payroll/config/tarif-ter
+ * Ambil semua tarif TER
+ */
+export const getTarifTER = async (req, res) => {
+    try {
+        const { tahun } = req.query;
+        const data = await prisma.tarifTER.findMany({
+            where: { ...(tahun ? { tahun: parseInt(tahun) } : {}), isActive: true },
+            orderBy: [{ kategori: 'asc' }, { batasMin: 'asc' }],
+        });
+        res.status(200).json({ success: true, data });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+/**
+ * GET /api/payroll/log/:periodeId
+ * Ambil audit trail perubahan payroll
+ */
+export const getPayrollLog = async (req, res) => {
+    try {
+        const { periodeId } = req.params;
+        const { emplId } = req.query;
+        const data = await prisma.payrollLog.findMany({
+            where: { period: periodeId, ...(emplId ? { emplId } : {}) },
+            orderBy: { changedAt: 'desc' },
+            take: 200,
+        });
+        res.status(200).json({ success: true, data });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
     }
 };
 

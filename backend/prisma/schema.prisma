@@ -91,6 +91,8 @@ model Company {
   parameter  Parameter[]
   periode    Periode[]
   timeWork   TimeWork[]
+  skalaUpah  SkalaUpah[]
+  konfigBpjs KonfigBpjs[]
 
   @@index([kodeCmpy])
   @@map("company")
@@ -382,7 +384,9 @@ model Karyawan {
   sekolahHist   Sekolah[]
   shiftAllw     ShiftAllw[]
   sysUsers      SysUser[]
-  tunjangan     Tunjangan[]
+  tunjangan       Tunjangan[]
+  kpiEmployee     KpiEmployee[]
+  suratPeringatan SuratPeringatan[]
 
   @@index([kdCmpy])
   @@index([kdFact])
@@ -1843,4 +1847,208 @@ model AttLog {
   @@index([tanggal])
   @@index([attTime])
   @@map("att_log")
+}
+
+// ============================================================
+// MODELS BARU — Kepatuhan Hukum Ketenagakerjaan Indonesia
+// ============================================================
+
+// PPh 21 Metode TER (PMK No. 168/2023 — berlaku 1 Jan 2024)
+// Kategori A: TK/0, TK/1 | Kategori B: TK/2, TK/3, K/0 | Kategori C: K/1, K/2, K/3
+model TarifTER {
+  id        String   @id @default(uuid()) @db.Uuid
+  kategori  String   @map("KATEGORI") @db.VarChar(1)    // A, B, atau C
+  batasMin  Decimal  @map("BATAS_MIN") @db.Decimal(15, 0)
+  batasMax  Decimal  @map("BATAS_MAX") @db.Decimal(15, 0) // 0 = tidak terbatas
+  tarif     Decimal  @map("TARIF") @db.Decimal(6, 4)     // dalam persen, contoh: 5.0000
+  tahun     Int      @default(2024) @map("tahun")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  @@unique([kategori, batasMin, tahun], name: "tarif_ter_unique")
+  @@index([kategori])
+  @@index([tahun])
+  @@index([isActive])
+  @@map("tarif_ter")
+}
+
+// Konfigurasi Rate BPJS per Perusahaan
+// PP 44/2015 (BPJS TK), PP 45/2015 (JP), Perpres 75/2019 (BPJS Kes)
+model KonfigBpjs {
+  id          String   @id @default(uuid()) @db.Uuid
+  kdCmpy      String   @map("KD_CMPY") @db.Char(3)
+  validDate   DateTime @map("VALID_DATE") @db.Date
+  // JHT (Jaminan Hari Tua)
+  jhtComp     Decimal  @default(3.70) @map("JHT_COMP") @db.Decimal(5, 2)   // % perusahaan
+  jhtEmpl     Decimal  @default(2.00) @map("JHT_EMPL") @db.Decimal(5, 2)   // % karyawan
+  // JKK (Jaminan Kecelakaan Kerja) — hanya perusahaan, rate tergantung risiko
+  jkkComp     Decimal  @default(0.24) @map("JKK_COMP") @db.Decimal(5, 2)   // 0.24-1.74%
+  // JKM (Jaminan Kematian) — hanya perusahaan
+  jkmComp     Decimal  @default(0.30) @map("JKM_COMP") @db.Decimal(5, 2)
+  // JP (Jaminan Pensiun)
+  jpComp      Decimal  @default(2.00) @map("JP_COMP") @db.Decimal(5, 2)    // % perusahaan
+  jpEmpl      Decimal  @default(1.00) @map("JP_EMPL") @db.Decimal(5, 2)    // % karyawan
+  jpMaxWage   Decimal  @default(10043950) @map("JP_MAX_WAGE") @db.Decimal(15, 0) // batas atas upah JP
+  // JKN / BPJS Kesehatan
+  jknComp     Decimal  @default(4.00) @map("JKN_COMP") @db.Decimal(5, 2)   // % perusahaan
+  jknEmpl     Decimal  @default(1.00) @map("JKN_EMPL") @db.Decimal(5, 2)   // % karyawan
+  jknMaxWage  Decimal  @default(12000000) @map("JKN_MAX_WAGE") @db.Decimal(15, 0) // batas atas iuran
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
+  company     Company  @relation(fields: [kdCmpy], references: [kodeCmpy])
+
+  @@unique([kdCmpy, validDate], name: "konfig_bpjs_unique")
+  @@index([kdCmpy])
+  @@index([validDate])
+  @@index([isActive])
+  @@map("konfig_bpjs")
+}
+
+// Struktur Skala Upah — Wajib per Permenaker No. 5/2023
+// Berlaku untuk perusahaan dengan >= 10 karyawan
+model SkalaUpah {
+  id        String   @id @default(uuid()) @db.Uuid
+  kdCmpy    String   @map("KD_CMPY") @db.Char(3)
+  kdJab     String?  @map("KD_JAB") @db.VarChar(20)    // nullable: bisa per jabatan atau golongan
+  golongan  String   @map("GOLONGAN") @db.VarChar(5)   // contoh: I, II, III, IV
+  namaGol   String?  @map("NAMA_GOL") @db.VarChar(50)
+  upahMin   Decimal  @map("UPAH_MIN") @db.Decimal(15, 0)
+  upahMid   Decimal  @map("UPAH_MID") @db.Decimal(15, 0) // upah tengah / referensi
+  upahMax   Decimal  @map("UPAH_MAX") @db.Decimal(15, 0)
+  validDate DateTime @map("VALID_DATE") @db.Date
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
+  company   Company  @relation(fields: [kdCmpy], references: [kodeCmpy])
+
+  @@unique([kdCmpy, golongan, validDate], name: "skala_upah_unique")
+  @@index([kdCmpy])
+  @@index([golongan])
+  @@index([validDate])
+  @@map("skala_upah")
+}
+
+// Template KPI per Jabatan
+model KpiTemplate {
+  id         String      @id @default(uuid()) @db.Uuid
+  kdJab      String?     @map("KD_JAB") @db.VarChar(20) // null = berlaku semua jabatan
+  namaKpi    String      @map("NAMA_KPI") @db.VarChar(100)
+  indikator  String      @map("INDIKATOR") @db.Text       // deskripsi indikator penilaian
+  satuan     String?     @map("SATUAN") @db.VarChar(20)   // pcs, %, jam, dll
+  bobot      Decimal     @map("BOBOT") @db.Decimal(5, 2)  // total semua bobot = 100
+  isActive   Boolean     @default(true) @map("is_active")
+  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt  DateTime    @updatedAt @map("updated_at") @db.Timestamp(6)
+  kpiScores  KpiScore[]
+
+  @@index([kdJab])
+  @@index([isActive])
+  @@map("kpi_template")
+}
+
+// Penilaian KPI per Karyawan per Periode
+model KpiEmployee {
+  id          String      @id @default(uuid()) @db.Uuid
+  emplId      String      @map("EMPL_ID") @db.VarChar(9)
+  tahun       Int         @map("TAHUN")
+  periode     Int         @map("PERIODE")    // 0=Tahunan, 1=Q1, 2=Q2, 3=Q3, 4=Q4
+  totalNilai  Decimal?    @map("TOTAL_NILAI") @db.Decimal(6, 2)
+  grade       String?     @map("GRADE") @db.VarChar(2)    // A, B, C, D
+  status      StatusKpi   @default(DRAFT) @map("STATUS")
+  assessorId  String?     @map("ASSESSOR_ID") @db.VarChar(9) // emplId penilai
+  catatan     String?     @map("CATATAN") @db.Text
+  approvedAt  DateTime?   @map("approved_at") @db.Timestamp(6)
+  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt   DateTime    @updatedAt @map("updated_at") @db.Timestamp(6)
+  karyawan    Karyawan    @relation(fields: [emplId], references: [emplId])
+  scores      KpiScore[]
+
+  @@unique([emplId, tahun, periode], name: "kpi_empl_unique")
+  @@index([emplId])
+  @@index([tahun])
+  @@index([status])
+  @@map("kpi_employee")
+}
+
+// Nilai Detail per Indikator KPI
+model KpiScore {
+  id            String      @id @default(uuid()) @db.Uuid
+  kpiEmplId     String      @map("KPI_EMPL_ID") @db.Uuid
+  kpiTemplateId String      @map("KPI_TEMPLATE_ID") @db.Uuid
+  target        Decimal?    @map("TARGET") @db.Decimal(12, 2)
+  realisasi     Decimal?    @map("REALISASI") @db.Decimal(12, 2)
+  nilai         Decimal?    @map("NILAI") @db.Decimal(6, 2)    // nilai setelah dikali bobot
+  keterangan    String?     @map("KETERANGAN") @db.VarChar(200)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt     DateTime    @updatedAt @map("updated_at") @db.Timestamp(6)
+  kpiEmpl       KpiEmployee @relation(fields: [kpiEmplId], references: [id], onDelete: Cascade)
+  kpiTemplate   KpiTemplate @relation(fields: [kpiTemplateId], references: [id])
+
+  @@unique([kpiEmplId, kpiTemplateId], name: "kpi_score_unique")
+  @@index([kpiEmplId])
+  @@index([kpiTemplateId])
+  @@map("kpi_score")
+}
+
+// Surat Peringatan (SP1 / SP2 / SP3) — Manajemen Disiplin
+model SuratPeringatan {
+  id          String   @id @default(uuid()) @db.Uuid
+  noSp        String   @unique @map("NO_SP") @db.VarChar(40)
+  emplId      String   @map("EMPL_ID") @db.VarChar(9)
+  tglSp       DateTime @map("TGL_SP") @db.Date
+  jenisSp     JenisSP  @default(SP1) @map("JENIS_SP")
+  sebab       String   @map("SEBAB") @db.Text
+  tglBerlaku  DateTime @map("TGL_BERLAKU") @db.Date
+  tglBerakhir DateTime? @map("TGL_BERAKHIR") @db.Date  // null = berlaku selamanya
+  isActive    Boolean  @default(true) @map("is_active")
+  createdBy   String?  @map("created_by") @db.VarChar(50)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
+  karyawan    Karyawan @relation(fields: [emplId], references: [emplId])
+
+  @@index([emplId])
+  @@index([tglSp])
+  @@index([jenisSp])
+  @@index([isActive])
+  @@map("surat_peringatan")
+}
+
+// Audit Trail Payroll — Immutable log setiap perubahan data gaji
+model PayrollLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  period    String   @map("PERIOD") @db.VarChar(6)
+  emplId    String   @map("EMPL_ID") @db.VarChar(9)
+  action    String   @map("ACTION") @db.VarChar(20)    // CREATE, UPDATE, RECALC, CLOSE, REOPEN
+  fieldName String?  @map("FIELD_NAME") @db.VarChar(60)
+  oldValue  String?  @map("OLD_VALUE") @db.Text
+  newValue  String?  @map("NEW_VALUE") @db.Text
+  changedBy String   @map("CHANGED_BY") @db.VarChar(50)
+  ipAddress String?  @map("ip_address") @db.VarChar(45)
+  changedAt DateTime @default(now()) @map("changed_at") @db.Timestamp(6)
+
+  @@index([period])
+  @@index([emplId])
+  @@index([action])
+  @@index([changedAt])
+  @@map("payroll_log")
+}
+
+// ============================================================
+// ENUM BARU
+// ============================================================
+
+enum StatusKpi {
+  DRAFT
+  REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum JenisSP {
+  SP1
+  SP2
+  SP3
+  PHK
 }
