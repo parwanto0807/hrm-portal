@@ -100,56 +100,56 @@ export function EmployeeTable({
                     <Table>
                         <TableHeader className="bg-gradient-to-r from-slate-50/80 to-slate-100/50 dark:from-slate-900/50 dark:to-slate-800/30 border-b border-slate-200/50 dark:border-slate-800/50">
                             <TableRow className="hover:bg-transparent">
-                                <TableHead className="w-[100px] py-6 pl-8">
-                                    <div className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                                        <User className="h-3.5 w-3.5" />
+                                <TableHead className="py-3 px-4">
+                                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                        <User className="h-3 w-3" />
                                         Employee
                                     </div>
                                 </TableHead>
-                                <TableHead className="py-6">
-                                    <div className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                                        <BadgeCheck className="h-3.5 w-3.5" />
+                                <TableHead className="py-3 px-4">
+                                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                        <BadgeCheck className="h-3 w-3" />
                                         Identity
                                     </div>
                                 </TableHead>
-                                <TableHead className="py-6">
-                                    <div className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                                        <Phone className="h-3.5 w-3.5" />
+                                <TableHead className="py-3 px-4">
+                                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                        <Phone className="h-3 w-3" />
                                         Contact
                                     </div>
                                 </TableHead>
-                                <TableHead className="py-6">
-                                    <div className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                                        <Briefcase className="h-3.5 w-3.5" />
+                                <TableHead className="py-3 px-4">
+                                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                        <Briefcase className="h-3 w-3" />
                                         Position
                                     </div>
                                 </TableHead>
-                                <TableHead className="py-6">
-                                    <div className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                                        <Building className="h-3.5 w-3.5" />
+                                <TableHead className="py-3 px-4">
+                                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                        <Building className="h-3 w-3" />
                                         Department
                                     </div>
                                 </TableHead>
-                                <TableHead className="py-6">
-                                    <div className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                                        <Building className="h-3.5 w-3.5" />
+                                <TableHead className="py-3 px-4">
+                                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                        <Building className="h-3 w-3" />
                                         Section
                                     </div>
                                 </TableHead>
-                                <TableHead className="py-6">
-                                    <div className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                                        <Calendar className="h-3.5 w-3.5" />
+                                <TableHead className="py-3 px-4">
+                                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                        <Calendar className="h-3 w-3" />
                                         Status
                                     </div>
                                 </TableHead>
-                                <TableHead className="py-6">
-                                    <div className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                                        <MapPin className="h-3.5 w-3.5" />
+                                <TableHead className="py-3 px-4">
+                                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                        <MapPin className="h-3 w-3" />
                                         Location
                                     </div>
                                 </TableHead>
-                                <TableHead className="w-[180px] py-6 pr-8 text-right">
-                                    <div className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                                <TableHead className="py-3 px-4 text-right">
+                                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                                         Actions
                                     </div>
                                 </TableHead>
@@ -159,25 +159,25 @@ export function EmployeeTable({
                             {isLoading ? (
                                 Array.from({ length: 5 }).map((_, i) => (
                                     <TableRow key={i} className="border-slate-100/50 dark:border-slate-800/30 hover:bg-slate-50/50 dark:hover:bg-slate-800/10">
-                                        <TableCell className="pl-8 py-5">
-                                            <div className="flex items-center gap-3">
-                                                <Skeleton className="h-12 w-12 rounded-full" />
-                                                <div className="space-y-2">
-                                                    <Skeleton className="h-4 w-32" />
-                                                    <Skeleton className="h-3 w-20" />
+                                        <TableCell className="px-4 py-3">
+                                            <div className="flex items-center gap-2">
+                                                <Skeleton className="h-9 w-9 rounded-full" />
+                                                <div className="space-y-1.5">
+                                                    <Skeleton className="h-3 w-24" />
+                                                    <Skeleton className="h-2 w-16" />
                                                 </div>
                                             </div>
                                         </TableCell>
                                         {Array.from({ length: 6 }).map((_, cellIndex) => (
-                                            <TableCell key={cellIndex} className="py-5">
-                                                <Skeleton className="h-4 w-full max-w-[120px]" />
+                                            <TableCell key={cellIndex} className="px-4 py-3">
+                                                <Skeleton className="h-3 w-full max-w-[100px]" />
                                             </TableCell>
                                         ))}
-                                        <TableCell className="pr-8 py-5">
-                                            <div className="flex justify-end gap-2">
-                                                <Skeleton className="h-9 w-9 rounded-lg" />
-                                                <Skeleton className="h-9 w-9 rounded-lg" />
-                                                <Skeleton className="h-9 w-9 rounded-lg" />
+                                        <TableCell className="px-4 py-3">
+                                            <div className="flex justify-end gap-1.5">
+                                                <Skeleton className="h-8 w-8 rounded-lg" />
+                                                <Skeleton className="h-8 w-8 rounded-lg" />
+                                                <Skeleton className="h-8 w-8 rounded-lg" />
                                             </div>
                                         </TableCell>
                                     </TableRow>
@@ -201,32 +201,21 @@ export function EmployeeTable({
                                     <React.Fragment key={deptName}>
                                         {/* Enhanced Department Header */}
                                         <TableRow className="bg-gradient-to-r from-blue-50/30 to-indigo-50/20 dark:from-blue-900/10 dark:to-indigo-900/10 border-y border-blue-100/50 dark:border-blue-800/20">
-                                            <TableCell colSpan={9} className="px-8 py-4">
+                                            <TableCell colSpan={9} className="px-4 py-2.5">
                                                 <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                                                            <Building className="h-5 w-5 text-white" />
+                                                    <div className="flex items-center gap-2.5">
+                                                        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                                                            <Building className="h-4 w-4 text-white" />
                                                         </div>
                                                         <div>
                                                             <div className="flex items-center gap-2">
-                                                                <span className="text-sm font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wider">{deptName}</span>
-                                                                <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-none px-2 py-0.5 text-xs font-bold">
+                                                                <span className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wider">{deptName}</span>
+                                                                <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-none px-1.5 py-0 text-[10px] font-bold">
                                                                     {groupedData[deptName].length} {groupedData[deptName].length === 1 ? 'Member' : 'Members'}
                                                                 </Badge>
                                                             </div>
-                                                            <p className="text-xs text-blue-600/70 dark:text-blue-400/70 mt-0.5">
-                                                                Department • {groupedData[deptName].filter(e => e.kdSts === 'AKTIF').length} Active
-                                                            </p>
                                                         </div>
                                                     </div>
-                                                    {/* <div className="flex items-center gap-4">
-                                                        <div className="text-right">
-                                                            <div className="text-xs font-medium text-blue-600/80 dark:text-blue-400/80">Department Lead</div>
-                                                            <div className="text-sm font-semibold text-blue-800 dark:text-blue-300">
-                                                                {groupedData[deptName][0]?.nama || 'Not Assigned'}
-                                                            </div>
-                                                        </div>
-                                                    </div> */}
                                                 </div>
                                             </TableCell>
                                         </TableRow>
@@ -240,72 +229,67 @@ export function EmployeeTable({
                                                     "transition-all duration-300 group"
                                                 )}
                                             >
-                                                <TableCell className="pl-8 py-5">
-                                                    <div className="flex items-center gap-4">
+                                                <TableCell className="px-4 py-3">
+                                                    <div className="flex items-center gap-3">
                                                         <div className="relative">
-                                                            <Avatar className="h-14 w-14 border-4 border-white/80 dark:border-slate-800/80 shadow-lg shadow-slate-200/50 dark:shadow-slate-900/30">
-                                                                <AvatarFallback className="bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 text-white font-bold text-sm">
+                                                            <Avatar className="h-9 w-9 border-2 border-white/80 dark:border-slate-800/80 shadow-sm shadow-slate-200/50 dark:shadow-slate-900/30">
+                                                                <AvatarFallback className="bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 text-white font-bold text-[10px]">
                                                                     {getInitials(employee.nama)}
                                                                 </AvatarFallback>
                                                             </Avatar>
                                                             <div className={cn(
-                                                                "absolute -bottom-1 -right-1 h-6 w-6 rounded-full border-2 border-white dark:border-slate-800 flex items-center justify-center",
+                                                                "absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white dark:border-slate-800 flex items-center justify-center",
                                                                 employee.kdSts === 'AKTIF'
                                                                     ? "bg-emerald-500"
                                                                     : "bg-slate-400"
                                                             )}>
-                                                                {employee.kdSts === 'AKTIF' ? (
-                                                                    <BadgeCheck className="h-3 w-3 text-white" />
-                                                                ) : (
-                                                                    <Calendar className="h-3 w-3 text-white" />
-                                                                )}
                                                             </div>
                                                         </div>
                                                         <div>
-                                                            <div className="font-bold text-slate-900 dark:text-white text-sm leading-tight">{employee.nama}</div>
-                                                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">ID: {employee.emplId}</div>
+                                                            <div className="font-bold text-slate-900 dark:text-white text-xs leading-tight line-clamp-1">{employee.nama}</div>
+                                                            <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">ID: {employee.emplId}</div>
                                                         </div>
                                                     </div>
                                                 </TableCell>
 
-                                                <TableCell className="py-5">
-                                                    <div className="space-y-2">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="h-6 w-6 rounded-md bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                                                                <BadgeCheck className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                                                <TableCell className="px-4 py-3">
+                                                    <div className="space-y-1">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <div className="h-5 w-5 rounded-md bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                                                                <BadgeCheck className="h-2.5 w-2.5 text-blue-600 dark:text-blue-400" />
                                                             </div>
-                                                            <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{employee.nik || 'N/A'}</span>
+                                                            <span className="text-xs font-medium text-slate-800 dark:text-slate-200">{employee.nik || 'N/A'}</span>
                                                         </div>
-                                                        <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                                                            <Calendar className="h-3 w-3" />
-                                                            Joined: {formatDate(employee.tglMsk)}
+                                                        <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                                            <Calendar className="h-2.5 w-2.5" />
+                                                            {formatDate(employee.tglMsk)}
                                                         </div>
                                                     </div>
                                                 </TableCell>
 
-                                                <TableCell className="py-5">
-                                                    <div className="space-y-2">
+                                                <TableCell className="px-4 py-3">
+                                                    <div className="space-y-1.5">
                                                         {employee.handphone && (
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="h-6 w-6 rounded-md bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                                                                    <Phone className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                                                            <div className="flex items-center gap-1.5">
+                                                                <div className="h-5 w-5 rounded-md bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                                                                    <Phone className="h-2.5 w-2.5 text-emerald-600 dark:text-emerald-400" />
                                                                 </div>
                                                                 <a
                                                                     href={`tel:${employee.handphone}`}
-                                                                    className="text-sm font-medium text-slate-800 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                                                                    className="text-xs font-medium text-slate-800 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
                                                                 >
                                                                     {employee.handphone}
                                                                 </a>
                                                             </div>
                                                         )}
                                                         {employee.email && (
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="h-6 w-6 rounded-md bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                                                                    <Mail className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                                                            <div className="flex items-center gap-1.5">
+                                                                <div className="h-5 w-5 rounded-md bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                                                                    <Mail className="h-2.5 w-2.5 text-amber-600 dark:text-amber-400" />
                                                                 </div>
                                                                 <a
                                                                     href={`mailto:${employee.email}`}
-                                                                    className="text-xs text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors truncate max-w-[150px]"
+                                                                    className="text-[10px] text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors truncate max-w-[120px]"
                                                                     title={employee.email}
                                                                 >
                                                                     {employee.email}
@@ -315,48 +299,36 @@ export function EmployeeTable({
                                                     </div>
                                                 </TableCell>
 
-                                                <TableCell className="py-5">
+                                                <TableCell className="px-4 py-3">
                                                     <div className="flex items-center gap-2">
-                                                        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 flex items-center justify-center">
-                                                            <Briefcase className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                                                        </div>
                                                         <div>
-                                                            <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">{employee.jabatan?.nmJab || 'Unassigned'}</div>
-                                                            <div className="text-xs text-slate-500 dark:text-slate-400">Position</div>
+                                                            <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">{employee.jabatan?.nmJab || 'Unassigned'}</div>
                                                         </div>
                                                     </div>
                                                 </TableCell>
 
-                                                <TableCell className="py-5">
+                                                <TableCell className="px-4 py-3">
                                                     <div className="flex items-center gap-2">
-                                                        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-100 to-blue-100 dark:from-indigo-900/30 dark:to-blue-900/30 flex items-center justify-center">
-                                                            <Building className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                                                        </div>
                                                         <div>
-                                                            <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">{employee.dept?.nmDept || 'Unassigned'}</div>
-                                                            <div className="text-xs text-slate-500 dark:text-slate-400">Department</div>
+                                                            <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">{employee.dept?.nmDept || 'Unassigned'}</div>
                                                         </div>
                                                     </div>
                                                 </TableCell>
 
-                                                <TableCell className="py-5">
+                                                <TableCell className="px-4 py-3">
                                                     <div className="flex items-center gap-2">
-                                                        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-cyan-100 to-teal-100 dark:from-cyan-900/30 dark:to-teal-900/30 flex items-center justify-center">
-                                                            <Building className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
-                                                        </div>
                                                         <div>
-                                                            <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">{employee.sie?.nmSeksie || 'Unassigned'}</div>
-                                                            <div className="text-xs text-slate-500 dark:text-slate-400">Section</div>
+                                                            <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">{employee.sie?.nmSeksie || 'Unassigned'}</div>
                                                         </div>
                                                     </div>
                                                 </TableCell>
 
-                                                <TableCell className="py-5">
+                                                <TableCell className="px-4 py-3">
                                                     <Badge
                                                         className={cn(
-                                                            "px-3 py-1.5 rounded-full font-bold text-xs uppercase tracking-wider border-0",
+                                                            "px-2 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider border-0",
                                                             employee.kdSts === 'AKTIF'
-                                                                ? "bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-lg shadow-emerald-500/25"
+                                                                ? "bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-sm shadow-emerald-500/25"
                                                                 : "bg-gradient-to-r from-slate-400 to-slate-500 text-white"
                                                         )}
                                                     >
@@ -364,42 +336,40 @@ export function EmployeeTable({
                                                     </Badge>
                                                 </TableCell>
 
-                                                <TableCell className="py-5">
-                                                    <div className="flex items-start gap-2 max-w-[200px]">
-                                                        <div className="h-6 w-6 rounded-md bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                                            <MapPin className="h-3 w-3 text-rose-600 dark:text-rose-400" />
-                                                        </div>
-                                                        <span className="text-sm text-slate-600 dark:text-slate-300 leading-tight line-clamp-2">
+                                                <TableCell className="px-4 py-3">
+                                                    <div className="flex items-start gap-1.5 max-w-[150px]">
+                                                        <MapPin className="h-3 w-3 text-rose-500 dark:text-rose-400 mt-0.5 flex-shrink-0" />
+                                                        <span className="text-xs text-slate-600 dark:text-slate-300 leading-tight line-clamp-2">
                                                             {employee.alamat1 || 'No address provided'}
                                                         </span>
                                                     </div>
                                                 </TableCell>
 
-                                                <TableCell className="pr-8 py-5">
-                                                    <div className="flex items-center justify-end gap-2">
+                                                <TableCell className="px-4 py-3 text-right">
+                                                    <div className="flex items-center justify-end gap-1.5">
                                                         <Button
                                                             size="icon"
                                                             variant="ghost"
                                                             onClick={() => onView(employee)}
-                                                            className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-800/30 hover:scale-105 transition-all group/action"
+                                                            className="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-800/30 hover:scale-105 transition-all"
                                                         >
-                                                            <Eye className="h-4 w-4" />
+                                                            <Eye className="h-3.5 w-3.5" />
                                                         </Button>
                                                         <Button
                                                             size="icon"
                                                             variant="ghost"
                                                             onClick={() => onEdit(employee)}
-                                                            className="h-10 w-10 rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-800/30 hover:scale-105 transition-all group/action"
+                                                            className="h-8 w-8 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-800/30 hover:scale-105 transition-all"
                                                         >
-                                                            <Pencil className="h-4 w-4" />
+                                                            <Pencil className="h-3.5 w-3.5" />
                                                         </Button>
                                                         <Button
                                                             size="icon"
                                                             variant="ghost"
                                                             onClick={() => onDelete(employee)}
-                                                            className="h-10 w-10 rounded-xl bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-800/30 hover:scale-105 transition-all group/action"
+                                                            className="h-8 w-8 rounded-lg bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-800/30 hover:scale-105 transition-all"
                                                         >
-                                                            <Trash2 className="h-4 w-4" />
+                                                            <Trash2 className="h-3.5 w-3.5" />
                                                         </Button>
                                                     </div>
                                                 </TableCell>

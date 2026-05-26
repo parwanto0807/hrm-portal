@@ -2,7 +2,6 @@ import { prisma } from '../config/prisma.js';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import * as jspdf from 'jspdf';
-import muhammara from 'muhammara';
 
 // Get aggregated payroll periods
 export const getPayrollPeriods = async (req, res) => {
@@ -406,7 +405,12 @@ export const generateProtectedPayslip = async (req, res, next) => {
         const doc = new jspdf.jsPDF({
             orientation: 'landscape',
             unit: 'mm',
-            format: [210, 148]
+            format: [210, 148],
+            encryption: {
+                userPassword: password,
+                ownerPassword: 'ADMIN_OWNER_KEY_12345',
+                userPermissions: ['print']
+            }
         });
 
         // --- PDF LAYOUT LOGIC (Replicated from frontend) ---
@@ -538,25 +542,11 @@ export const generateProtectedPayslip = async (req, res, next) => {
 
         const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
 
-        // 4. Encrypt using Muhammara (Recrypt)
-
-        const inStream = new muhammara.PDFRStreamForBuffer(pdfBuffer);
-        const outStream = new muhammara.PDFWStreamForBuffer();
-        
-        muhammara.recrypt(inStream, outStream, {
-            userPassword: password,
-            ownerPassword: 'ADMIN_OWNER_KEY_12345',
-            userProtectionFlag: 4 // Print only
-        });
-
-
-        const finalBuffer = outStream.buffer;
-
         // 5. Send result
 
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename=Slip_Gaji_${periodId}_${employeeId}.pdf`);
-        res.send(finalBuffer);
+        res.send(pdfBuffer);
 
     } catch (error) {
         console.error('CRITICAL Error generating protected PDF:', error);

@@ -205,25 +205,41 @@ export default function MasterShiftPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="w-[120px]">Kode Shift</TableHead>
+                                    <TableHead className="w-[100px]">Kode Shift</TableHead>
                                     <TableHead>Nama Shift</TableHead>
-                                    <TableHead className="w-[100px] text-center">Masuk</TableHead>
-                                    <TableHead className="w-[100px] text-center">Keluar</TableHead>
+                                    <TableHead className="text-center">Jml Shift</TableHead>
+                                    <TableHead className="text-center">Jadwal (Masuk - Keluar)</TableHead>
                                     <TableHead className="w-[120px] text-center">Status</TableHead>
                                     <TableHead className="w-[80px] text-right">Aksi</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {isLoading ? (
-                                    <TableRow><TableCell colSpan={5} className="text-center py-10">Memuat data...</TableCell></TableRow>
+                                    <TableRow><TableCell colSpan={6} className="text-center py-10">Memuat data...</TableCell></TableRow>
                                 ) : filteredShifts?.length === 0 ? (
-                                    <TableRow><TableCell colSpan={5} className="text-center py-10 text-muted-foreground">Tidak ada data shift.</TableCell></TableRow>
+                                    <TableRow><TableCell colSpan={6} className="text-center py-10 text-muted-foreground">Tidak ada data shift.</TableCell></TableRow>
                                 ) : filteredShifts?.map((shift) => (
                                     <TableRow key={shift.id}>
                                         <TableCell className="font-bold">{shift.kdJam}</TableCell>
                                         <TableCell>{shift.jnsJam || "-"}</TableCell>
-                                        <TableCell className="text-center font-mono">{shift.jamMasuk || "-"}</TableCell>
-                                        <TableCell className="text-center font-mono">{shift.jamKeluar || "-"}</TableCell>
+                                        <TableCell className="text-center font-medium">{shift.jmShif}</TableCell>
+                                        <TableCell className="text-center">
+                                            {shift.jamMasuk || shift.jamKeluar ? (
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <Badge variant="outline" className="font-mono bg-slate-50 text-slate-700">
+                                                        <Clock className="w-3 h-3 mr-1 inline" />
+                                                        {shift.jamMasuk || "--:--"}
+                                                    </Badge>
+                                                    <span className="text-muted-foreground">-</span>
+                                                    <Badge variant="outline" className="font-mono bg-slate-50 text-slate-700">
+                                                        <Clock className="w-3 h-3 mr-1 inline" />
+                                                        {shift.jamKeluar || "--:--"}
+                                                    </Badge>
+                                                </div>
+                                            ) : (
+                                                <span className="text-muted-foreground">-</span>
+                                            )}
+                                        </TableCell>
                                         <TableCell className="text-center">
                                             {shift.isActive ? (
                                                 <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">Aktif</Badge>
