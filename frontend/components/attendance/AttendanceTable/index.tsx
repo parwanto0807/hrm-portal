@@ -131,7 +131,7 @@ export const AttendanceTable = ({
                             {table.getHeaderGroups().map((headerGroup: any) => (
                                 <TableRow key={headerGroup.id} className="hover:bg-transparent border-slate-200 dark:border-slate-800">
                                     {headerGroup.headers.map((header: any) => (
-                                        <TableHead key={header.id} className="text-[10px] sm:text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest py-3 md:py-4 px-2">
+                                        <TableHead key={header.id} className="text-xs font-semibold text-slate-600 dark:text-slate-300 py-2.5 px-3">
                                             {header.isPlaceholder
                                                 ? null
                                                 : flexRender(
@@ -174,7 +174,7 @@ export const AttendanceTable = ({
                                         >
                                             {row.getVisibleCells().map((cell: any) => (
                                                 <TableCell key={cell.id} className={cn(
-                                                    "py-2.5 sm:py-3 px-2 text-[11px] sm:text-sm",
+                                                    "py-1.5 sm:py-2 px-3 text-xs",
                                                     isHoliday && "text-red-700 font-medium"
                                                 )}>
                                                     {flexRender(cell.column.columnDef.cell, cell.getContext())}

@@ -753,3 +753,89 @@ export const generateProtectedPayslip = async (req, res, next) => {
         next(error);
     }
 };
+
+// ── Skala Upah ─────────────────────────────────────────────────
+
+export const getSkalaUpah = async (req, res) => {
+    try {
+        const { tahun } = req.query;
+        let where = {};
+        
+        if (tahun) {
+            where = {
+                validDate: {
+                    gte: new Date(`${tahun}-01-01`),
+                    lte: new Date(`${tahun}-12-31`)
+                }
+            };
+        }
+        
+        const data = await prisma.skalaUpah.findMany({
+            where,
+            orderBy: [{ kdCmpy: 'asc' }, { upahMin: 'asc' }],
+        });
+        
+        // Map database fields back to frontend expected fields
+        const mappedData = data.map(item => ({
+            ...item,
+            tahun: new Date(item.validDate).getFullYear(),
+            umk: parseFloat(item.upahMid || 0),
+            upahMin: parseFloat(item.upahMin || 0),
+            upahMaks: parseFloat(item.upahMax || 0),
+            nmJab: item.namaGol || '' // Or fetch from MstJab if needed, but for now map it safely
+        }));
+        
+        res.status(200).json({ success: true, data: mappedData });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const saveSkalaUpah = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const data = { ...req.body };
+        
+        // Format data for Prisma
+        const prismaData = {
+            kdCmpy: data.kdCmpy,
+            kdJab: data.kdJab || null,
+            golongan: data.golongan || '',
+            namaGol: data.nmJab || data.namaGol || null, // save nmJab to namaGol as fallback
+            upahMin: parseFloat(data.upahMin || 0),
+            upahMid: parseFloat(data.umk || 0), // map umk to upahMid
+            upahMax: parseFloat(data.upahMaks || data.upahMax || 0), // map upahMaks to upahMax
+            validDate: data.validDate ? new Date(data.validDate) : new Date(),
+            isActive: data.isActive !== undefined ? data.isActive : true
+        };
+
+        let result;
+        if (id) {
+            result = await prisma.skalaUpah.update({
+                where: { id },
+                data: prismaData,
+            });
+        } else {
+            result = await prisma.skalaUpah.create({
+                data: prismaData,
+            });
+        }
+        
+        res.status(200).json({ success: true, data: result });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const deleteSkalaUpah = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await prisma.skalaUpah.delete({
+            where: { id },
+        });
+        res.status(200).json({ success: true, message: 'Deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+

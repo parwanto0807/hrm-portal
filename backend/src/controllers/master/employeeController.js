@@ -694,3 +694,57 @@ export const verifyDob = async (req, res) => {
         });
     }
 };
+
+/**
+ * GET /employees/contracts
+ * Monitor Kontrak PKWT — semua kontrak beserta detail karyawan
+ */
+export const getContracts = async (req, res) => {
+    try {
+        const { status, kdDept, search } = req.query;
+        const today = new Date();
+        const in90Days = new Date();
+        in90Days.setDate(today.getDate() + 90);
+
+        const contracts = await prisma.kontrak.findMany({
+            include: {
+                karyawan: {
+                    select: {
+                        nama: true,
+                        nik: true,
+                        kdSts: true,
+                        kdJns: true,
+                        dept: { select: { nmDept: true, kdDept: true } },
+                        sie: { select: { nmSeksie: true } },
+                        jabatan: { select: { nmJab: true } },
+                    }
+                }
+            },
+            orderBy: { tglAkhir: 'asc' }
+        });
+
+        // Filter by search
+        let filtered = contracts;
+        if (search) {
+            const s = search.toLowerCase();
+            filtered = filtered.filter(c =>
+                c.karyawan?.nama?.toLowerCase().includes(s) ||
+                c.emplId.toLowerCase().includes(s) ||
+                c.nik?.includes(search)
+            );
+        }
+        if (kdDept && kdDept !== 'all') {
+            filtered = filtered.filter(c => c.karyawan?.dept?.kdDept === kdDept);
+        }
+
+        res.status(200).json({
+            success: true,
+            data: filtered,
+            total: filtered.length,
+        });
+    } catch (error) {
+        console.error('Error fetching contracts:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+

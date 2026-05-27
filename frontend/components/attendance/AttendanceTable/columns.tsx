@@ -26,17 +26,12 @@ export const getColumns = (onEdit: (record: any) => void, onView: (record: any) 
         header: "Karyawan",
         cell: ({ row }: { row: any }) => (
             <div className="flex flex-col min-w-[120px]">
-                <span className="font-bold text-slate-900 dark:text-slate-100 leading-tight text-[11px] sm:text-xs">
+                <span className="font-semibold text-slate-800 dark:text-slate-200 text-xs">
                     {row.original.karyawan?.nama || row.original.nama}
                 </span>
-                <div className="flex flex-col gap-0 mt-0.5">
-                    <span className="text-[9px] text-muted-foreground dark:text-slate-400 uppercase font-bold tracking-tighter truncate max-w-[140px]">
-                        {row.original.karyawan?.jabatan?.nmJab || row.original.jabatan || '-'}
-                    </span>
-                    <span className="text-[9px] text-slate-400 dark:text-slate-500 truncate max-w-[140px] hidden sm:inline">
-                        {row.original.karyawan?.dept?.nmDept || '-'}
-                    </span>
-                </div>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[160px]">
+                    {row.original.karyawan?.jabatan?.nmJab || row.original.jabatan || '-'} • {row.original.karyawan?.dept?.nmDept || '-'}
+                </span>
             </div>
         ),
     },
@@ -51,16 +46,16 @@ export const getColumns = (onEdit: (record: any) => void, onView: (record: any) 
             return (
                 <div className="flex flex-col">
                     <span className={cn(
-                        "text-[11px] sm:text-xs font-bold",
-                        holiday ? "text-rose-600 dark:text-rose-400" : "text-slate-900 dark:text-slate-100"
+                        "text-xs font-semibold",
+                        holiday ? "text-rose-600 dark:text-rose-400" : "text-slate-700 dark:text-slate-300"
                     )}>
-                        {format(date, 'dd MMM', { locale: id })}
+                        {format(date, 'dd MMM yyyy', { locale: id })}
                     </span>
-                    <span className="text-[9px] text-muted-foreground dark:text-slate-400 font-medium">
+                    <span className="text-[11px] text-slate-500">
                         {format(date, 'EEEE', { locale: id })}
                     </span>
                     {holiday && (
-                        <Badge variant="outline" className="mt-1 w-fit border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 text-rose-600 dark:text-rose-400 text-[8px] px-1 py-0 h-4 whitespace-nowrap overflow-hidden text-ellipsis max-w-[100px]">
+                        <Badge variant="outline" className="mt-1 w-fit border-red-200 bg-red-50 text-rose-600 text-[10px] px-1.5 py-0">
                             {holiday.keterangan}
                         </Badge>
                     )}
@@ -72,14 +67,10 @@ export const getColumns = (onEdit: (record: any) => void, onView: (record: any) 
         id: "schedule",
         header: () => <span className="hidden sm:inline">Jadwal</span>,
         cell: ({ row }: { row: any }) => (
-            <div className="hidden sm:flex items-center gap-1 text-[10px]">
-                <Badge variant="outline" className="font-semibold bg-slate-50/50 dark:bg-slate-900/50 px-1 py-0 h-4 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400">
-                    {row.original.stdMasuk || '--:--'}
-                </Badge>
-                <span className="text-slate-300 dark:text-slate-700">-</span>
-                <Badge variant="outline" className="font-semibold bg-slate-50/50 dark:bg-slate-900/50 px-1 py-0 h-4 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400">
-                    {row.original.stdKeluar || '--:--'}
-                </Badge>
+            <div className="hidden sm:flex items-center gap-1 text-xs text-slate-600 font-mono bg-slate-50 px-2 py-1 rounded w-fit border border-slate-100">
+                <span>{row.original.stdMasuk || '--:--'}</span>
+                <span className="text-slate-400">-</span>
+                <span>{row.original.stdKeluar || '--:--'}</span>
             </div>
         ),
     },
@@ -101,45 +92,29 @@ export const getColumns = (onEdit: (record: any) => void, onView: (record: any) 
             const isEarlyOut = (stdKeluar && realKeluar && realKeluar < stdKeluar);
 
             return (
-                <div className="flex items-center gap-1.5 text-[10px]">
-                    {/* IN TIME */}
-                    <div className="group relative flex items-center gap-1">
-                        <Badge className={cn(
-                            "font-black px-1.5 py-0 h-4.5 transition-all duration-300 border flex items-center gap-1 shadow-sm",
-                            isLate
-                                ? "bg-red-600 hover:bg-red-700 text-white border-red-500 shadow-red-200 dark:shadow-red-900/20"
-                                : "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500 shadow-emerald-200 dark:shadow-emerald-900/20"
+                <div className="flex items-center gap-2 text-xs font-mono">
+                    <div className="flex flex-col">
+                        <span className="text-[10px] text-slate-400 mb-0.5 leading-none">In</span>
+                        <span className={cn(
+                            "font-semibold",
+                            isLate ? "text-rose-600" : "text-emerald-600"
                         )}>
                             {realMasuk || '--:--'}
-                            {isLate && <span className="text-[8px] opacity-90">({row.original.lambat}m)</span>}
-                        </Badge>
-                        {isLate && (
-                            <span className="flex h-2.5 w-2.5">
-                                <span className="animate-ping absolute inline-flex h-2.5 w-2.5 rounded-full bg-red-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600 shadow-[0_0_8px_rgba(220,38,38,0.8)]"></span>
-                            </span>
-                        )}
+                            {isLate && <span className="text-[10px] ml-1 text-rose-500 font-normal">({row.original.lambat}m)</span>}
+                        </span>
                     </div>
 
-                    <span className="text-slate-300 dark:text-slate-700 font-bold">/</span>
+                    <div className="h-6 w-px bg-slate-200 mx-1"></div>
 
-                    {/* OUT TIME */}
-                    <div className="group relative flex items-center gap-1">
-                        <Badge className={cn(
-                            "font-black px-1.5 py-0 h-4.5 transition-all duration-300 border flex items-center gap-1 shadow-sm",
-                            isEarlyOut
-                                ? "bg-orange-600 hover:bg-orange-700 text-white border-orange-500 shadow-orange-200 dark:shadow-orange-900/20"
-                                : "bg-blue-600 hover:bg-blue-700 text-white border-blue-500 shadow-blue-200 dark:shadow-blue-900/20"
+                    <div className="flex flex-col">
+                        <span className="text-[10px] text-slate-400 mb-0.5 leading-none">Out</span>
+                        <span className={cn(
+                            "font-semibold",
+                            isEarlyOut ? "text-amber-600" : "text-blue-600"
                         )}>
                             {realKeluar || '--:--'}
-                            {isEarlyOut && <span className="text-[8px] opacity-90">({row.original.cepat}m)</span>}
-                        </Badge>
-                        {isEarlyOut && (
-                            <span className="flex h-2.5 w-2.5">
-                                <span className="animate-ping absolute inline-flex h-2.5 w-2.5 rounded-full bg-orange-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-orange-600 shadow-[0_0_8px_rgba(234,88,12,0.8)]"></span>
-                            </span>
-                        )}
+                            {isEarlyOut && <span className="text-[10px] ml-1 text-amber-500 font-normal">({row.original.cepat}m)</span>}
+                        </span>
                     </div>
                 </div>
             );
@@ -161,11 +136,10 @@ export const getColumns = (onEdit: (record: any) => void, onView: (record: any) 
             };
             const item = config[status] || { label: status, color: 'bg-slate-500', icon: null };
             return (
-                <div className="flex justify-center sm:justify-start">
+                <div className="flex justify-start">
                     <Badge className={cn(
                         item.color,
-                        "text-white hover:opacity-90 border-none text-[8px] sm:text-[9px] font-black h-4.5 px-2 flex items-center justify-center rounded-full shadow-sm transition-all",
-                        status === 'A' && "animate-pulse"
+                        "text-white border-none text-[10px] font-medium px-2 py-0.5 rounded shadow-sm"
                     )}>
                         {item.icon}
                         {item.label}
@@ -181,8 +155,8 @@ export const getColumns = (onEdit: (record: any) => void, onView: (record: any) 
             const ot = parseFloat(row.getValue("totLmb") || "0");
             return (
                 <span className={cn(
-                    "text-[10px] font-bold hidden md:inline",
-                    ot > 0 ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground dark:text-slate-500"
+                    "text-xs font-mono hidden md:inline",
+                    ot > 0 ? "text-blue-600 font-semibold" : "text-slate-400"
                 )}>
                     {ot > 0 ? `${ot}m` : '-'}
                 </span>

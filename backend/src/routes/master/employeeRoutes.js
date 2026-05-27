@@ -8,7 +8,8 @@ import {
     createEmployee,
     updateEmployee,
     deleteEmployee,
-    verifyDob
+    verifyDob,
+    getContracts,
 } from '../../controllers/master/employeeController.js';
 import { protect } from '../../middleware/auth.middleware.js';
 
@@ -19,6 +20,7 @@ router.use(protect);
 
 // Employee CRUD routes
 router.get('/', getEmployees);
+router.get('/contracts', getContracts);  // Monitor Kontrak PKWT (harus sebelum /:id)
 router.get('/:id', getEmployeeById);
 router.get('/:id/payroll', getEmployeePayroll);
 router.get('/:id/history', getPayrollHistory);

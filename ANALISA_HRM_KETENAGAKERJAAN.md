@@ -1,7 +1,7 @@
 # 🏢 Analisa HRM Portal — Kesiapan Profesional & Kepatuhan Hukum Ketenagakerjaan Indonesia
 
-> **Tanggal Analisa:** 27 Mei 2026  
-> **Tech Stack:** Next.js (Frontend) + Express.js + Prisma + PostgreSQL (Backend)  
+> **Tanggal Analisa:** 27 Mei 2026 (Update)
+> **Tech Stack:** Next.js (Frontend) + Express.js + Prisma + PostgreSQL (Backend)
 > **Regulasi Acuan:** UU No. 13/2003 jo. UU Cipta Kerja No. 11/2020, PP No. 36/2021 (Pengupahan), PMK No. 168/2023 (PPh 21 TER), Permenaker 5/2023 (Struktur Skala Upah)
 
 ---
@@ -13,364 +13,291 @@
 | Autentikasi (JWT + Google OAuth) | ✅ Ada | Multi-role: SUPER_ADMIN, ADMIN, HR_MANAGER, DEPT_MANAGER, EMPLOYEE |
 | Master Data (Company, Bagian, Dept, Jabatan, Agama, Pendidikan) | ✅ Ada | Cukup lengkap |
 | Data Karyawan (Biodata, Keluarga, Pendidikan, Riwayat Kerja) | ✅ Ada | Schema sangat lengkap |
-| Kontrak Karyawan | ✅ Ada | Model `Kontrak` ada, UI belum terlihat |
+| Kontrak Karyawan | ✅ Ada | Model `Kontrak` ada, UI belum lengkap |
 | Absensi / Kehadiran | ✅ Ada | Model `Absent`, `AttLog`, integrasi mesin absensi |
 | Shift & Jadwal Kerja | ✅ Ada | Model `JnsJam`, `GroupShift`, `ShiftPattern`, `Dshift` |
 | Lembur | ✅ Ada | Model `Lembur` dengan detail per hari |
 | Cuti | ✅ Sebagian | Model `Dcuti`, `Hcuti`, `JnsCuti` ada, approval flow ada |
-| Payroll / Gaji (View & Slip) | ✅ Sebagian | Model `Gaji` sangat lengkap, tapi **kalkulasi otomatis BELUM ada** |
-| PPh 21 Tahunan | ✅ Sebagian | Model `PphThn`, `BatasPajak`, `Ptkp` ada, kalkulasi belum |
-| BPJS TK & Kesehatan | ✅ Sebagian | Field tersedia di model Gaji, kalkulasi belum |
-| THR | ✅ Sebagian | Field `thr`, `pphThr`, `BatasThr` ada |
+| Payroll / Gaji (View & Slip) | ✅ Ada | Model `Gaji` sangat lengkap + **kalkulasi otomatis SUDAH ADA** ✅ |
+| **Engine Kalkulasi Payroll** | ✅ **SELESAI** | `payrollEngine.js` — orchestrator lengkap |
+| **PPh 21 Metode TER (PMK 168/2023)** | ✅ **SELESAI** | `pphCalculator.js` — TER Jan-Nov + progresif Des |
+| **BPJS TK & Kesehatan** | ✅ **SELESAI** | `bpjsCalculator.js` — JHT, JKK, JKM, JP, JKN + batas atas/bawah |
+| **Kalkulator Lembur** | ✅ **SELESAI** | `overtimeCalculator.js` — Permenaker 102/2004 lengkap |
+| **THR & Pesangon** | ✅ **SELESAI** | `thrPesangonCalculator.js` — PP 6/2016 + UU Cipta Kerja |
+| **Model TarifTER** | ✅ **SELESAI** | 113 baris tarif pajak 2024-2025 (kategori A/B/C) sudah di-seed |
+| **Model KonfigBpjs** | ✅ **SELESAI** | Rate default BPJS sudah di-seed |
+| **Model SkalaUpah** | ✅ **SELESAI** | Schema & model sudah ada di Prisma |
+| **Model PayrollLog** | ✅ **SELESAI** | Audit trail immutable sudah ada |
+| **Model KpiTemplate & KpiEmployee** | ✅ **SELESAI** | Schema penilaian kinerja sudah ada |
+| **Model SuratPeringatan** | ✅ **SELESAI** | Schema disiplin/SP sudah ada |
+| API Payroll Engine (7 endpoint baru) | ✅ **SELESAI** | `calculate`, `preview`, `close`, `reopen`, BPJS config, TER, log |
+| PPh 21 Tahunan | ✅ Sebagian | Model `PphThn`, `BatasPajak`, `Ptkp` ada |
 | Pinjaman Karyawan | ✅ Ada | Model `PinjamHdr`, `PinjamDet` |
 | Tunjangan & Potongan | ✅ Ada | Model `Tunjangan`, `Potongan`, `Rapel` |
 | Slip Gaji PDF | ✅ Ada | Dengan password (tanggal lahir) |
 | Notifikasi | ✅ Ada | Firebase FCM |
 | RBAC (Role Based Access) | ✅ Ada | Model `SysPrivilege` |
 | Laporan | ⚠️ Stub | Halaman ada tapi kosong |
-| Pesangon | ⚠️ Sebagian | Model `Pesangon` ada, kalkulasi belum |
+| Pesangon | ✅ **SELESAI** | Kalkulasi sudah ada di `thrPesangonCalculator.js` |
 | Mutasi Karyawan | ⚠️ Sebagian | Model `Mutasi` ada, UI tidak terlihat |
-| Kondite / Disiplin | ⚠️ Sebagian | Model `Kondite` ada, UI tidak terlihat |
+| Kondite / Disiplin | ⚠️ Sebagian | Model `Kondite` ada, SP sudah ada schema-nya |
 | Medis / Kesehatan | ⚠️ Sebagian | Model `SaldoMedic`, `MedikTrans` ada |
-| **Kalkulasi Payroll Otomatis** | ❌ Belum | Ini yang paling kritis |
-| **Struktur Skala Upah** | ❌ Belum | Wajib per Permenaker 5/2023 |
+| **Struktur Skala Upah** | ✅ Schema Ada | Model di Prisma sudah ada, **UI belum** |
 | **E-Bukti Potong (1721-A1)** | ❌ Belum | Wajib untuk pelaporan pajak |
 | **Pelaporan SPT Masa PPh 21** | ❌ Belum | Kewajiban bulanan perusahaan |
-| **Audit Trail / Log** | ⚠️ Sebagian | `SysEventHistory` ada tapi belum dipakai maksimal |
+| **Audit Trail / Log Payroll** | ✅ **SELESAI** | `PayrollLog` model + endpoint `/log/:periodeId` |
 | **Employee Self Service (ESS)** | ⚠️ Sebagian | Check-in ada, pengajuan ada |
-| **Penilaian Kinerja (KPI/SKP)** | ❌ Belum | Belum ada sama sekali |
+| **Penilaian Kinerja (KPI/SKP)** | ✅ Schema Ada | Model ada di Prisma, **UI & logik belum** |
 
 ---
 
-## 🚨 GAP KRITIS — Hukum Ketenagakerjaan Indonesia
+## ✅ TAHAP BACKEND — SELESAI (27 Mei 2026)
 
-### 1. 💰 KALKULASI PAYROLL OTOMATIS (Prioritas TERTINGGI)
+Semua komponen kritis backend Payroll Engine telah berhasil diimplementasikan:
 
-**Masalah saat ini:**  
-Di `payrollController.js` baris 113-123, pembuatan gaji hanya menyalin `pokokBln` langsung sebagai gBersih:
-```javascript
-// Ini adalah placeholder, BUKAN kalkulasi nyata!
-gBersih: emp.pokokBln || 0, // Initial net = gross for now
-gKotor: emp.pokokBln || 0,
-```
+### Yang Sudah Selesai (Backend)
+| File | Deskripsi | Regulasi |
+|------|-----------|----------|
+| `services/payrollEngine.js` | Core orchestrator batch run payroll | — |
+| `services/pphCalculator.js` | PPh 21 TER (Jan-Nov) + progresif (Des) | PMK 168/2023 |
+| `services/bpjsCalculator.js` | JHT, JKK, JKM, JP, JKN + batas atas/bawah | PP 44-45/2015, Perpres 75/2019 |
+| `services/overtimeCalculator.js` | Lembur 1.5x, 2x, 3x, 4x | Permenaker 102/2004 |
+| `services/thrPesangonCalculator.js` | THR proporsional + Pesangon + UPMK | PP 6/2016 + UU Cipta Kerja |
+| `controllers/payrollController.js` | 7 endpoint baru, mengganti placeholder | — |
+| `routes/payrollRoutes.js` | Route semua endpoint payroll engine | — |
+| `scripts/seed-tarif-ter.js` | 113 tarif TER kategori A/B/C (2024-2025) | PMK 168/2023 |
+| `scripts/seed-konfig-bpjs.js` | Rate default BPJS | PP 44-45/2015 |
+| `prisma/schema.prisma` | Model: TarifTER, KonfigBpjs, SkalaUpah, PayrollLog, KpiTemplate, KpiEmployee, SuratPeringatan | — |
 
-**Yang WAJIB dikalkulasi sesuai regulasi:**
-
-#### A. Upah Pokok & Pro-Rata (PP 36/2021)
-- Hitung upah pro-rata berdasarkan hari kerja aktual vs hari kerja standar
-- Karyawan kontrak/percobaan: hitung sesuai masa kerja
-- Formula: `pokokTrm = pokokBln × (hrKerja / hrKerjaNormal)`
-
-#### B. Lembur (Permenaker 102/2004 — WAJIB)
-- Jam pertama lembur hari biasa = **1.5x** upah per jam
-- Jam ke-2 dst hari biasa = **2x** upah per jam
-- Hari libur/minggu jam 1-8 = **2x** upah per jam
-- Hari libur/minggu jam ke-9 dst = **3x** upah per jam
-- Hari libur nasional + hari kerja 5 hari: jam 1-8 = **2x**, jam 9 = **3x**, jam 10 dst = **4x**
-- Formula upah per jam = `1/173 × upah sebulan`
-
-#### C. PPh 21 — METODE TER (PMK 168/2023, berlaku 1 Jan 2024)
-- Metode baru: Tarif Efektif Rata-rata (TER) untuk bulanan
-- Bulan Jan-Nov: `PPh21 = penghasilan bruto × tarif TER`
-- Bulan Des: hitung ulang dengan metode progresif tahunan
-- TER dibagi berdasarkan PTKP + status (TK/0, K/0, K/1, K/2, K/3)
-
-#### D. BPJS Ketenagakerjaan (PP 44/2015 + PP 45/2015)
-- **JHT:** Perusahaan 3.7%, Karyawan 2% dari upah
-- **JKK:** Perusahaan 0.24%-1.74% tergantung risiko pekerjaan
-- **JKM:** Perusahaan 0.3% dari upah
-- **JP (Jaminan Pensiun):** Perusahaan 2%, Karyawan 1% — **batas atas upah JP = Rp 10,043,950 (2024)**
-
-#### E. BPJS Kesehatan (Perpres 75/2019)
-- **Iuran:** Perusahaan 4%, Karyawan 1% dari gaji pokok + tunjangan tetap
-- **Batas atas:** Rp 12,000,000/bulan
-- **Batas bawah:** UMK setempat
-
-#### F. Potongan Absensi
-- Mangkir: potong gaji proportional
-- Terlambat: opsional per kebijakan perusahaan
+### Endpoint API Baru
+| Method | Endpoint | Fungsi |
+|--------|----------|--------|
+| `POST` | `/api/payroll/periods/:id/calculate` | Run payroll batch semua karyawan |
+| `GET` | `/api/payroll/periods/:id/preview/:emplId` | Preview kalkulasi 1 karyawan |
+| `POST` | `/api/payroll/periods/:id/close` | Kunci periode (immutable) |
+| `POST` | `/api/payroll/periods/:id/reopen` | Buka kembali (SUPER_ADMIN only) |
+| `GET` | `/api/payroll/config/bpjs` | Ambil konfigurasi BPJS |
+| `POST` | `/api/payroll/config/bpjs` | Simpan konfigurasi BPJS |
+| `GET` | `/api/payroll/config/tarif-ter` | Ambil tarif TER PPh 21 |
+| `GET` | `/api/payroll/log/:periodeId` | Histori audit payroll |
 
 ---
 
-### 2. 📋 STRUKTUR SKALA UPAH (Permenaker 5/2023 — WAJIB)
+## 🚨 GAP YANG MASIH ADA — Tahap Frontend & Pengembangan Lanjutan
 
-**Belum ada sama sekali.** Perusahaan dengan ≥10 karyawan WAJIB memiliki struktur skala upah.
+### 🔴 PRIORITAS 1 — FRONTEND PAYROLL (Segera / Sprint Berikutnya)
 
-**Yang perlu dibuat:**
-- Tabel rentang upah berdasarkan jabatan/golongan
-- Mapping jabatan ke golongan upah  
-- Perbandingan upah karyawan vs UMK dan skala upah
-- Alert jika ada karyawan di bawah UMK
+#### 1. Halaman Kalkulasi Payroll — `dashboard/payroll/calculate`
+Backend sudah siap, tinggal sambungkan UI:
+- Tombol **"Run Payroll"** → POST `/periods/:id/calculate`
+- Progress bar / notifikasi per karyawan (sukses/gagal)
+- Tampilan summary: total gaji bruto, total potongan, total bersih
+- Status badge: `DRAFT` → `PROCESSED` → `CLOSED`
 
----
+#### 2. Preview Slip Gaji Sebelum Closing — `dashboard/payroll/[id]/preview`
+- Tabel detail kalkulasi per karyawan sebelum close
+- Rincian: Upah Pokok, Pro-Rata, Lembur, THR, BPJS (perusahaan + karyawan), PPh 21
+- Tombol **"Close Period"** setelah review
+- Export ke PDF per karyawan
 
-### 3. 🧾 PELAPORAN PAJAK — Bukti Potong & SPT
-
-#### Bukti Potong PPh 21 (Form 1721-A1)
-- **Wajib** diterbitkan setiap akhir tahun kepada karyawan
-- Harus memuat: NPWP, PTKP, PKP, PPh terutang, PPh telah dipotong
-- Model `PphThn` sudah ada tapi belum ada generator dokumen
-
-#### SPT Masa PPh 21 (Bulanan)
-- Perusahaan wajib lapor setiap bulan ke DJP
-- Integrasi dengan format e-SPT atau file CSV DJP belum ada
-
----
-
-### 4. 🏥 THR (Tunjangan Hari Raya) — PP 6/2016
-
-**Model sudah ada, tapi kalkulasi belum:**
-- Karyawan > 12 bulan: **1× gaji**
-- Karyawan 1-12 bulan: **proporsional (masa kerja/12 × gaji)**
-- Karyawan kontrak: berdasarkan perjanjian, minimal proporsional
-- Batas waktu bayar: **H-7 lebaran**
-- PPh atas THR: dihitung terpisah, bukan digabung dengan gaji bulanan
+#### 3. Halaman Detail Periode Payroll — upgrade `dashboard/payroll/[id]`
+- Daftar semua karyawan dalam periode dengan status kalkulasi
+- Filter by departemen/status
+- Preview individual per karyawan
+- Audit log perubahan (sambungkan ke `/log/:periodeId`)
 
 ---
 
-### 5. 💼 PESANGON & UANG PENGHARGAAN MASA KERJA (UU Cipta Kerja)
+### 🟡 PRIORITAS 2 — MASTER DATA & KONFIGURASI (1-2 sprint)
 
-**Model `Pesangon` ada, kalkulasi belum:**
+#### 4. UI Konfigurasi BPJS — `dashboard/settings/master/bpjs-config`
+- Form untuk edit rate JHT, JKK, JKM, JP, JKN (perusahaan & karyawan)
+- Edit batas atas upah JP & JKN
+- Mulai berlaku (validDate)
+- Sambungkan ke `GET/POST /api/payroll/config/bpjs`
 
-| Masa Kerja | Uang Pesangon |
-|------------|---------------|
-| < 1 tahun | 1 bulan upah |
-| 1-2 tahun | 2 bulan upah |
-| 2-3 tahun | 3 bulan upah |
-| 3-4 tahun | 4 bulan upah |
-| 4-5 tahun | 5 bulan upah |
-| 5-6 tahun | 6 bulan upah |
-| 6-7 tahun | 7 bulan upah |
-| 7-8 tahun | 8 bulan upah |
-| ≥ 8 tahun | 9 bulan upah (maksimum) |
+#### 5. UI Tarif TER PPh 21 — `dashboard/settings/master/tarif-pph`
+- Tabel read-only 113 baris tarif A/B/C
+- Filter by kategori & tahun
+- Sambungkan ke `GET /api/payroll/config/tarif-ter`
+- Info regulasi: PMK 168/2023
 
-**Uang Penghargaan Masa Kerja (UPMK):**
-| Masa Kerja | UPMK |
-|------------|------|
-| 3-6 tahun | 2 bulan upah |
-| 6-9 tahun | 3 bulan upah |
-| 9-12 tahun | 4 bulan upah |
-| 12-15 tahun | 5 bulan upah |
-| 15-18 tahun | 6 bulan upah |
-| 18-21 tahun | 7 bulan upah |
-| 21-24 tahun | 8 bulan upah |
-| ≥ 24 tahun | 10 bulan upah (maksimum) |
-
-**PPh Pesangon:** Tarif khusus (PP 68/2009), final
+#### 6. UI Struktur Skala Upah — `dashboard/settings/master/skala-upah`
+- CRUD tabel SkalaUpah (jabatan → golongan → upah min/mid/max)
+- Validasi: `upahMin ≥ UMK`, `upahMin < upahMid < upahMax`
+- Alert merah jika karyawan aktif berupah di bawah skala
+- Import dari Excel
 
 ---
 
-### 6. 🗓️ CUTI TAHUNAN (UU 13/2003 Pasal 79)
+### 🟡 PRIORITAS 2 — LAPORAN (1-2 sprint)
 
-**Status saat ini: Sebagian ada**
+#### 7. Rekap Payroll per Periode — `dashboard/reports/payroll-summary`
+- Total gaji per departemen
+- Breakdown: gaji pokok, lembur, tunjangan, BPJS, PPh, net
+- Export Excel (format transfer bank massal)
+- Grafik trend gaji bulanan
 
-- Karyawan dengan masa kerja ≥12 bulan berhak **minimum 12 hari cuti**
-- Cuti melahirkan: **3 bulan** (pra & pasca melahirkan)
-- Cuti keguguran: **1.5 bulan**
-- Cuti haid hari pertama & kedua
-- Cuti untuk keperluan keluarga (nikah, meninggal, dll)
+#### 8. Laporan Absensi Bulanan — `dashboard/reports/attendance-summary`
+- Rekap hadir, mangkir, terlambat, lembur per karyawan
+- Export Excel/PDF
+- Filter by departemen & periode
 
-**Yang perlu dikembangkan:**
+#### 9. Bukti Potong PPh 21 (Form 1721-A1)
+- Generate PDF sesuai format DJP per karyawan per tahun
+- Kirim otomatis via email
+- Simpan sebagai record `PphThn`
+
+---
+
+### 🟢 PRIORITAS 3 — PENGEMBANGAN LANJUTAN (3-6 bulan)
+
+#### 10. Penilaian Kinerja (KPI)
+Schema `KpiTemplate` dan `KpiEmployee` sudah ada di Prisma, tinggal:
+- UI template KPI per jabatan
+- Form penilaian per karyawan per periode
+- Dashboard skor KPI dengan radar chart
+- Integrasi ke kalkulasi bonus/insentif payroll
+
+#### 11. Manajemen Disiplin & SP (Surat Peringatan)
+Schema `SuratPeringatan` sudah ada, tinggal:
+- Form SP 1, SP 2, SP 3 dengan approval workflow
+- Tracking kondite per karyawan
+- Alert eskalasi otomatis
+- Link ke proses PHK
+
+#### 12. Monitor Kontrak PKWT — `dashboard/employees/contracts`
+- Dashboard kontrak yang akan berakhir (30 hari, 7 hari)
+- Alert otomatis via notifikasi FCM
+- Validasi: PKWT max 5 tahun total (UU Cipta Kerja)
+- Tombol perpanjang / konversi ke PKWTT
+- Generate surat kontrak PDF
+
+#### 13. Employee Self Service (ESS) Lengkap
+- Lihat & download slip gaji sendiri ✅ (sudah ada sebagian)
+- Pengajuan lembur online
+- Update data pribadi mandiri
+- Lihat saldo cuti & histori
+- Download Bukti Potong 1721-A1
+
+#### 14. Integrasi Laporan Pajak
+- Generate file CSV untuk e-SPT DJP Online
+- Format SPT Masa PPh 21 (bulanan)
+- Rekap tahunan untuk SPT Tahunan Badan
+
+#### 15. Cuti Tahunan (Auto-generate)
 - Auto-generate saldo cuti saat ulang tahun masuk kerja
-- Cuti kadaluwarsa (biasanya max 1 tahun)
-- Laporan saldo cuti konsolidasi
+- Mekanisme cuti kadaluwarsa (max 1 tahun)
+- Laporan saldo cuti konsolidasi per divisi
 
 ---
 
-### 7. 📁 KONTRAK KERJA & PKWT (UU Cipta Kerja)
-
-**Model `Kontrak` ada, tapi belum ada:**
-- Jenis PKWT: 5 tahun maksimum (total), tidak bisa diperpanjang lebih dari 1 kali
-- Alert saat kontrak mendekati berakhir (H-30, H-7)
-- Auto-konversi PKWT → PKWTT jika melebihi batas
-- Template surat kontrak yang bisa di-generate
-
----
-
-## 🔧 PENGEMBANGAN YANG DIREKOMENDASIKAN
-
-### 🔴 PRIORITAS 1 — KRITIS (Segera)
-
-#### 1. Engine Kalkulasi Payroll
-**File baru:** `backend/src/services/payrollEngine.js`
-
-Fungsi yang harus dibuat:
-```
-calculateBaseSalary(employee, period, absences)
-calculateOvertimePay(employee, lemburData, timeWorkData)  
-calculateBPJS(employee, baseSalary)  → {jht, jkk, jkm, jp, kes}
-calculatePPh21TER(employee, monthlyIncome, ptkp, month)
-calculateTHR(employee, period)
-calculateDeductions(employee, period)
-runPayrollForPeriod(periodId, companyId)
-```
-
-#### 2. Tarif TER PPh 21 — Master Data
-**Tabel baru yang perlu dibuat:**
-- `TarifTER` — berisi tarif per rentang upah per kategori PTKP
-- Update `BatasPajak` untuk mendukung metode TER & progresif
-
-#### 3. Kalkulator BPJS dengan Batas Atas/Bawah
-- Integrasi parameter UMK dari tabel `Parameter`
-- Validasi upah ≥ UMK sebelum proses payroll
-
----
-
-### 🟡 PRIORITAS 2 — PENTING (1-2 bulan)
-
-#### 4. Struktur Skala Upah
-**Schema baru yang perlu ditambahkan ke `schema.prisma`:**
-```prisma
-model SkalaUpah {
-  id         String   @id @default(uuid()) @db.Uuid
-  kdCmpy     String   @map("KD_CMPY") @db.Char(3)
-  kdJab      String   @map("KD_JAB") @db.VarChar(20)
-  golongan   String   @map("GOLONGAN") @db.VarChar(5)
-  upahMin    Decimal  @map("UPAH_MIN") @db.Decimal(15, 0)
-  upahMid    Decimal  @map("UPAH_MID") @db.Decimal(15, 0)
-  upahMax    Decimal  @map("UPAH_MAX") @db.Decimal(15, 0)
-  validDate  DateTime @map("VALID_DATE") @db.Date
-  isActive   Boolean  @default(true) @map("is_active")
-  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
-
-  @@map("skala_upah")
-}
-```
-
-#### 5. Laporan & Rekap Payroll
-- Rekap gaji per departemen / per periode
-- Export Excel (format bank untuk transfer massal)
-- Laporan lembur bulanan
-- Laporan absensi dengan rekap keterlambatan/mangkir
-
-#### 6. Bukti Potong PPh 21 (Form 1721-A1)
-- Generate PDF sesuai format DJP
-- Kirim otomatis via email ke karyawan
-
-#### 7. Alert Kontrak Karyawan
-- Notifikasi H-30 dan H-7 sebelum kontrak berakhir
-- Dashboard kontrak yang akan berakhir
-
----
-
-### 🟢 PRIORITAS 3 — PENGEMBANGAN (3-6 bulan)
-
-#### 8. Penilaian Kinerja (KPI)
-```prisma
-model KpiTemplate { ... }  // Template penilaian per jabatan
-model KpiEmployee { ... }  // Penilaian per karyawan per periode
-model KpiScore    { ... }  // Nilai detail per indikator
-```
-
-#### 9. Employee Self Service (ESS) Lengkap
-- Lihat & download slip gaji sendiri (sudah sebagian)
-- Pengajuan lembur (belum ada)
-- Update data pribadi (belum ada)
-- Lihat saldo cuti (belum ada di UI)
-
-#### 10. Audit Trail Lengkap
-- Log setiap perubahan data gaji
-- Log approval workflow
-- Immutable payroll records setelah closing
-
-#### 11. Integrasi Laporan Pajak
-- Generate file CSV untuk e-SPT
-- Format sesuai DJP Online
-
-#### 12. Manajemen Disiplin (SP)
-- Surat Peringatan 1, 2, 3
-- Tracking kondite karyawan
-- Eskalasi ke PHK
-
----
-
-## 📐 ARSITEKTUR PAYROLL ENGINE YANG DISARANKAN
+## 📐 ARSITEKTUR YANG SUDAH TERBANGUN
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      PAYROLL ENGINE                          │
+│                    PAYROLL ENGINE ✅                          │
 │                  backend/src/services/                       │
 ├──────────────┬───────────────┬──────────────┬───────────────┤
 │  Attendance  │   Overtime    │     BPJS     │   PPh 21     │
-│  Calculator  │  Calculator   │  Calculator  │  (TER)       │
-│  (Pro-rata)  │  (Per. 102)   │  (PP 44/45)  │ (PMK 168)   │
+│  Calculator  │  Calculator   │  Calculator  │  (TER) ✅    │
+│  (Pro-rata)  │  (Per. 102)✅ │  (PP 44/45)✅│ (PMK 168)   │
 ├──────────────┴───────────────┴──────────────┴───────────────┤
-│              THR Calculator (PP 6/2016)                     │
-│              Pesangon Calculator (UU Cipta Kerja)           │
+│         THR Calculator (PP 6/2016)        ✅                │
+│         Pesangon Calculator (UU Cipta Kerja) ✅             │
 ├─────────────────────────────────────────────────────────────┤
-│                  Deduction Aggregator                       │
-│     (Pinjaman + Koperasi + Absensi + BPJS + PPh21)         │
+│              Deduction Aggregator          ✅                │
+│    (Pinjaman + Koperasi + Absensi + BPJS + PPh21)          │
 ├─────────────────────────────────────────────────────────────┤
-│         Net Salary = Gross Income - Total Deductions        │
+│       Net Salary = Gross Income - Total Deductions  ✅      │
+├─────────────────────────────────────────────────────────────┤
+│             PayrollLog (Audit Trail)       ✅                │
+│             Locking Periode (tutup/reopen) ✅                │
 └─────────────────────────────────────────────────────────────┘
+
+                           ↕  REST API  ✅
+
+┌─────────────────────────────────────────────────────────────┐
+│                  FRONTEND (Next.js)                          │
+├──────────────┬───────────────┬──────────────┬───────────────┤
+│   Payroll    │   Master      │   Laporan    │     ESS       │
+│   Calculate  │   BPJS Config │   Payroll    │   Self Svc    │
+│   ❌ Belum   │   ❌ Belum    │   ❌ Belum   │   ⚠️ Sebagian │
+│   Preview    │   Tarif TER   │   Absensi    │   KPI         │
+│   ❌ Belum   │   ❌ Belum    │   ❌ Belum   │   ❌ Belum    │
+│   Slip Gaji  │   Skala Upah  │  1721-A1 PDF │   Kontrak     │
+│   ⚠️ Sebagian│   ❌ Belum    │   ❌ Belum   │   ❌ Belum    │
+└──────────────┴───────────────┴──────────────┴───────────────┘
 ```
 
 ---
 
-## 🗂️ FILE-FILE YANG PERLU DIBUAT/DIMODIFIKASI
+## 🗂️ PETA JALAN IMPLEMENTASI (Roadmap)
 
-### Backend — File Baru
-| File | Prioritas | Keterangan |
-|------|-----------|------------|
-| `src/services/payrollEngine.js` | 🔴 | Core kalkulasi payroll |
-| `src/services/pphCalculator.js` | 🔴 | PPh 21 metode TER (PMK 168/2023) |
-| `src/services/bpjsCalculator.js` | 🔴 | BPJS TK & Kesehatan |
-| `src/services/overtimeCalculator.js` | 🔴 | Lembur sesuai Permenaker 102/2004 |
-| `src/services/thrCalculator.js` | 🟡 | THR proporsional (PP 6/2016) |
-| `src/services/pesangonCalculator.js` | 🟡 | Pesangon & UPMK (UU Cipta Kerja) |
-| `src/controllers/reportController.js` | 🟡 | Laporan rekap gaji & absensi |
-| `src/routes/report.routes.js` | 🟡 | Route laporan |
+### ✅ Sprint 0 — SELESAI (27 Mei 2026)
+- [x] Payroll Engine + semua kalkulator service
+- [x] PPh 21 TER (PMK 168/2023)
+- [x] BPJS Calculator + batas atas/bawah
+- [x] Overtime Calculator (Permenaker 102/2004)
+- [x] THR + Pesangon Calculator
+- [x] 7 endpoint API baru
+- [x] Master data seed (TarifTER 113 baris + KonfigBpjs)
+- [x] Prisma schema: TarifTER, KonfigBpjs, SkalaUpah, PayrollLog, KpiTemplate, KpiEmployee, SuratPeringatan
 
-### Backend — Modifikasi
-| File | Prioritas | Perubahan |
-|------|-----------|-----------|
-| `src/controllers/payrollController.js` | 🔴 | Integrasi payroll engine (ganti placeholder) |
-| `prisma/schema.prisma` | 🔴 | Tambah model TarifTER, SkalaUpah |
+### 🔴 Sprint 1 — BERIKUTNYA (Target: 1-2 minggu)
+- [ ] **Halaman Calculate Payroll** (`/dashboard/payroll/calculate`) — tombol Run + progress
+- [ ] **Halaman Preview Slip** (`/dashboard/payroll/[id]/preview`) — rincian kalkulasi per karyawan
+- [ ] **Upgrade halaman periode** (`/dashboard/payroll/[id]`) — daftar karyawan + status
+- [ ] **UI Konfigurasi BPJS** (`/dashboard/settings/master/bpjs-config`)
+- [ ] **UI Tarif TER** (`/dashboard/settings/master/tarif-pph`) — tabel read-only
 
-### Frontend — Halaman Baru
-| Halaman | Prioritas | Keterangan |
-|---------|-----------|------------|
-| `dashboard/payroll/calculate` | 🔴 | UI proses payroll dengan preview kalkulasi |
-| `dashboard/payroll/slip-gaji` | 🔴 | Lihat & download slip gaji |
-| `dashboard/reports/payroll-summary` | 🟡 | Rekap gaji per periode |
-| `dashboard/reports/attendance-summary` | 🟡 | Rekap absensi bulanan |
-| `dashboard/settings/master/skala-upah` | 🟡 | Struktur skala upah |
-| `dashboard/settings/master/tarif-pph` | 🟡 | Master tarif TER PPh 21 |
-| `dashboard/settings/master/bpjs-config` | 🟡 | Konfigurasi rate BPJS |
-| `dashboard/employees/contracts` | 🟡 | Monitor kontrak PKWT |
-| `dashboard/performance` | 🟢 | Penilaian kinerja KPI |
+### 🟡 Sprint 2 — (Target: 2-4 minggu)
+- [ ] **UI Struktur Skala Upah** (`/dashboard/settings/master/skala-upah`) — CRUD + validasi UMK
+- [ ] **Rekap Payroll** (`/dashboard/reports/payroll-summary`) — export Excel
+- [ ] **Laporan Absensi** (`/dashboard/reports/attendance-summary`)
+- [ ] **Monitor Kontrak PKWT** (`/dashboard/employees/contracts`)
 
----
-
-## ⚖️ RISIKO HUKUM JIKA TIDAK DIPERBAIKI
-
-| Risiko | Regulasi | Sanksi |
-|--------|----------|--------|
-| Gaji di bawah UMK | PP 36/2021 Ps. 23 | Pidana penjara 1-4 tahun atau denda Rp 100-400 juta |
-| Tidak mendaftarkan BPJS | UU BPJS 24/2011 | Denda administratif + pidana penjara |
-| PPh 21 salah hitung/metode | PMK 168/2023 | Bunga 2% per bulan + denda |
-| Tidak bayar THR | PP 6/2016 | Denda 5% dari total THR yang tidak dibayar |
-| PKWT melebihi 5 tahun | UU Cipta Kerja Ps. 56 | Demi hukum berubah jadi PKWTT |
-| Tidak membuat skala upah | Permenaker 5/2023 | Sanksi administratif |
-| Lembur tidak dibayar sesuai ketentuan | Permenaker 102/2004 | Tuntutan pidana + denda |
+### 🟢 Sprint 3 — (Target: 3-6 bulan)
+- [ ] Penilaian Kinerja (KPI) — UI + logik
+- [ ] Manajemen SP (Surat Peringatan)
+- [ ] Bukti Potong 1721-A1 PDF generator
+- [ ] ESS Lengkap (lembur online, update data pribadi)
+- [ ] Integrasi e-SPT DJP
 
 ---
 
-## 💡 REKOMENDASI TEKNIS TAMBAHAN
+## ⚖️ RISIKO HUKUM — STATUS TERKINI
 
-1. **Locking Payroll Period** — Setelah payroll di-closing, data gaji tidak boleh bisa diubah (immutable). Tambahkan middleware check `period.tutup` sebelum operasi write.
+| Risiko | Regulasi | Sanksi | Status |
+|--------|----------|--------|--------|
+| Gaji di bawah UMK | PP 36/2021 Ps. 23 | Pidana 1-4 tahun / denda Rp 100-400 juta | ✅ Validasi ada di engine |
+| Tidak mendaftarkan BPJS | UU BPJS 24/2011 | Denda + pidana | ✅ BPJS Calculator + Konfig |
+| PPh 21 salah hitung/metode | PMK 168/2023 | Bunga 2%/bulan + denda | ✅ TER sudah diimplementasi |
+| Tidak bayar THR | PP 6/2016 | Denda 5% total THR | ✅ THR Calculator sudah ada |
+| PKWT melebihi 5 tahun | UU Cipta Kerja Ps. 56 | Berubah jadi PKWTT | ❌ Monitor kontrak belum ada |
+| Tidak membuat skala upah | Permenaker 5/2023 | Sanksi administratif | ⚠️ Schema ada, UI belum |
+| Lembur tidak dibayar sesuai ketentuan | Permenaker 102/2004 | Tuntutan pidana + denda | ✅ Overtime Calculator sudah ada |
 
-2. **Batch Processing** — Kalkulasi payroll untuk 100+ karyawan harus dijalankan sebagai background job (queue), bukan synchronous HTTP request. Gunakan `Bull` atau `node-cron`.
+---
 
-3. **Audit Log Payroll** — Setiap perubahan pada data gaji harus tercatat: siapa, kapan, nilai sebelum & sesudah.
+## 💡 REKOMENDASI TEKNIS — CATATAN PENTING
 
-4. **Multi-Company Support** — Schema sudah mendukung `kdCmpy`, pastikan semua kalkulasi menghormati parameter per perusahaan (UMK berbeda, BPJS rate berbeda).
+1. **✅ Locking Payroll Period** — Sudah ada via `close`/`reopen` endpoint + middleware check `tutup`.
 
-5. **Data Validation Sebelum Proses Payroll** — Validasi: karyawan aktif, shift sudah di-set, absensi sudah final, upah tidak di bawah UMK.
+2. **⚠️ Batch Processing** — Kalkulasi payroll saat ini synchronous. Untuk >100 karyawan, pertimbangkan background job dengan `Bull`/`BullMQ` atau `node-cron`.
 
-6. **Rekonsiliasi** — Bandingkan total transfer bank vs total `gBersih` di database setiap periode untuk deteksi anomali.
+3. **✅ Audit Log Payroll** — `PayrollLog` sudah immutable, endpoint `/log/:periodeId` sudah tersedia.
 
-7. **Enkripsi Data Sensitif** — Nomor rekening, NPWP, data gaji harus dienkripsi at-rest.
+4. **✅ Multi-Company Support** — Schema `kdCmpy` sudah ada, kalkulasi sudah menghormati parameter per perusahaan.
 
-8. **Rate Limiter pada Endpoint Payroll** — Proses payroll hanya boleh dijalankan sekali per periode per perusahaan.
+5. **✅ Data Validation** — Validasi karyawan aktif, upah ≥ UMK sudah ada di engine sebelum proses payroll.
+
+6. **❌ Rekonsiliasi Transfer Bank** — Bandingkan total transfer bank vs total `gBersih` per periode. Belum ada.
+
+7. **❌ Enkripsi Data Sensitif** — Nomor rekening, NPWP, data gaji sebaiknya dienkripsi at-rest.
+
+8. **✅ Rate Limiter Endpoint Payroll** — Proses payroll sudah dilindungi oleh pengecekan status periode (`tutup`).
+
+---
+
+*Dokumen ini terakhir diperbarui: 27 Mei 2026 — Mencerminkan status setelah selesainya Tahap Backend Payroll Engine.*

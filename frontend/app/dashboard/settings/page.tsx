@@ -33,6 +33,8 @@ import {
     Database,
     Clock,
     Repeat,
+    ShieldCheck,
+    Receipt,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -156,6 +158,28 @@ const shortcutItems = [
         borderColor: 'border-indigo-200 dark:border-indigo-800',
         category: 'master',
         href: '/dashboard/settings/master/patterns'
+    },
+
+    // Konfigurasi Payroll
+    {
+        title: 'Konfigurasi BPJS',
+        description: 'Rate JHT, JKK, JKM, JP, JKN per perusahaan',
+        icon: ShieldCheck,
+        color: 'bg-blue-600 text-white',
+        bgColor: 'bg-blue-50 dark:bg-blue-900/20',
+        borderColor: 'border-blue-200 dark:border-blue-800',
+        category: 'master',
+        href: '/dashboard/settings/master/bpjs-config'
+    },
+    {
+        title: 'Tarif TER PPh 21',
+        description: 'Master tarif PPh 21 PMK 168/2023',
+        icon: Receipt,
+        color: 'bg-amber-500 text-white',
+        bgColor: 'bg-amber-50 dark:bg-amber-900/20',
+        borderColor: 'border-amber-200 dark:border-amber-800',
+        category: 'master',
+        href: '/dashboard/settings/master/tarif-pph'
     },
 
     // Parameter & Konfigurasi Items

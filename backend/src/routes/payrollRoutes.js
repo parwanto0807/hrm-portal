@@ -13,7 +13,11 @@ import {
     saveKonfigBpjs,
     getTarifTER,
     getPayrollLog,
+    getSkalaUpah,
+    saveSkalaUpah,
+    deleteSkalaUpah,
 } from '../controllers/payrollController.js';
+
 import { protect } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
@@ -41,6 +45,12 @@ router.get('/config/tarif-ter',         getTarifTER);
 
 // ── Audit Trail ────────────────────────────────────────────────
 router.get('/log/:periodeId',           getPayrollLog);
+
+// ── Skala Upah ─────────────────────────────────────────────────
+router.get('/config/skala-upah',        getSkalaUpah);
+router.post('/config/skala-upah',       saveSkalaUpah);
+router.put('/config/skala-upah/:id',    saveSkalaUpah);
+router.delete('/config/skala-upah/:id', deleteSkalaUpah);
 
 export default router;
 

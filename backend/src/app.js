@@ -26,6 +26,7 @@ import historyRoute from './routes/historyRoutes.js';
 import shiftRoute from './routes/shiftRoutes.js';
 import dashboardRoute from './routes/dashboardRoutes.js';
 import notificationRoute from './routes/notification.routes.js';
+import reportRoute from './routes/reportRoutes.js';
 
 
 import { auditLog } from './middleware/audit.middleware.js';
@@ -148,6 +149,7 @@ app.use('/api/absent', absentRoute);
 app.use('/api/holidays', holidayRoute);
 app.use('/api/shifts', shiftRoute);
 app.use('/api/dashboard', dashboardRoute);
+app.use('/api/reports', reportRoute);
 
 
 // Error Handler

@@ -63,9 +63,9 @@ export const getAttendance = async (req, res) => {
                         { karyawan: { emplId: { contains: search, mode: 'insensitive' } } }
                     ]
                 } : {},
-                (kdDept && kdDept !== 'all') ? { kdDept } : {}, // Use Absent column
-                (kdSeksie && kdSeksie !== 'all') ? { kdSeksie } : {}, // Use Absent column
-                (kdJab && kdJab !== 'all') ? { karyawan: { kdJab } } : {}, // Use Relation (Absent doesn't have kdJab)
+                (kdDept && kdDept !== 'all') ? { karyawan: { kdDept } } : {}, 
+                (kdSeksie && kdSeksie !== 'all') ? { karyawan: { kdSeksie } } : {}, 
+                (kdJab && kdJab !== 'all') ? { karyawan: { kdJab } } : {},
                 (startDate && endDate) ? {
                     tglAbsen: {
                         gte: new Date(startDate),
