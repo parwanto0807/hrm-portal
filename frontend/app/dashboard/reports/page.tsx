@@ -14,7 +14,19 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Home } from 'lucide-react';
 
-const REPORT_CARDS = [
+type ReportCardType = {
+    title: string;
+    desc: string;
+    href: string;
+    icon: React.ElementType;
+    color: string;
+    badge: string;
+    badgeColor: string;
+    tags: string[];
+    coming?: boolean;
+};
+
+const REPORT_CARDS: ReportCardType[] = [
     {
         title: 'Rekap Laporan Payroll',
         desc: 'Ringkasan gaji kotor, potongan BPJS, PPh 21, dan THP per periode. Export ke Excel multi-sheet.',
